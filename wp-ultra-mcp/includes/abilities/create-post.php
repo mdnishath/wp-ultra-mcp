@@ -63,5 +63,5 @@ function wpultra_create_post(array $input) {
     if (!empty($input['terms']) && is_array($input['terms'])) {
         foreach ($input['terms'] as $tax => $terms) { wp_set_post_terms((int) $id, (array) $terms, (string) $tax); }
     }
-    return wpultra_ok(['post_id' => (int) $id, 'permalink' => get_permalink($id), 'edit_url' => get_edit_post_link($id, 'raw')]);
+    return wpultra_ok(['post_id' => (int) $id, 'permalink' => (string) get_permalink($id), 'edit_url' => (string) get_edit_post_link($id, 'raw')]);
 }

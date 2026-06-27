@@ -52,7 +52,7 @@ function wpultra_recipe_register_all(): void {
             'category' => 'custom',
             'input_schema' => wpultra_recipe_input_schema($parsed['input']),
             'output_schema' => ['type' => 'object', 'properties' => ['success' => ['type' => 'boolean']], 'required' => ['success']],
-            'execute_callback' => function (array $in = []) use ($parsed) { return wpultra_recipe_execute($parsed, $in); },
+            'execute_callback' => function ($in = []) use ($parsed) { return wpultra_recipe_execute($parsed, (array) $in); },
             'permission_callback' => 'wpultra_permission_callback',
             'meta' => ['show_in_rest' => true, 'mcp' => ['public' => true, 'type' => 'tool'],
                 'annotations' => ['readonly' => false, 'destructive' => true, 'idempotent' => false]],

@@ -15,7 +15,9 @@ function wpultra_recipe_subst_array(array $tpl, array $input): array {
 }
 
 function wpultra_recipe_execute(array $parsed, array $input) {
+    $input = (array) $input;
     foreach ((array) ($parsed['input'] ?? []) as $key => $def) {
+        $def = (array) $def;
         if (!empty($def['required']) && !array_key_exists($key, $input)) {
             return wpultra_err('recipe_missing_input', "Required input '$key' is missing.");
         }
