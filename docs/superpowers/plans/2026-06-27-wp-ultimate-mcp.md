@@ -475,7 +475,7 @@ git commit -m "feat: zod-validated ConfigManager"
   - `interface QueryClassification { verb: string; destructive: boolean }`
   - `function classifyQuery(sql: string): QueryClassification` — pure; verb = first keyword uppercased; `destructive=true` for `DROP`/`TRUNCATE`/`ALTER`, or `DELETE`/`UPDATE` lacking a `WHERE`.
   - `interface PoolLike { query(sql: string, params?: unknown[]): Promise<[unknown, unknown]>; end(): Promise<void> }`
-  - `class DatabaseManager` constructed as `new DatabaseManager(config, poolFactory?)` where `poolFactory?: (cfg) => PoolLike` (defaults to real mysql2 pool). Methods: `query(sql, params?) → Promise<{ rows?: unknown[]; affectedRows?: number; insertId?: number; verb: string }>`; `upsertPostMeta(postId: number, key: string, value: string) → Promise<void>`; `getOption(name: string) → Promise<string | null>`; `table(name: string) → string` (prefix + identifier validation); `close() → Promise<void>`.
+  - `class DatabaseManager` constructed as `new DatabaseManager(config, poolFactory?)` where `poolFactory?: (cfg) => PoolLike` (defaults to real mysql2 pool). Methods: `query(sql, params?) → Promise<{ rows?: unknown[]; affectedRows?: number; insertId?: number; verb: string }>`; `getOption(name: string) → Promise<string | null>`; `table(name: string) → string` (prefix + identifier validation); `close() → Promise<void>`.
 
 - [ ] **Step 1: Write the failing test** — `test/database.test.ts`
 
@@ -523,14 +523,16 @@ describe("DatabaseManager", () => {
     expect(pool.query).toHaveBeenCalledWith("INSERT INTO wp_posts (post_title) VALUES (?)", ["x"]);
   });
 
-  it("upsertPostMeta issues ON DUPLICATE KEY UPDATE with bound params", async () => {
-    const pool = fakePool(() => ({ affectedRows: 1, insertId: 7 }));
+  it("getOption returns the option_value", async () => {
+    const pool = fakePool(() => [{ option_value: "https://site.test" }]);
     const db = new DatabaseManager(cfg, () => pool);
-    await db.upsertPostMeta(10, "_elementor_edit_mode", "builder");
-    const call = pool.query.mock.calls[0];
-    expect(call[0]).toContain("wp_postmeta");
-    expect(call[0]).toContain("ON DUPLICATE KEY UPDATE");
-    expect(call[1]).toEqual([10, "_elementor_edit_mode", "builder", "builder"]);
+    expect(await db.getOption("siteurl")).toBe("https://site.test");
+  });
+
+  it("getOption returns null when absent", async () => {
+    const pool = fakePool(() => []);
+    const db = new DatabaseManager(cfg, () => pool);
+    expect(await db.getOption("missing")).toBeNull();
   });
 
   it("table() rejects bad identifiers", () => {
@@ -629,15 +631,6 @@ export class DatabaseManager {
     return row?.option_value ?? null;
   }
 
-  async upsertPostMeta(postId: number, key: string, value: string): Promise<void> {
-    await this.query(
-      `INSERT INTO ${this.table("postmeta")} (post_id, meta_key, meta_value)
-       VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE meta_value = ?`,
-      [postId, key, value, value],
-    );
-  }
-
   async close(): Promise<void> {
     if (this.pool) {
       await this.pool.end();
@@ -650,9 +643,9 @@ export class DatabaseManager {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/database.test.ts`
-Expected: PASS (8 tests).
+Expected: PASS (9 tests).
 
-> Note on `upsertPostMeta`: WordPress `wp_postmeta` has no unique key on `(post_id, meta_key)` by default, so `ON DUPLICATE KEY UPDATE` only fires on the `meta_id` PK. The ElementorManager (Task 6) handles the read-then-update/insert logic correctly; this helper is the bound-param primitive used by it and is safe because Elementor meta keys are single-valued per post.
+> Note: WordPress `wp_postmeta` has no unique key on `(post_id, meta_key)` by default, so a blind `INSERT ... ON DUPLICATE KEY UPDATE` would not work for post meta. The ElementorManager (Task 6) therefore does explicit read-then-update/insert. DatabaseManager intentionally exposes only the generic `query` primitive plus `getOption`/`table` — no post-meta upsert helper.
 
 - [ ] **Step 5: Commit**
 
@@ -1716,4 +1709,4 @@ git commit -m "feat: server bootstrap, stdio transport, smoke test, README"
 
 **Type consistency:** `classifyQuery`, `DatabaseManager.query` shape (`{verb, rows?, affectedRows?, insertId?}`), `FileManager.writeAtomic/read`, `WpCliManager.run/isDenylisted`, `ElementorManager.setLayout` signatures match between definition (Tasks 3–6) and consumption (Tasks 7–8). `Managers` interface (Task 7 Step 3) matches `buildServer`/`main` usage (Task 9). `ToolResult` consistent. ✅
 
-**Known WordPress caveat documented:** `wp_postmeta` upsert semantics handled via read-then-write in ElementorManager (Task 6), with a note in Task 4 explaining why the generic `upsertPostMeta` helper is not used for Elementor meta.
+**Known WordPress caveat documented:** `wp_postmeta` upsert semantics handled via read-then-write in ElementorManager (Task 6), with a note in Task 4 explaining why DatabaseManager exposes no post-meta upsert helper (no unique key on `(post_id, meta_key)`).
