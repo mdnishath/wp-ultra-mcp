@@ -23,16 +23,16 @@ export class ElementorManager {
 
   private async setMeta(postId: number, key: string, value: string): Promise<void> {
     const existing = await this.db.query(
-      `SELECT meta_id FROM ${this.db.table("postmeta")} WHERE post_id = ? AND meta_key = '${key}' LIMIT 1`,
-      [postId],
+      `SELECT meta_id FROM ${this.db.table("postmeta")} WHERE post_id = ? AND meta_key = ? LIMIT 1`,
+      [postId, key],
     );
     const found = existing.rows?.[0] as { meta_id?: number } | undefined;
     if (found?.meta_id) {
       await this.db.query(`UPDATE ${this.db.table("postmeta")} SET meta_value = ? WHERE meta_id = ?`, [value, found.meta_id]);
     } else {
       await this.db.query(
-        `INSERT INTO ${this.db.table("postmeta")} (post_id, meta_key, meta_value) VALUES (?, '${key}', ?)`,
-        [postId, value],
+        `INSERT INTO ${this.db.table("postmeta")} (post_id, meta_key, meta_value) VALUES (?, ?, ?)`,
+        [postId, key, value],
       );
     }
   }

@@ -31,9 +31,9 @@ describe("ElementorManager", () => {
     const em = new ElementorManager(db);
     const r = await em.setLayout(5, [{ id: "a", elType: "container", elements: [] }]);
     expect(r.elements).toBe(1);
-    const metaWrites = db.query.mock.calls.map((c: any[]) => c[0]).join("\n");
-    expect(metaWrites).toContain("_elementor_data");
-    expect(metaWrites).toContain("_elementor_edit_mode");
+    const allCalls = db.query.mock.calls.map((c: any[]) => JSON.stringify(c)).join("\n");
+    expect(allCalls).toContain("_elementor_data");
+    expect(allCalls).toContain("_elementor_edit_mode");
   });
 
   it("setLayout rejects invalid JSON string", async () => {
