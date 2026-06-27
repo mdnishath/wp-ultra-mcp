@@ -46,6 +46,44 @@ The prior "write raw `_elementor_data` JSON" approach is **rejected** — it can
 
 ---
 
+## 2B. Pillar: Hubs, Sandbox & the ever-growing library (the durable moat)
+
+In the AI age the compounding advantage is not any single feature — it is the **library of skills + abilities**, the **Hubs** that let anyone manage and *extend* them, and the **Sandbox** that makes AI-written code safe. This pillar runs across all waves and must surpass Novamira (which has these but gates/limits them).
+
+### Skill Hub (admin UI over the existing skills system)
+We already ship the skills engine (CPT `wpultra_skill`, markdown frontmatter parser, agentic catalog, per-skill MCP prompts, CRUD abilities, built-ins). Missing = the **management UI**:
+- Browse all skills (built-in + user) as cards; per-skill toggle for `enable_prompt` / `enable_agentic`.
+- **Upload `.md` skills** (drag-drop or file picker) → parsed via the existing parser → stored as `wpultra_skill` CPT.
+- Inline edit (frontmatter + body), duplicate, delete, and **export** a skill back to `.md`. Import/export = portability between sites.
+- Search + category/tag filtering.
+
+### Ability Hub (extend the Abilities page)
+We ship the enable/disable toggle page (Wave 1). Grow it into a true hub:
+- Search, group-by-category, per-ability **info drawer** (input/output schema, annotations, example call).
+- **Declarative custom abilities — our innovation (Novamira requires PHP):** define an ability in a `.md`/YAML doc with frontmatter (`name`, `description`, `input` schema) + a `run` recipe of type `wp-cli` | `sql` | `php` | `http` and a parameter-substituted `command`/`query`/`code`/`url` template. Upload via the Hub → a generic `wpultra_recipe_ability` executor registers it as a real MCP ability at runtime. Non-coders add full WP capabilities with **zero plugin code**. Recipes are sandbox/permission-gated exactly like the built-in code abilities; destructive recipes inherit the confirm gate.
+  ```yaml
+  name: woo/empty-cart
+  description: Empty a WooCommerce customer's cart
+  input: { user_id: { type: integer, required: true } }
+  run: wp-cli
+  command: ["wc", "cart", "empty", "--user={user_id}"]
+  ```
+- Stored as a `wpultra_ability` CPT (mirrors the skill CPT); listed in the Hub; toggle/edit/delete/export like skills.
+
+### Memory Hub (admin UI over the existing memory system)
+We ship memory abilities + CPT. Add a UI: list/search by type (user/feedback/project/reference), inline view/edit/delete, manual add.
+
+### Sandbox + crash-recovery safe-mode (beat Novamira's safety)
+- AI-written executable code (`.php`/`.htaccess`/`*.ini`) is already confined to `WP_CONTENT_DIR/wpultra-sandbox/`. Add the **safety runtime**:
+  - A small mu-plugin shim that loads sandbox PHP inside a guard; on a fatal it writes a `.crashed` sentinel.
+  - When `.crashed` exists → **safe mode**: all sandbox-loaded code is suspended, an admin notice + a `wpultra/read-debug-log`-driven self-heal prompt is surfaced, and the site stays up. One-click "clear safe mode" after fixing.
+  - `execute-php` and recipe `php` runs respect safe mode.
+
+### Ever-growing library (a standing principle, every wave)
+Each wave ships new built-in **skills + abilities** toward covering the **whole WP ecosystem** — so "do anything in WordPress" becomes literally true: Elementor, WooCommerce, ACF/JetEngine/Meta Box/Pods, SEO (Yoast/RankMath), media library, users/roles/capabilities, menus, widgets, options, cron/Action Scheduler, comments, taxonomies, multisite. Coverage breadth is tracked as a first-class metric, not an afterthought.
+
+---
+
 ## 3. Full feature inventory → waves
 
 **Wave 1 — Foundation (largely the existing plan, Elementor deferred):**
