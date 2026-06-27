@@ -111,6 +111,7 @@ function wpultra_abilities_render(): void {
             </div>
         </div>
 
+        <div class="wpu-grid">
         <?php foreach ($groups as $title => $group) : ?>
             <div class="wpu-card">
                 <div class="wpu-card-head">
@@ -138,12 +139,15 @@ function wpultra_abilities_render(): void {
                 </div>
             </div>
         <?php endforeach; ?>
+        </div>
 
         <span id="wpu-toast" class="wpu-toast">Saved</span>
     </div>
 
     <style>
-        .wpu-wrap { max-width: 860px; }
+        .wpu-wrap { max-width: 1180px; }
+        .wpu-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; align-items:start; }
+        @media (max-width:960px) { .wpu-grid { grid-template-columns:1fr; } }
         .wpu-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:8px 0 22px; flex-wrap:wrap; }
         .wpu-title { display:flex; align-items:center; gap:10px; font-size:23px; margin:0; }
         .wpu-title .dashicons { color:#6d4afe; font-size:26px; width:26px; height:26px; }
@@ -154,7 +158,7 @@ function wpultra_abilities_render(): void {
         .wpu-pill-on strong { color:#1a9d5a; }
         .wpu-pill-off strong { color:#c23b3b; }
 
-        .wpu-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; margin:0 0 18px; overflow:hidden;
+        .wpu-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; margin:0; overflow:hidden;
             box-shadow:0 6px 20px rgba(18,20,40,.06), 0 1px 3px rgba(18,20,40,.05); transition:box-shadow .2s ease; }
         .wpu-card:hover { box-shadow:0 10px 30px rgba(18,20,40,.10), 0 2px 6px rgba(18,20,40,.06); }
         .wpu-card-head { display:flex; align-items:center; gap:10px; padding:15px 20px; font-weight:600; font-size:14px;
