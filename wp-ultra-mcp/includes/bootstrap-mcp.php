@@ -36,6 +36,7 @@ function wpultra_register_categories(): void {
         'elementor' => 'Elementor layout engine.',
         'gutenberg' => 'Gutenberg block content.',
         'skills' => 'Reusable AI skill documents.',
+        'memory' => 'Persistent cross-session memory.',
     ];
     foreach ($cats as $slug => $desc) {
         wp_register_ability_category($slug, ['label' => $slug, 'description' => __($desc, 'wp-ultra-mcp')]);
@@ -48,6 +49,7 @@ function wpultra_load_abilities(): void {
         $path = WPULTRA_DIR . 'includes/abilities/' . $file . '.php';
         if (is_readable($path)) { require_once $path; }
     }
+    if (is_readable(WPULTRA_DIR . 'includes/memory/cpt.php')) { require_once WPULTRA_DIR . 'includes/memory/cpt.php'; }
     // Skills subsystem (CPT + catalog + per-skill prompts) registers its own abilities/prompts.
     if (is_readable(WPULTRA_DIR . 'includes/skills/cpt.php')) {
         require_once WPULTRA_DIR . 'includes/skills/cpt.php';
