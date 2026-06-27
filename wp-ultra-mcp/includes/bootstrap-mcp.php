@@ -36,7 +36,8 @@ function wpultra_register_categories(): void {
         'elementor' => 'Elementor layout engine.',
         'gutenberg' => 'Gutenberg block content.',
         'skills' => 'Reusable AI skill documents.',
-        'memory' => 'Persistent cross-session memory.',
+        'memory'  => 'Persistent cross-session memory.',
+        'content' => 'WordPress posts, pages, and CPTs.',
     ];
     foreach ($cats as $slug => $desc) {
         wp_register_ability_category($slug, ['label' => $slug, 'description' => __($desc, 'wp-ultra-mcp')]);
