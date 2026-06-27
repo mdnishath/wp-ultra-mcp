@@ -38,6 +38,7 @@ function wpultra_register_categories(): void {
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, and CPTs.',
+        'custom'  => 'User-defined declarative abilities.',
     ];
     foreach ($cats as $slug => $desc) {
         wp_register_ability_category($slug, ['label' => $slug, 'description' => __($desc, 'wp-ultra-mcp')]);
@@ -57,6 +58,10 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/skills/sources.php';
         require_once WPULTRA_DIR . 'includes/skills/catalog.php';
         require_once WPULTRA_DIR . 'includes/skills/prompts.php';
+    }
+    if (is_readable(WPULTRA_DIR . 'includes/recipes/cpt.php')) {
+        require_once WPULTRA_DIR . 'includes/recipes/cpt.php';
+        add_action('wp_abilities_api_init', 'wpultra_recipe_register_all', 600);
     }
 }
 
