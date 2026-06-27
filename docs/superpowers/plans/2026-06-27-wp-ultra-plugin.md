@@ -1,8 +1,10 @@
-# WP-Ultra-MCP Plugin Implementation Plan
+# WP-Ultra-MCP — Wave 1 (Foundation) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+>
+> **This is Wave 1 of the program** (`docs/superpowers/specs/2026-06-27-wp-ultra-program.md`). Wave 1 = the foundation + memory + WP content + skills + admin. **Elementor (schema-driven), Gutenberg, Bricks, design systems, and field-plugin integrations are LATER waves with their own plans.** Tasks 7, 8, 9 below are **DEFERRED — do NOT implement in Wave 1** (kept for reference; Elementor is being redesigned schema-driven in the Wave 2 plan). Wave 1 adds Task 13 (memory) and Task 14 (WP content).
 
-**Goal:** Build a free WordPress **plugin** (`WP-Ultra-MCP`) that exposes any WordPress site as an MCP server over HTTP for AI CLIs, with deep server-side Elementor control, raw SQL, WP-CLI, filesystem, execute-php, diagnostics, and a skills system — beating Novamira.
+**Goal:** Build the installable foundation of `WP-Ultra-MCP`: an MCP server plugin with files, WP-CLI, raw SQL, execute-php, diagnostics, persistent memory, WP content management, and a skills system — a useful product on its own and the base every later wave builds on.
 
 **Architecture:** The plugin bundles the official `wordpress/mcp-adapter` (vendored from Novamira's copy) and registers WordPress **abilities** (`wp_register_ability`). The adapter auto-exposes every public ability as an MCP tool/resource/prompt at `/wp-json/mcp/wpultra`. We write only abilities + a server-side Elementor engine + an admin connect page + a skills system. We do not implement the MCP protocol or transport.
 
@@ -537,7 +539,7 @@ function wpultra_mcp_adapter_available(): bool {
     return class_exists(WPULTRA_MCP_ADAPTER_CLASS);
 }
 
-/** Single source of truth for which ability files to load. Ability tasks append here. */
+/** Single source of truth for which ability files to load. Later waves append here. */
 function wpultra_ability_files(): array {
     return [
         // filesystem
@@ -546,13 +548,14 @@ function wpultra_ability_files(): array {
         'run-wp-cli', 'execute-php',
         // database + diagnostics
         'execute-wp-query', 'read-debug-log',
-        // elementor
-        'elementor-get-layout', 'elementor-set-layout', 'elementor-patch-element', 'elementor-schema',
-        // gutenberg
-        'gutenberg-get-content', 'gutenberg-write-content',
+        // memory (Wave 1, Task 13)
+        'memory-save', 'memory-get', 'memory-list', 'memory-delete',
+        // wp content (Wave 1, Task 14)
+        'create-post', 'update-post', 'delete-post',
         // skills
         'skill-get', 'skill-write', 'skill-edit', 'skill-delete',
     ];
+    // NOTE: elementor-*, gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
 }
 
 function wpultra_register_categories(): void {
@@ -647,10 +650,11 @@ require __DIR__ . '/../wp-ultra-mcp/includes/bootstrap-mcp.php';
 
 it('ability file list is complete and unique', function () {
     $files = wpultra_ability_files();
-    assert_eq(19, count($files), 'count');
+    assert_eq(20, count($files), 'count');
     assert_eq(count($files), count(array_unique($files)), 'unique');
     assert_true(in_array('execute-wp-query', $files, true), 'has sql');
-    assert_true(in_array('elementor-set-layout', $files, true), 'has elementor');
+    assert_true(in_array('memory-save', $files, true), 'has memory');
+    assert_true(in_array('create-post', $files, true), 'has wp content');
 });
 it('adapter-unavailable boot is a no-op (no throw)', function () {
     wpultra_boot();
@@ -1113,7 +1117,11 @@ git commit -m "feat(plugin): database (execute-wp-query) + diagnostics (read-deb
 
 ---
 
-### Task 7: Elementor engine (pure transforms — the killer, heavily unit-tested)
+### Task 7: Elementor engine — ⚠️ DEFERRED TO WAVE 2 (do NOT implement in Wave 1)
+
+> Superseded by the schema-driven Elementor design in the program spec §2. The raw-JSON engine below is **not** built. Skip to Task 10. (Retained only as a reference contrast.)
+
+#### (reference) Elementor engine (pure transforms)
 
 **Files:**
 - Create: `wp-ultra-mcp/includes/elementor/engine.php`
@@ -1309,7 +1317,11 @@ git commit -m "feat(plugin): Elementor engine — validate/compact/patch (pure t
 
 ---
 
-### Task 8: Elementor abilities (get-layout / set-layout / patch-element / schema)
+### Task 8: Elementor abilities — ⚠️ DEFERRED TO WAVE 2 (do NOT implement in Wave 1)
+
+> Superseded by program spec §2.4. Skip to Task 10.
+
+#### (reference) Elementor abilities
 
 **Files:**
 - Create: `wp-ultra-mcp/includes/abilities/elementor-get-layout.php`, `elementor-set-layout.php`, `elementor-patch-element.php`, `elementor-schema.php`
@@ -1424,7 +1436,11 @@ git commit -m "feat(plugin): Elementor abilities (get/set/patch layout + schema 
 
 ---
 
-### Task 9: Gutenberg abilities (get-content / write-content, dynamic-only)
+### Task 9: Gutenberg abilities — ⚠️ DEFERRED TO WAVE 4 (do NOT implement in Wave 1)
+
+> Gutenberg is part of the Wave 4 builder wave. Skip to Task 10.
+
+#### (reference) Gutenberg abilities
 
 **Files:**
 - Create: `wp-ultra-mcp/includes/abilities/gutenberg-get-content.php`, `gutenberg-write-content.php`
@@ -2069,7 +2085,278 @@ git commit -m "chore(plugin): readme, full-suite runner, integration smoke notes
 
 ---
 
+### Task 13: Memory subsystem (CPT + save/get/list/delete)
+
+**Files:**
+- Create: `wp-ultra-mcp/includes/memory/cpt.php`, `wp-ultra-mcp/includes/abilities/memory-save.php`, `memory-get.php`, `memory-list.php`, `memory-delete.php`
+- Modify: `wp-ultra-mcp/includes/bootstrap-mcp.php` (require `memory/cpt.php` inside `wpultra_load_abilities`)
+- Test: `tests/memory.test.php`
+
+**Interfaces:**
+- Consumes: WP post APIs, `wpultra_ok/err`.
+- Produces: CPT `wpultra_memory`; abilities `wpultra_memory_save/get/list/delete`. Data model: `{id=post->ID, name=post_title, description=post_excerpt, type=_wpultra_memory_type meta (user|feedback|project|reference), content=post_content, updated_at=post_modified_gmt}`.
+
+- [ ] **Step 1: Write `includes/memory/cpt.php`**
+
+```php
+<?php
+declare(strict_types=1);
+if (!defined('ABSPATH')) { exit(); }
+add_action('init', function () {
+    register_post_type('wpultra_memory', [
+        'public' => false, 'show_ui' => false, 'show_in_rest' => false,
+        'supports' => ['title', 'editor', 'excerpt', 'revisions'], 'rewrite' => false,
+    ]);
+});
+function wpultra_memory_shape(WP_Post $p): array {
+    return [
+        'id' => $p->ID, 'name' => $p->post_title, 'description' => $p->post_excerpt,
+        'type' => (string) get_post_meta($p->ID, '_wpultra_memory_type', true),
+        'updated_at' => $p->post_modified_gmt,
+    ];
+}
+```
+
+- [ ] **Step 2: Write the failing test** `tests/memory.test.php` (unit-tests the input-validation guards; full CRUD is integration). 
+
+```php
+<?php
+declare(strict_types=1);
+require __DIR__ . '/harness.php';
+if (!defined('ABSPATH')) { define('ABSPATH', '/tmp/'); }
+if (!function_exists('wp_register_ability')) { function wp_register_ability($n, $a) {} }
+require __DIR__ . '/../wp-ultra-mcp/includes/helpers.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/abilities/memory-save.php';
+
+it('memory-save rejects an invalid type', function () {
+    assert_wp_error(wpultra_memory_save(['name' => 'n', 'description' => 'd', 'content' => 'c', 'type' => 'bogus']), 'bad type');
+});
+it('memory-save rejects a missing name', function () {
+    assert_wp_error(wpultra_memory_save(['description' => 'd', 'content' => 'c', 'type' => 'user']), 'no name');
+});
+
+run_tests();
+```
+
+- [ ] **Step 3: Run to verify failure**
+
+Run: `& $PHP E:\wp-connector\tests\memory.test.php`
+Expected: FAIL — `wpultra_memory_save` undefined.
+
+- [ ] **Step 4: Write the four ability files** (each in the Step-0 skeleton, category `skills` → register a `memory` category in Task 3's `wpultra_register_categories` is NOT required; reuse category `diagnostics`? No — add `'memory' => 'Persistent cross-session memory.'` to the categories map in bootstrap-mcp.php Task 3, and use category `memory`).
+
+`memory-save.php` (SLUG `memory-save`, input `{id:int, name:string, description:string, content:string, type:enum[user,feedback,project,reference]}`, output `{success,id}`, destructive):
+```php
+function wpultra_memory_save(array $input) {
+    $type = (string) ($input['type'] ?? '');
+    if (!in_array($type, ['user', 'feedback', 'project', 'reference'], true)) {
+        return wpultra_err('bad_type', "type must be one of user|feedback|project|reference.");
+    }
+    $name = trim((string) ($input['name'] ?? ''));
+    if ($name === '') { return wpultra_err('missing_name', 'name is required.'); }
+    $postarr = [
+        'post_type' => 'wpultra_memory', 'post_status' => 'publish', 'post_title' => $name,
+        'post_excerpt' => (string) ($input['description'] ?? ''), 'post_content' => (string) ($input['content'] ?? ''),
+    ];
+    if (!empty($input['id'])) { $postarr['ID'] = (int) $input['id']; }
+    $id = wp_insert_post($postarr, true);
+    if (is_wp_error($id)) { return $id; }
+    update_post_meta((int) $id, '_wpultra_memory_type', $type);
+    return wpultra_ok(['id' => (int) $id]);
+}
+```
+
+`memory-list.php` (SLUG `memory-list`, input `{type:string}`, output `{success,memories:[{id,name,description,type,updated_at}]}`, readonly):
+```php
+function wpultra_memory_list(array $input) {
+    $args = ['post_type' => 'wpultra_memory', 'post_status' => 'publish', 'numberposts' => 500, 'orderby' => 'title', 'order' => 'ASC'];
+    $posts = get_posts($args);
+    $out = [];
+    $filter = (string) ($input['type'] ?? '');
+    foreach ($posts as $p) {
+        $shaped = wpultra_memory_shape($p);
+        if ($filter !== '' && $shaped['type'] !== $filter) { continue; }
+        $out[] = $shaped;
+    }
+    return wpultra_ok(['memories' => $out]);
+}
+```
+
+`memory-get.php` (SLUG `memory-get`, input `{id:int(req)}`, output `{success,id,name,description,type,content}`, readonly):
+```php
+function wpultra_memory_get(array $input) {
+    $id = (int) ($input['id'] ?? 0);
+    $p = get_post($id);
+    if (!$p || $p->post_type !== 'wpultra_memory') { return wpultra_err('not_found', "No memory $id."); }
+    return wpultra_ok(wpultra_memory_shape($p) + ['content' => $p->post_content]);
+}
+```
+
+`memory-delete.php` (SLUG `memory-delete`, input `{id:int(req)}`, output `{success,id,deleted}`, destructive/idempotent):
+```php
+function wpultra_memory_delete(array $input) {
+    $id = (int) ($input['id'] ?? 0);
+    $p = get_post($id);
+    if (!$p || $p->post_type !== 'wpultra_memory') { return wpultra_ok(['id' => $id, 'deleted' => false]); }
+    wp_delete_post($id, true);
+    return wpultra_ok(['id' => $id, 'deleted' => true]);
+}
+```
+
+Each `*.php` requires the CPT helper: start the files that call `wpultra_memory_shape` with `require_once WPULTRA_DIR . 'includes/memory/cpt.php';`.
+
+- [ ] **Step 5: Wire the CPT loader + category**
+
+In `includes/bootstrap-mcp.php`: inside `wpultra_load_abilities()`, after the abilities loop, add:
+```php
+if (is_readable(WPULTRA_DIR . 'includes/memory/cpt.php')) { require_once WPULTRA_DIR . 'includes/memory/cpt.php'; }
+```
+And in `wpultra_register_categories()` add `'memory' => 'Persistent cross-session memory.'` to the `$cats` map.
+
+- [ ] **Step 6: Run the test + lint**
+
+Run: `& $PHP E:\wp-connector\tests\memory.test.php`
+Expected: `2 passed, 0 failed`.
+Lint all five memory files.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add wp-ultra-mcp/includes/memory wp-ultra-mcp/includes/abilities/memory-*.php wp-ultra-mcp/includes/bootstrap-mcp.php tests/memory.test.php
+git commit -m "feat(plugin): persistent memory (CPT + save/get/list/delete)"
+```
+
+---
+
+### Task 14: WP content abilities (create/update/delete-post)
+
+**Files:**
+- Create: `wp-ultra-mcp/includes/abilities/create-post.php`, `update-post.php`, `delete-post.php`
+- Test: `tests/wp-content.test.php`
+
+**Interfaces:**
+- Consumes: WP post APIs, `wpultra_ok/err`.
+- Produces: `wpultra_create_post/update_post/delete_post`. Our delta vs PRO: taxonomy term assignment via `wp_set_post_terms`.
+
+- [ ] **Step 1: Write the failing test** `tests/wp-content.test.php`
+
+```php
+<?php
+declare(strict_types=1);
+require __DIR__ . '/harness.php';
+if (!defined('ABSPATH')) { define('ABSPATH', '/tmp/'); }
+if (!function_exists('wp_register_ability')) { function wp_register_ability($n, $a) {} }
+require __DIR__ . '/../wp-ultra-mcp/includes/helpers.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/abilities/create-post.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/abilities/delete-post.php';
+
+it('create-post requires a title', function () {
+    assert_wp_error(wpultra_create_post(['content' => 'x']), 'no title');
+});
+it('delete-post requires a post_id', function () {
+    assert_wp_error(wpultra_delete_post([]), 'no id');
+});
+
+run_tests();
+```
+
+- [ ] **Step 2: Run to verify failure**
+
+Run: `& $PHP E:\wp-connector\tests\wp-content.test.php`
+Expected: FAIL — `wpultra_create_post` undefined.
+
+- [ ] **Step 3: Write `create-post.php`** (SLUG `create-post`, category `diagnostics`→ no; add category `content` to bootstrap categories map and use it; input `{title:string(req), content:string, status:enum[publish,draft,pending,private,future], post_type:string, excerpt:string, slug:string, parent:int, author:int, date:string, meta:object, terms:object}`, output `{success,post_id,permalink,edit_url}`, destructive):
+
+```php
+function wpultra_create_post(array $input) {
+    $title = (string) ($input['title'] ?? $input['post_title'] ?? '');
+    if (trim($title) === '') { return wpultra_err('missing_title', 'title is required.'); }
+    $postarr = [
+        'post_title' => $title,
+        'post_content' => (string) ($input['content'] ?? $input['post_content'] ?? ''),
+        'post_excerpt' => (string) ($input['excerpt'] ?? ''),
+        'post_status' => (string) ($input['status'] ?? 'draft'),
+        'post_type' => (string) ($input['post_type'] ?? 'page'),
+    ];
+    if (!empty($input['slug'])) { $postarr['post_name'] = sanitize_title((string) $input['slug']); }
+    if (!empty($input['parent'])) { $postarr['post_parent'] = (int) $input['parent']; }
+    if (!empty($input['author'])) { $postarr['post_author'] = (int) $input['author']; }
+    if (!empty($input['date'])) { $postarr['post_date'] = (string) $input['date']; }
+    if (!empty($input['meta']) && is_array($input['meta'])) { $postarr['meta_input'] = $input['meta']; }
+    $id = wp_insert_post($postarr, true);
+    if (is_wp_error($id)) { return $id; }
+    if (!empty($input['terms']) && is_array($input['terms'])) {
+        foreach ($input['terms'] as $tax => $terms) { wp_set_post_terms((int) $id, (array) $terms, (string) $tax); }
+    }
+    return wpultra_ok(['post_id' => (int) $id, 'permalink' => get_permalink($id), 'edit_url' => get_edit_post_link($id, 'raw')]);
+}
+```
+
+- [ ] **Step 4: Write `update-post.php`** (SLUG `update-post`, input `{post_id:int(req), title, content, status, excerpt, slug, menu_order, featured_image_id, meta, terms}`, output `{success,post_id,updated_fields}`, destructive):
+
+```php
+function wpultra_update_post(array $input) {
+    $id = (int) ($input['post_id'] ?? $input['id'] ?? 0);
+    if ($id <= 0 || !get_post($id)) { return wpultra_err('not_found', 'Valid post_id is required.'); }
+    $postarr = ['ID' => $id]; $updated = [];
+    $map = ['title' => 'post_title', 'content' => 'post_content', 'excerpt' => 'post_excerpt', 'status' => 'post_status'];
+    foreach ($map as $in => $col) { if (array_key_exists($in, $input)) { $postarr[$col] = (string) $input[$in]; $updated[] = $in; } }
+    if (array_key_exists('slug', $input)) { $postarr['post_name'] = sanitize_title((string) $input['slug']); $updated[] = 'slug'; }
+    if (array_key_exists('menu_order', $input)) { $postarr['menu_order'] = (int) $input['menu_order']; $updated[] = 'menu_order'; }
+    if (count($postarr) > 1) { $res = wp_update_post($postarr, true); if (is_wp_error($res)) { return $res; } }
+    if (!empty($input['meta']) && is_array($input['meta'])) {
+        foreach ($input['meta'] as $k => $v) { update_post_meta($id, (string) $k, $v); }
+        $updated[] = 'meta';
+    }
+    if (!empty($input['terms']) && is_array($input['terms'])) {
+        foreach ($input['terms'] as $tax => $terms) { wp_set_post_terms($id, (array) $terms, (string) $tax); }
+        $updated[] = 'terms';
+    }
+    if (array_key_exists('featured_image_id', $input)) {
+        $fid = (int) $input['featured_image_id'];
+        if ($fid === 0) { delete_post_thumbnail($id); } else { set_post_thumbnail($id, $fid); }
+        $updated[] = 'featured_image';
+    }
+    return wpultra_ok(['post_id' => $id, 'updated_fields' => $updated]);
+}
+```
+
+- [ ] **Step 5: Write `delete-post.php`** (SLUG `delete-post`, input `{post_id:int(req), force:bool}`, output `{success,post_id,result}`, destructive):
+
+```php
+function wpultra_delete_post(array $input) {
+    $id = (int) ($input['post_id'] ?? $input['id'] ?? 0);
+    if ($id <= 0) { return wpultra_err('missing_id', 'post_id is required.'); }
+    $p = get_post($id);
+    if (!$p) { return wpultra_err('not_found', "No post $id."); }
+    $force = ($input['force'] ?? false) === true;
+    if ($force || $p->post_status === 'trash') { wp_delete_post($id, true); $result = 'deleted'; }
+    else { wp_trash_post($id); $result = 'trashed'; }
+    return wpultra_ok(['post_id' => $id, 'result' => $result]);
+}
+```
+
+- [ ] **Step 6: Add the `content` category**
+
+In `includes/bootstrap-mcp.php` `wpultra_register_categories()` `$cats` map add `'content' => 'WordPress posts, pages, and CPTs.'`. Use `category => 'content'` in all three ability registrations.
+
+- [ ] **Step 7: Run the test + lint**
+
+Run: `& $PHP E:\wp-connector\tests\wp-content.test.php`
+Expected: `2 passed, 0 failed`. Lint all three files.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add wp-ultra-mcp/includes/abilities/create-post.php wp-ultra-mcp/includes/abilities/update-post.php wp-ultra-mcp/includes/abilities/delete-post.php wp-ultra-mcp/includes/bootstrap-mcp.php tests/wp-content.test.php
+git commit -m "feat(plugin): WP content abilities (create/update/delete-post + taxonomy)"
+```
+
+---
+
 ## Self-Review
+
+**Wave 1 task order for execution:** 1, 2, 3, 4, 5, 6, 13, 14, 10, 11, 12. (Tasks 7, 8, 9 are DEFERRED — skip.) Task 12's integration smoke uses `execute-wp-query` + `create-post` + `memory-save` instead of the deferred Elementor calls.
 
 **Spec coverage:**
 - Plugin architecture on bundled mcp-adapter (§2,§3) → Tasks 1, 3. ✅
