@@ -1,0 +1,13 @@
+{
+  "name": "wp-ultra/wp-ultra-mcp",
+  "description": "WordPress plugin: MCP server for AI CLIs with deep Elementor control.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": ">=8.0",
+    "wordpress/mcp-adapter": "^0.5",
+    "wordpress/php-mcp-schema": "^0.1",
+    "automattic/jetpack-autoloader": "^5.0"
+  },
+  "config": { "allow-plugins": { "automattic/jetpack-autoloader": true } }
+}
