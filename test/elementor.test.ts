@@ -40,4 +40,29 @@ describe("ElementorManager", () => {
     const em = new ElementorManager(fakeDb(null));
     await expect(em.setLayout(5, "{not json")).rejects.toThrow(/JSON/i);
   });
+
+  it("setMeta takes UPDATE path when meta_id row already exists", async () => {
+    const db = {
+      table: (n: string) => `wp_${n}`,
+      query: vi.fn(async (sql: string) => {
+        if (/SELECT meta_id/.test(sql)) {
+          return { rows: [{ meta_id: 99 }] };
+        }
+        if (/SELECT meta_value/.test(sql)) {
+          return { rows: [] };
+        }
+        return { affectedRows: 1 };
+      }),
+    } as any;
+
+    const em = new ElementorManager(db);
+    await em.setLayout(7, [{ id: "a", elType: "container", elements: [] }]);
+
+    const updateCall = db.query.mock.calls.find((c: any[]) =>
+      /UPDATE.*postmeta.*SET meta_value.*WHERE meta_id/s.test(c[0]),
+    );
+    expect(updateCall).toBeDefined();
+    // params: [value, meta_id] — second param must be 99
+    expect(updateCall![1]).toContain(99);
+  });
 });
