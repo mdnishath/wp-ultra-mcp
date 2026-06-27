@@ -6,7 +6,7 @@ Requires PHP: 8.0
 Stable tag: 0.1.0
 License: GPLv2 or later
 
-Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini). Deep server-side Elementor control, raw SQL, WP-CLI, files, execute-php, and a skills system.
+Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, and a skills system. Schema-driven Elementor control is planned (Wave 2).
 
 == Description ==
 
