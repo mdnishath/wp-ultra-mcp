@@ -35,7 +35,7 @@ function wpultra_recipe_input_schema(array $input): array {
         $props[$key] = ['type' => in_array($type, ['string', 'integer', 'number', 'boolean', 'array', 'object'], true) ? $type : 'string'];
         if (!empty($def['required'])) { $required[] = $key; }
     }
-    $schema = ['type' => 'object', 'properties' => (object) $props];
+    $schema = ['type' => 'object', 'properties' => $props];
     if ($required) { $schema['required'] = $required; }
     return $schema;
 }
