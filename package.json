@@ -1,0 +1,29 @@
+{
+  "name": "wp-ultimate-mcp",
+  "version": "0.1.0",
+  "description": "Full-control WordPress MCP server (DB, files, WP-CLI, Elementor) over stdio.",
+  "type": "module",
+  "bin": { "wp-ultimate-mcp": "dist/index.js" },
+  "main": "dist/index.js",
+  "files": ["dist", "README.md", ".env.example", "claude-config.example.json"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.22.5",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.22.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
+  }
+}

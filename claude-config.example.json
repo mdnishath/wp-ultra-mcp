@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "wp-ultimate-mcp": {
+      "command": "node",
+      "args": ["C:/path/to/wp-ultimate-mcp/dist/index.js"],
+      "env": {
+        "WP_ROOT_PATH": "C:/laragon/www/mysite",
+        "WP_DB_HOST": "127.0.0.1",
+        "WP_DB_NAME": "mysite",
+        "WP_DB_USER": "root",
+        "WP_DB_PASSWORD": ""
+      }
+    }
+  }
+}
