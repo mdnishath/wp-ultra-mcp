@@ -3,17 +3,23 @@ declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit(); }
 
-if (function_exists('wp_register_ability')) {
-    wp_register_ability('execute-wp-query', [
-        'slug'        => 'execute-wp-query',
-        'category'    => 'database',
-        'description' => 'Execute a SQL query via $wpdb.',
-        'input'       => [
-            'sql'     => ['type' => 'string', 'required' => true],
+wp_register_ability('wpultra/execute-wp-query', [
+    'label'       => __('Execute WP Query', 'wp-ultra-mcp'),
+    'description' => __('Execute a SQL query via $wpdb.', 'wp-ultra-mcp'),
+    'category'    => 'database',
+    'input_schema'  => [
+        'type'       => 'object',
+        'properties' => [
+            'sql'     => ['type' => 'string'],
             'params'  => ['type' => 'array'],
             'confirm' => ['type' => 'boolean'],
         ],
-        'output'      => [
+        'required'             => ['sql'],
+        'additionalProperties' => false,
+    ],
+    'output_schema' => [
+        'type'       => 'object',
+        'properties' => [
             'success'       => ['type' => 'boolean'],
             'verb'          => ['type' => 'string'],
             'rows'          => ['type' => 'array'],
@@ -21,10 +27,16 @@ if (function_exists('wp_register_ability')) {
             'rows_affected' => ['type' => 'integer'],
             'insert_id'     => ['type' => 'integer'],
         ],
-        'meta'        => ['destructive' => true],
-        'callback'    => 'wpultra_execute_wp_query',
-    ]);
-}
+        'required' => ['success'],
+    ],
+    'execute_callback'    => 'wpultra_execute_wp_query',
+    'permission_callback' => 'wpultra_permission_callback',
+    'meta' => [
+        'show_in_rest' => true,
+        'mcp'          => ['public' => true, 'type' => 'tool'],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
+    ],
+]);
 
 function wpultra_execute_wp_query(array $input) {
     global $wpdb;

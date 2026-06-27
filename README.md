@@ -23,11 +23,11 @@ All core server-side abilities are live:
 - **WP-CLI:** `run-wp-cli` — execute any WP-CLI command inside the site root
 - **SQL:** `execute-wp-query` — parameterized SELECT and destructive queries (destructive gated behind `confirm: true`)
 - **PHP:** `execute-php` — run arbitrary PHP in the WP context, capture output and return value
-- **Diagnostics:** `get-diagnostics` — PHP version, WP version, active plugins, debug-log tail
-- **Memory:** `memory-save`, `memory-load`, `memory-list` — persistent keyed memory across sessions, stored in `wp_options`
-- **WP content:** `create-post`, `delete-post` — WordPress post/page CRUD
-- **Skills:** `skills-list`, `skills-get`, `skills-create`, `skills-update`, `skills-delete` — reusable named prompt snippets stored in the DB
-- **Admin:** Settings page to enable/disable AI control, generate application passwords, and manage skills
+- **Diagnostics:** `read-debug-log` — tail the WordPress debug.log
+- **Memory:** `memory-save`, `memory-get`, `memory-list`, `memory-delete` — persistent keyed memory across sessions, stored in `wp_options`
+- **WP content:** `create-post`, `update-post`, `delete-post` — WordPress post/page CRUD
+- **Skills:** `skill-get`, `skill-write`, `skill-edit`, `skill-delete` — reusable named prompt snippets stored in the DB
+- **Admin:** Top-level **WP-Ultra-MCP** menu in wp-admin — Connect page (enable AI control, generate app password) and Abilities page (enable/disable individual abilities)
 
 ### Wave 2 — Planned
 
@@ -46,19 +46,20 @@ All core server-side abilities are live:
 ## Install & Connect
 
 1. **Install:** Download or clone this repo. Upload the `wp-ultra-mcp/` directory (including `vendor/`) to `wp-content/plugins/`, then activate via the Plugins screen.
-2. **Enable:** Go to **Settings → WP-Ultra-MCP** in wp-admin. Toggle **AI Control** on.
+2. **Enable:** Go to the top-level **WP-Ultra-MCP** menu in wp-admin → **Connect** page. Toggle **AI Control** on.
 3. **App password:** Click **Generate Application Password**. Copy the password shown.
 4. **Paste config:** Add the following to your Claude Code MCP config (or equivalent for Gemini CLI) and restart the MCP session:
 
 ```json
 {
   "mcpServers": {
-    "wpultra": {
-      "url": "https://yoursite.example.com/wp-json/mcp/wpultra",
-      "auth": {
-        "type": "basic",
-        "username": "your-wp-username",
-        "password": "xxxx xxxx xxxx xxxx xxxx xxxx"
+    "wp-ultra-mcp": {
+      "command": "npx",
+      "args": ["-y", "@automattic/mcp-wordpress-remote@latest"],
+      "env": {
+        "WP_API_URL": "https://SITE/wp-json/mcp/wpultra",
+        "WP_API_USERNAME": "your-wp-username",
+        "WP_API_PASSWORD": "xxxx xxxx xxxx xxxx xxxx xxxx"
       }
     }
   }

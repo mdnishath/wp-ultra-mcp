@@ -26,9 +26,13 @@ wp_register_ability('wpultra/execute-php', [
         ],
         'required' => ['success'],
     ],
-    'meta' => ['destructive' => true],
+    'execute_callback'    => 'wpultra_execute_php',
     'permission_callback' => 'wpultra_permission_callback',
-    'callback'            => 'wpultra_execute_php',
+    'meta' => [
+        'show_in_rest' => true,
+        'mcp'          => ['public' => true, 'type' => 'tool'],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
+    ],
 ]);
 
 function wpultra_execute_php(array $input) {

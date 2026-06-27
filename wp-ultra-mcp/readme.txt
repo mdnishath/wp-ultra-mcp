@@ -19,17 +19,17 @@ Install, enable AI control, generate an application password, and paste the conf
 - `wpultra/run-wp-cli` — any WP-CLI command inside the WP root
 - `wpultra/execute-wp-query` — parameterized SQL with SELECT/destructive gating
 - `wpultra/execute-php` — run arbitrary PHP in the WP context, capture output + return value
-- `wpultra/get-diagnostics` — PHP version, active plugins, WP version, debug-log tail
-- `wpultra/memory-save` / `wpultra/memory-load` / `wpultra/memory-list` — persistent keyed memory across sessions
-- `wpultra/create-post` / `wpultra/delete-post` — WordPress content CRUD
-- `wpultra/skills-list` / `wpultra/skills-get` / `wpultra/skills-create` / `wpultra/skills-update` / `wpultra/skills-delete` — reusable skill prompt management
-- Admin settings page: enable/disable AI control, generate app password, manage skills
+- `wpultra/read-debug-log` — tail the WordPress debug.log
+- `wpultra/memory-save` / `wpultra/memory-get` / `wpultra/memory-list` / `wpultra/memory-delete` — persistent keyed memory across sessions
+- `wpultra/create-post` / `wpultra/update-post` / `wpultra/delete-post` — WordPress content CRUD
+- `wpultra/skill-get` / `wpultra/skill-write` / `wpultra/skill-edit` / `wpultra/skill-delete` — reusable skill prompt management
+- Admin: top-level **WP-Ultra-MCP** menu — Connect page (enable AI control, generate app password) and Abilities page (enable/disable individual abilities)
 
 **Wave 2 (planned):** schema-driven Elementor layout control, design-token system, Gutenberg block injection, Bricks Builder support, ACF/Meta Box/Pods field-plugin integration.
 
 == Installation ==
 1. Upload the release ZIP (with vendor/) and activate.
-2. Go to WP-Ultra-MCP, enable AI control, generate an application password.
+2. Go to the top-level **WP-Ultra-MCP** menu in wp-admin → Connect page. Enable AI control and generate an application password.
 3. Copy the client config into Claude Code / Gemini and restart the MCP session.
 
 == Frequently Asked Questions ==
@@ -38,7 +38,7 @@ Install, enable AI control, generate an application password, and paste the conf
 No. All Wave 1 abilities work without Elementor. Elementor-specific layout tools are planned for Wave 2.
 
 = Is it safe to leave AI control enabled permanently? =
-AI control is disabled by default. Enable it only when you need it. The SQL ability gates destructive queries (INSERT, UPDATE, DELETE) behind an explicit `confirm: true` parameter.
+AI control is disabled by default. Enable it only when you need it. The SQL ability automatically classifies queries as destructive and requires `confirm: true` before executing them. Queries are always considered destructive if they contain `DROP`, `TRUNCATE`, or `ALTER`. `DELETE` and `UPDATE` are treated as destructive only when they are missing a `WHERE` clause. `INSERT` is never gated.
 
 = Does it work with any MCP client? =
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.

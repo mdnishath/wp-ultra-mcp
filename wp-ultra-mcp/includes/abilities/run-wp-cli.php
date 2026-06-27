@@ -27,9 +27,13 @@ wp_register_ability('wpultra/run-wp-cli', [
         ],
         'required' => ['success'],
     ],
-    'meta' => ['destructive' => true],
+    'execute_callback'    => 'wpultra_run_wp_cli',
     'permission_callback' => 'wpultra_permission_callback',
-    'callback'            => 'wpultra_run_wp_cli',
+    'meta' => [
+        'show_in_rest' => true,
+        'mcp'          => ['public' => true, 'type' => 'tool'],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
+    ],
 ]);
 
 function wpultra_find_wp_cli(): string {

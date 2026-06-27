@@ -3,24 +3,36 @@ declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit(); }
 
-if (function_exists('wp_register_ability')) {
-    wp_register_ability('read-debug-log', [
-        'slug'        => 'read-debug-log',
-        'category'    => 'diagnostics',
-        'description' => 'Read the last N lines of the WordPress debug.log file.',
-        'input'       => [
+wp_register_ability('wpultra/read-debug-log', [
+    'label'       => __('Read Debug Log', 'wp-ultra-mcp'),
+    'description' => __('Read the last N lines of the WordPress debug.log file.', 'wp-ultra-mcp'),
+    'category'    => 'diagnostics',
+    'input_schema'  => [
+        'type'       => 'object',
+        'properties' => [
             'lines' => ['type' => 'integer'],
         ],
-        'output'      => [
+        'additionalProperties' => false,
+    ],
+    'output_schema' => [
+        'type'       => 'object',
+        'properties' => [
             'success' => ['type' => 'boolean'],
             'path'    => ['type' => 'string'],
             'content' => ['type' => 'string'],
             'exists'  => ['type' => 'boolean'],
+            'note'    => ['type' => 'string'],
         ],
-        'meta'        => ['readonly' => true],
-        'callback'    => 'wpultra_read_debug_log',
-    ]);
-}
+        'required' => ['success'],
+    ],
+    'execute_callback'    => 'wpultra_read_debug_log',
+    'permission_callback' => 'wpultra_permission_callback',
+    'meta' => [
+        'show_in_rest' => true,
+        'mcp'          => ['public' => true, 'type' => 'tool'],
+        'annotations'  => ['readonly' => true, 'destructive' => false, 'idempotent' => true],
+    ],
+]);
 
 function wpultra_debug_log_path(): string {
     if (defined('WP_DEBUG_LOG') && is_string(WP_DEBUG_LOG) && WP_DEBUG_LOG !== '') { return WP_DEBUG_LOG; }
