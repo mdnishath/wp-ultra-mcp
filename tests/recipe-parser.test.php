@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/harness.php';
 if (!defined('ABSPATH')) { define('ABSPATH', '/tmp/'); }
+require __DIR__ . '/../wp-ultra-mcp/includes/helpers.php';
 require __DIR__ . '/../wp-ultra-mcp/includes/recipes/parser.php';
 
 $doc = "---\nname: woo-empty-cart\ndescription: Empty a cart\ncategory: woocommerce\nrun: wp-cli\n---\nNotes here.\n\n```json\n{ \"input\": { \"user_id\": { \"type\": \"integer\", \"required\": true } }, \"command\": [\"wc\", \"cart\", \"empty\", \"--user={user_id}\"] }\n```\n";
