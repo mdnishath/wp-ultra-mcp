@@ -45,6 +45,8 @@ function wpultra_recipe_register_all(): void {
     foreach (wpultra_recipe_all() as $row) {
         $parsed = wpultra_recipe_parse($row['raw']);
         if (is_wp_error($parsed) || wpultra_recipe_validate($parsed) !== true) { continue; }
+        // Don't surface recipes whose run-type is disabled on this site.
+        if (!in_array($parsed['run'], wpultra_recipe_allowed_run_types(), true)) { continue; }
         $slug = $row['slug'];
         wp_register_ability('wpultra/' . $slug, [
             'label' => $parsed['name'] !== '' ? $parsed['name'] : $slug,

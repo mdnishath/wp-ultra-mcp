@@ -330,7 +330,7 @@ SKILL;
                                     <button type="submit" class="button">Export</button>
                                 </form>
                                 <form method="post" action="<?php echo $post_url; ?>" style="display:inline;"
-                                      onsubmit="return confirm('Delete skill <?php echo esc_attr((string) ($skill['name'] ?? $skill['slug'])); ?>? This cannot be undone.');">
+                                      onsubmit="return confirm('Delete skill <?php echo esc_js((string) ($skill['name'] ?? $skill['slug'])); ?>? This cannot be undone.');">
                                     <?php wp_nonce_field('wpultra_delete_skill'); ?>
                                     <input type="hidden" name="action" value="wpultra_delete_skill">
                                     <input type="hidden" name="slug" value="<?php echo esc_attr($skill['slug']); ?>">

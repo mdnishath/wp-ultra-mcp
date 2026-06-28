@@ -24,16 +24,29 @@ it('identifier validation', function () {
 
 it('classify query verb and destructive flag', function () {
     assert_eq(['verb' => 'SELECT', 'destructive' => false], wpultra_classify_query('  SELECT * FROM wp_posts '));
+    assert_eq(false, wpultra_classify_query('INSERT INTO wp_x VALUES (1)')['destructive']);
+    assert_eq(false, wpultra_classify_query('SHOW TABLES')['destructive']);
     assert_eq(['verb' => 'DELETE', 'destructive' => true], wpultra_classify_query('DELETE FROM wp_posts'));
-    assert_eq(false, wpultra_classify_query('delete from wp_posts where ID=1')['destructive']);
+    // A WHERE clause no longer exempts DELETE/UPDATE — `WHERE 1=1` is a trivial bypass.
+    assert_eq(true, wpultra_classify_query('delete from wp_posts where ID=1')['destructive']);
+    assert_eq(true, wpultra_classify_query('UPDATE wp_posts SET x=1 WHERE ID=1')['destructive']);
     assert_eq(true, wpultra_classify_query('DROP TABLE wp_x')['destructive']);
     assert_eq(true, wpultra_classify_query('TRUNCATE wp_x')['destructive']);
+    assert_eq(true, wpultra_classify_query('GRANT ALL ON *.* TO x')['destructive']);
+    assert_eq(true, wpultra_classify_query('WITH t AS (SELECT 1) DELETE FROM wp_x')['destructive']);
 });
 
 it('sandbox detection', function () {
     assert_true(wpultra_path_requires_sandbox('/a/b/functions.php'), 'php');
     assert_true(wpultra_path_requires_sandbox('/a/.htaccess'), 'htaccess');
     assert_eq(false, wpultra_path_requires_sandbox('/a/style.css'), 'css');
+    // Bypass vectors that the naive str_ends_with('.php') check missed.
+    assert_true(wpultra_path_requires_sandbox('/a/shell.phtml'), 'phtml');
+    assert_true(wpultra_path_requires_sandbox('/a/shell.php5'), 'php5');
+    assert_true(wpultra_path_requires_sandbox('/a/shell.PHP'), 'uppercase');
+    assert_true(wpultra_path_requires_sandbox('/a/shell.php.'), 'trailing dot');
+    assert_true(wpultra_path_requires_sandbox('/a/shell.php '), 'trailing space');
+    assert_true(wpultra_path_requires_sandbox('/a/.user.ini'), 'user.ini');
 });
 
 run_tests();

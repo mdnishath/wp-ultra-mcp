@@ -280,7 +280,7 @@ function wpultra_memory_hub_render(): void {
                             <div class="wpu-ability-actions">
                                 <a href="<?php echo esc_url($edit_url); ?>" class="button">Edit</a>
                                 <form method="post" action="<?php echo $post_url; ?>" style="display:inline;"
-                                      onsubmit="return confirm('Delete memory &quot;<?php echo esc_attr($shape['name']); ?>&quot;? This cannot be undone.');">
+                                      onsubmit="return confirm('Delete memory &quot;<?php echo esc_js($shape['name']); ?>&quot;? This cannot be undone.');">
                                     <?php wp_nonce_field('wpultra_delete_memory'); ?>
                                     <input type="hidden" name="action" value="wpultra_delete_memory">
                                     <input type="hidden" name="id" value="<?php echo $mem_id; ?>">

@@ -52,8 +52,36 @@ function wpultra_run_wp_cli(array $input) {
     $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
     $proc = proc_open($cmd, $descriptors, $pipes, ABSPATH);
     if (!is_resource($proc)) { return wpultra_err('spawn_failed', 'Could not start wp-cli.'); }
-    $stdout = stream_get_contents($pipes[1]); fclose($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]); fclose($pipes[2]);
+
+    // Drain stdout AND stderr concurrently with non-blocking reads. Reading one pipe
+    // to EOF before the other deadlocks once the unread pipe's OS buffer (~64KB) fills.
+    $timeout = defined('WPULTRA_CLI_TIMEOUT') ? (int) WPULTRA_CLI_TIMEOUT : 30;
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+    $stdout = ''; $stderr = '';
+    $open = [1 => $pipes[1], 2 => $pipes[2]];
+    $start = microtime(true);
+    $timed_out = false;
+    while ($open) {
+        if ((microtime(true) - $start) > $timeout) { $timed_out = true; break; }
+        $read = array_values($open); $w = null; $x = null;
+        $ready = @stream_select($read, $w, $x, 1); // wake at least 1×/s to re-check timeout
+        if ($ready === false) { break; }
+        foreach ($read as $stream) {
+            $key = ($stream === $pipes[1]) ? 1 : 2;
+            $chunk = fread($stream, 8192);
+            if (($chunk === '' || $chunk === false) && feof($stream)) { fclose($stream); unset($open[$key]); continue; }
+            if ($key === 1) { $stdout .= (string) $chunk; } else { $stderr .= (string) $chunk; }
+        }
+    }
+    foreach ($open as $stream) { fclose($stream); }
+    if ($timed_out) {
+        proc_terminate($proc, 9);
+        proc_close($proc);
+        wpultra_audit_log('run-wp-cli', implode(' ', array_slice($args, 0, 8)), false);
+        return wpultra_err('cli_timeout', "wp-cli timed out after {$timeout}s.");
+    }
     $code = proc_close($proc);
-    return wpultra_ok(['exit_code' => $code, 'stdout' => (string) $stdout, 'stderr' => (string) $stderr]);
+    wpultra_audit_log('run-wp-cli', implode(' ', array_slice($args, 0, 8)), $code === 0);
+    return wpultra_ok(['exit_code' => $code, 'stdout' => $stdout, 'stderr' => $stderr]);
 }

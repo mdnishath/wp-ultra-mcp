@@ -36,7 +36,13 @@ function wpultra_delete_file(array $input) {
     $resolved = wpultra_resolve_path((string) ($input['path'] ?? ''), false);
     if (is_wp_error($resolved)) { return $resolved; }
     $protected = array_map('wpultra_normalize_absolute_path', [
+        // Core directories.
         rtrim(ABSPATH, '/\\'), ABSPATH . 'wp-admin', ABSPATH . 'wp-includes', WP_CONTENT_DIR . '/mu-plugins',
+        // Critical files whose removal takes the site down or triggers the install flow.
+        ABSPATH . 'wp-config.php', dirname(rtrim(ABSPATH, '/\\')) . '/wp-config.php',
+        ABSPATH . 'index.php', ABSPATH . '.htaccess', ABSPATH . 'wp-load.php',
+        ABSPATH . 'wp-settings.php', ABSPATH . 'wp-blog-header.php', ABSPATH . 'wp-login.php',
+        ABSPATH . 'wp-cron.php', ABSPATH . 'wp-activate.php',
     ]);
     if (in_array(wpultra_normalize_absolute_path($resolved), $protected, true)) {
         return wpultra_err('protected_path', "Refusing to delete a protected path: $resolved");
@@ -44,5 +50,6 @@ function wpultra_delete_file(array $input) {
     if (!file_exists($resolved)) { return wpultra_ok(['path' => $resolved, 'deleted' => false]); }
     if (is_dir($resolved)) { return wpultra_err('is_directory', 'Refusing to delete a directory.'); }
     if (!unlink($resolved)) { return wpultra_err('delete_failed', "Could not delete: $resolved"); }
+    wpultra_audit_log('delete-file', $resolved, true);
     return wpultra_ok(['path' => $resolved, 'deleted' => true]);
 }

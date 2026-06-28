@@ -195,7 +195,7 @@ RECIPE;
                                 <a href="<?php echo esc_url(admin_url('admin.php?page=wpultra-ability-hub&edit_id=' . (int) $row['post_id'])); ?>"
                                    class="button">Edit</a>
                                 <form method="post" action="<?php echo $post_url; ?>" style="display:inline;"
-                                      onsubmit="return confirm('Delete ability <?php echo esc_attr($row['name']); ?>? This cannot be undone.');">
+                                      onsubmit="return confirm('Delete ability <?php echo esc_js($row['name']); ?>? This cannot be undone.');">
                                     <?php wp_nonce_field('wpultra_delete_recipe'); ?>
                                     <input type="hidden" name="action" value="wpultra_delete_recipe">
                                     <input type="hidden" name="post_id" value="<?php echo (int) $row['post_id']; ?>">

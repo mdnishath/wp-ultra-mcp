@@ -33,14 +33,25 @@ function wpultra_is_valid_identifier(string $name): bool {
     return (bool) preg_match('/^[A-Za-z0-9_]+$/', $name);
 }
 
-/** Return ['verb'=>UPPER, 'destructive'=>bool]. Pure. */
+/** The plugin's own private CPTs — the generic content abilities must not touch these. */
+function wpultra_reserved_post_types(): array {
+    return ['wpultra_memory', 'wpultra_skill', 'wpultra_ability'];
+}
+
+/**
+ * Return ['verb'=>UPPER, 'destructive'=>bool]. Pure.
+ *
+ * Allow-list approach: only genuinely read-only verbs (and INSERT, which only adds
+ * rows) are non-destructive. Everything else — DELETE/UPDATE (even with a WHERE,
+ * since `WHERE 1=1` is a trivial bypass), DDL (DROP/TRUNCATE/ALTER/RENAME/CREATE),
+ * privilege changes (GRANT/REVOKE), CTEs that can wrap a DELETE (WITH …), and any
+ * unrecognised verb — requires `confirm: true`.
+ */
 function wpultra_classify_query(string $sql): array {
     $trimmed = trim($sql);
     $verb = strtoupper(preg_split('/\s+/', $trimmed)[0] ?? '');
-    $has_where = (bool) preg_match('/\bWHERE\b/i', $trimmed);
-    $destructive = false;
-    if (in_array($verb, ['DROP', 'TRUNCATE', 'ALTER'], true)) { $destructive = true; }
-    if (in_array($verb, ['DELETE', 'UPDATE'], true) && !$has_where) { $destructive = true; }
+    $safe = ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'INSERT'];
+    $destructive = !in_array($verb, $safe, true);
     return ['verb' => $verb, 'destructive' => $destructive];
 }
 
@@ -49,10 +60,12 @@ function wpultra_filesystem_base_dir(): string {
 }
 
 function wpultra_path_requires_sandbox(string $path): bool {
-    $name = strtolower(basename($path));
-    if (str_ends_with($name, '.php')) { return true; }
-    if (str_ends_with($name, '.ini')) { return true; }
-    return in_array($name, ['.htaccess', 'php.ini', 'web.config', '.user.ini'], true);
+    // Trailing dots/spaces are stripped by some filesystems on open, so `shell.php.`
+    // and `shell.php ` resolve to `shell.php` — strip them before matching.
+    $name = strtolower(rtrim(basename($path), " ."));
+    // Any extension the PHP handler (or a server config) commonly maps to executable code.
+    if (preg_match('/\.(php\d*|phtml|phps|pht|phar|ini)$/', $name)) { return true; }
+    return in_array($name, ['.htaccess', 'web.config'], true);
 }
 
 /**
@@ -62,6 +75,10 @@ function wpultra_path_requires_sandbox(string $path): bool {
 function wpultra_resolve_path(string $path, bool $must_exist = false) {
     $path = trim($path);
     if ($path === '') { return wpultra_err('missing_path', 'Path is required.'); }
+    // Reject null bytes / control chars: they bypass extension checks and break FS calls.
+    if (strpbrk($path, "\0") !== false || preg_match('/[\x00-\x1f]/', $path)) {
+        return wpultra_err('invalid_path', 'Path contains illegal control characters.');
+    }
 
     $base = wpultra_filesystem_base_dir();
     $is_abs = (bool) preg_match('#^([A-Za-z]:[\\\\/]|[\\\\/])#', $path);
@@ -110,6 +127,27 @@ function wpultra_current_user_can_manage(): bool {
 
 function wpultra_permission_callback(): bool {
     return wpultra_is_enabled() && wpultra_current_user_can_manage();
+}
+
+/**
+ * Append an entry to the privileged-action audit log (a capped ring buffer in an option).
+ * No-ops outside WordPress (e.g. unit tests) so callers can instrument freely. Best-effort.
+ */
+function wpultra_audit_log(string $action, string $summary, bool $ok = true): void {
+    if (!function_exists('get_option') || !function_exists('update_option')) { return; }
+    $log = get_option('wpultra_audit', []);
+    if (!is_array($log)) { $log = []; }
+    $log[] = [
+        'ts'      => function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s'),
+        'user'    => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+        'action'  => $action,
+        'summary' => function_exists('mb_substr') ? mb_substr($summary, 0, 300) : substr($summary, 0, 300),
+        'ok'      => $ok,
+    ];
+    $max = (int) (function_exists('apply_filters') ? apply_filters('wpultra_audit_max', 200) : 200);
+    if ($max < 1) { $max = 200; }
+    if (count($log) > $max) { $log = array_slice($log, -$max); }
+    update_option('wpultra_audit', $log, false);
 }
 
 function wpultra_ok(array $fields): array { return array_merge(['success' => true], $fields); }

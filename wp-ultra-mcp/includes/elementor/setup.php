@@ -24,10 +24,15 @@ function wpultra_el_status(): array {
     ];
 }
 
-function wpultra_el_new_id(): string {
+/** Generate a 7-char element id, regenerating if it collides with one already in $tree. */
+function wpultra_el_new_id(array $tree = []): string {
     $alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
     $id = '';
-    for ($i = 0; $i < 7; $i++) { $id .= $alphabet[random_int(0, strlen($alphabet) - 1)]; }
+    for ($attempt = 0; $attempt < 25; $attempt++) {
+        $id = '';
+        for ($i = 0; $i < 7; $i++) { $id .= $alphabet[random_int(0, strlen($alphabet) - 1)]; }
+        if ($tree === [] || !function_exists('wpultra_el_find') || wpultra_el_find($tree, $id) === null) { return $id; }
+    }
     return $id;
 }
 

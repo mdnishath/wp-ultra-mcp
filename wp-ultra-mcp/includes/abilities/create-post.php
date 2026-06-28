@@ -46,12 +46,19 @@ wp_register_ability('wpultra/create-post', [
 function wpultra_create_post(array $input) {
     $title = (string) ($input['title'] ?? $input['post_title'] ?? '');
     if (trim($title) === '') { return wpultra_err('missing_title', 'title is required.'); }
+    $post_type = (string) ($input['post_type'] ?? 'page');
+    if (in_array($post_type, wpultra_reserved_post_types(), true)) {
+        return wpultra_err('reserved_post_type', "'$post_type' is managed by a dedicated ability; use that instead.");
+    }
+    if (function_exists('post_type_exists') && !post_type_exists($post_type)) {
+        return wpultra_err('unknown_post_type', "Unknown post_type '$post_type'. Register it first or use an existing type.");
+    }
     $postarr = [
         'post_title'   => $title,
         'post_content' => (string) ($input['content'] ?? $input['post_content'] ?? ''),
         'post_excerpt' => (string) ($input['excerpt'] ?? ''),
         'post_status'  => (string) ($input['status'] ?? 'draft'),
-        'post_type'    => (string) ($input['post_type'] ?? 'page'),
+        'post_type'    => $post_type,
     ];
     if (!empty($input['slug'])) { $postarr['post_name'] = sanitize_title((string) $input['slug']); }
     if (!empty($input['parent'])) { $postarr['post_parent'] = (int) $input['parent']; }

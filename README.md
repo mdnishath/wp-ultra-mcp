@@ -149,9 +149,8 @@ wp-ultra-mcp/            ← the WordPress plugin (install this)
     skills/  memory/  sandbox/  helpers.php  bootstrap-mcp.php
   vendor/                bundled wordpress/mcp-adapter (GPL)
   bin/                   deploy.ps1, build-zip.ps1
-tests/                   zero-dependency PHP test harness (run-all.ps1)
+tests/                   zero-dependency PHP test harness (run with: php tests/<name>.test.php)
 docs/superpowers/        design specs & implementation plans
-src/                     archived early Node/stdio prototype (superseded — not the product)
 ```
 
 ---
@@ -159,8 +158,9 @@ src/                     archived early Node/stdio prototype (superseded — not
 ## Develop
 
 ```powershell
-# run the PHP test suite (uses a bundled PHP path; see tests/run-all.ps1)
-powershell -File tests\run-all.ps1
+# run the PHP test suite — any PHP 8.x CLI; no dependencies
+#   bash:       for f in tests/*.test.php; do php "$f"; done
+#   powershell: Get-ChildItem tests\*.test.php | % { php $_.FullName }
 
 # deploy into a local site for live testing
 powershell -File wp-ultra-mcp\bin\deploy.ps1

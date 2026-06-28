@@ -6,9 +6,29 @@ function wpultra_sandbox_dir(): string { return defined('WPULTRA_SANDBOX_DIR') ?
 function wpultra_sandbox_sentinel(): string { return rtrim(wpultra_sandbox_dir(), '/\\') . '/.crashed'; }
 function wpultra_sandbox_crashed(): bool { return file_exists(wpultra_sandbox_sentinel()); }
 
-function wpultra_sandbox_mark_crashed(string $detail): void {
-    $dir = wpultra_sandbox_dir();
+/**
+ * Ensure the sandbox dir exists and is not directly web-executable. The sandbox lives
+ * under wp-content (web-reachable), so without this a written .php could be run by URL,
+ * defeating the whole point of confining executable code here.
+ */
+function wpultra_sandbox_harden(): void {
+    $dir = rtrim(wpultra_sandbox_dir(), '/\\');
     if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+    if (!file_exists($dir . '/.htaccess')) {
+        @file_put_contents(
+            $dir . '/.htaccess',
+            "# Deny direct web access to sandbox files (Apache 2.2 + 2.4).\n"
+            . "<IfModule mod_authz_core.c>\n  Require all denied\n</IfModule>\n"
+            . "<IfModule !mod_authz_core.c>\n  Order allow,deny\n  Deny from all\n</IfModule>\n"
+        );
+    }
+    if (!file_exists($dir . '/index.php')) {
+        @file_put_contents($dir . '/index.php', "<?php // Silence is golden.\n");
+    }
+}
+
+function wpultra_sandbox_mark_crashed(string $detail): void {
+    wpultra_sandbox_harden();
     @file_put_contents(wpultra_sandbox_sentinel(), $detail);
 }
 

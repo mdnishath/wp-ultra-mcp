@@ -47,5 +47,6 @@ function wpultra_edit_file(array $input) {
     if ($count > 1) { return wpultra_err('not_unique', "old_string occurs $count times; make it unique."); }
     $updated = str_replace($old, $new, $content);
     if (file_put_contents($resolved, $updated) === false) { return wpultra_err('write_failed', "Could not write: $resolved"); }
+    wpultra_audit_log('edit-file', $resolved, true);
     return wpultra_ok(['path' => $resolved, 'replacements' => 1]);
 }

@@ -43,7 +43,15 @@ wp_register_ability('wpultra/update-post', [
 
 function wpultra_update_post(array $input) {
     $id = (int) ($input['post_id'] ?? $input['id'] ?? 0);
-    if ($id <= 0 || !get_post($id)) { return wpultra_err('not_found', 'Valid post_id is required.'); }
+    $post = $id > 0 ? get_post($id) : null;
+    if (!$post) { return wpultra_err('not_found', 'Valid post_id is required.'); }
+    if (in_array($post->post_type, wpultra_reserved_post_types(), true)) {
+        return wpultra_err('reserved_post_type', "Post $id is a plugin-internal '{$post->post_type}'; edit it via its dedicated ability.");
+    }
+    if (array_key_exists('featured_image_id', $input) && (int) $input['featured_image_id'] > 0
+        && get_post_type((int) $input['featured_image_id']) !== 'attachment') {
+        return wpultra_err('bad_attachment', 'featured_image_id must reference an attachment.');
+    }
     $postarr = ['ID' => $id]; $updated = [];
     $map = ['title' => 'post_title', 'content' => 'post_content', 'excerpt' => 'post_excerpt', 'status' => 'post_status'];
     foreach ($map as $in => $col) { if (array_key_exists($in, $input)) { $postarr[$col] = (string) $input[$in]; $updated[] = $in; } }

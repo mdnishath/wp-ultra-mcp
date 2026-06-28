@@ -36,5 +36,21 @@ it('rejects missing required input', function () {
     $parsed = ['run' => 'php', 'input' => ['x' => ['type' => 'string', 'required' => true]], 'recipe' => ['code' => 'return 1;']];
     assert_wp_error(wpultra_recipe_execute($parsed, []), 'missing input');
 });
+it('allows all run types by default', function () {
+    assert_eq(['wp-cli', 'sql', 'php', 'http'], wpultra_recipe_allowed_run_types());
+});
+it('blocks a run type disabled via WPULTRA_RECIPE_RUN_TYPES (defined last)', function () {
+    // Lock down to http+sql only; php and wp-cli become unavailable.
+    define('WPULTRA_RECIPE_RUN_TYPES', 'http, sql');
+    assert_eq(['sql', 'http'], wpultra_recipe_allowed_run_types());
+    $php = ['run' => 'php', 'input' => [], 'recipe' => ['code' => 'return 1;']];
+    $r = wpultra_recipe_execute($php, []);
+    assert_wp_error($r, 'php disabled');
+    assert_eq('recipe_run_disabled', $r->get_error_code());
+    // An allowed type still dispatches.
+    $sql = ['run' => 'sql', 'input' => [], 'recipe' => ['query' => 'SELECT 1', 'params' => []]];
+    wpultra_recipe_execute($sql, []);
+    assert_eq('sql', $GLOBALS['__last'][0]);
+});
 
 run_tests();

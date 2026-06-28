@@ -60,11 +60,13 @@ function wpultra_execute_php(array $input) {
         restore_error_handler();
         if (function_exists('set_time_limit')) { @set_time_limit((int) $prev); }
         if (!is_scalar($return) && $return !== null) { $return = print_r($return, true); }
+        wpultra_audit_log('execute-php', $code, true);
         return wpultra_ok(['return_value' => $return, 'output' => $output, 'warnings' => $warnings]);
     } catch (\Throwable $e) {
         $output = ob_get_clean();
         restore_error_handler();
         if (function_exists('set_time_limit')) { @set_time_limit((int) $prev); }
+        wpultra_audit_log('execute-php', $code, false);
         return ['success' => false, 'error' => $e->getMessage(), 'error_class' => get_class($e), 'output' => $output, 'warnings' => $warnings];
     }
 }

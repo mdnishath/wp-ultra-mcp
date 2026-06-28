@@ -39,6 +39,11 @@ function wpultra_write_file(array $input) {
     if (is_wp_error($resolved)) { return $resolved; }
     $content = (string) ($input['content'] ?? '');
     $append = ($input['append'] ?? false) === true;
+    // When writing an executable file (allowed only inside the sandbox), make sure the
+    // sandbox carries its deny-.htaccess/index.php so the file can't be run by URL.
+    if (function_exists('wpultra_sandbox_harden') && wpultra_path_requires_sandbox($resolved)) {
+        wpultra_sandbox_harden();
+    }
     $dir = dirname($resolved);
     if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) { return wpultra_err('mkdir_failed', "Could not create dir: $dir"); }
     if ($append) {
@@ -50,5 +55,6 @@ function wpultra_write_file(array $input) {
         $ok = strlen($content);
     }
     if ($ok === false) { return wpultra_err('write_failed', "Could not write: $resolved"); }
+    wpultra_audit_log($append ? 'write-file (append)' : 'write-file', $resolved, true);
     return wpultra_ok(['path' => $resolved, 'bytes_written' => strlen($content)]);
 }
