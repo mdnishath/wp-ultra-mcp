@@ -77,8 +77,21 @@ Schema-driven Elementor **v4 atomic** layout control. Requires Elementor (free o
 
 Built-in skill **`elementor-v4-architect`** is pre-loaded and teaches the AI the step-by-step atomic workflow: introspect → build → position → read back.
 
+### Wave 3 — Elementor design systems (shipped)
+
+Site-wide design control for Elementor v4. Requires Elementor (free or Pro).
+
+- **`elementor-get-design-system`** — read the active kit's global colors, global typography presets, and design-token variables in one call; use this to understand the current brand palette before making changes
+- **`elementor-manage-global-colors`** — set or add brand colors to the kit (e.g. `{colors:[{title:"Brand",color:"#0055FF"}], target:"custom"}`); each color becomes a `--e-global-color-<id>` CSS custom property applied site-wide across all pages
+- **`elementor-manage-variables`** — list or create Elementor v4 design-token variables (color, font, size types); reference a variable inside any widget or style prop with the shape `{ "$$type":"global-color-variable", "value":"e-gv-<id>" }` so widgets stay in sync when the token value changes
+- **`elementor-list-dynamic-tags`** — list all registered dynamic-tag groups and tags; bind any widget prop to live data with `{ "$$type":"dynamic", "value":{ "name":"post-title", "group":"post", "settings":{} } }` — ACF, JetEngine, and other field-plugin tags appear here when those plugins are active
+
+The built-in **`elementor-v4-architect`** skill is extended with a "Design systems (site-wide)" section that teaches the AI the variable-reference and dynamic-tag binding shapes.
+
+> **Wave 3.5 (planned):** global classes (`e_classes`) and Elementor interactions (`e_interactions`) — deferred because they depend on experiments that are off by default and involve complex schema. Planned for the next release.
+
 ### Wave 3+ — Planned
-**Gutenberg** block injection, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration, Elementor dynamic tags and global design tokens. The goal: literally do everything in WordPress through AI.
+**Gutenberg** block injection, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
 
 ---
 

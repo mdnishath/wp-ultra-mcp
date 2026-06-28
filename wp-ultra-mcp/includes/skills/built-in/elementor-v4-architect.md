@@ -16,3 +16,9 @@ Workflow:
 Data model: `_elementor_data` is an array of nodes. Widget node = `{id, elType:'widget', widgetType, settings:{prop:{$$type,value}}, styles:{}, elements:[]}`. Container = `{id, elType:'e-flexbox'|'e-div-block', settings, styles, elements:[…]}`. The engine writes atomic-safe (it does NOT route through Document::save, which strips atomic widgets) and clears Elementor's CSS cache for you.
 
 A 3-column section = one `e-flexbox` container (settings display:flex via the style schema) holding three child containers, each holding its widget(s).
+
+## Design systems (site-wide)
+- `wpultra/elementor-get-design-system` — read the kit's global colors, typography, and variables.
+- `wpultra/elementor-manage-global-colors` — set/add brand colors (e.g. `{colors:[{title:"Brand",color:"#0055FF"}], target:"custom"}`). They become `--e-global-color-<id>` CSS vars site-wide.
+- `wpultra/elementor-manage-variables` — list/create v4 design-token variables (color/font/size). Reference one in a widget/style prop as `{ "$$type":"global-color-variable", "value":"e-gv-<id>" }`.
+- `wpultra/elementor-list-dynamic-tags` — list available dynamic tags. Bind a prop to data with `{ "$$type":"dynamic", "value":{ "name":"post-title", "group":"post", "settings":{} } }` (ACF/JetEngine tags appear here when those plugins are installed).
