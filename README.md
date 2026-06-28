@@ -107,6 +107,12 @@ Reliable Elementor builds — schema validation before every write + server-side
 - **`elementor-render-check`** — server-side render verification: confirms what actually rendered after `set-content` / `add-element` / `edit-element` / `move-element` (catches design breakage)
 - **Validate-before-commit:** Elementor writes now enforce strict atomic-settings validation (with `force:true` escape hatch); container layout properties always validated to prevent broken designs
 
+### Phase B — Elementor Design Tokens (shipped)
+
+Apply a reference's design palette, typography system, and token sizes as Elementor Variables for token-consistent, reference-faithful builds.
+
+- **`elementor-apply-design-tokens`** — create color, font, and size Variables from a perceived reference's palette, typography, and sizes; returns refs in the form `{$$type,value}` for use in atomic-build workflows
+
 ### Wave 4a — Gutenberg core block control (shipped)
 
 Positional-path block tree ops for Gutenberg posts and pages. Core WordPress APIs only — no browser tab required.
