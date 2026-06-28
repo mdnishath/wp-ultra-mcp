@@ -28,6 +28,8 @@ function wpultra_ability_files(): array {
         'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content',
         // elementor mutation abilities (Wave 2, Task 7)
         'elementor-set-content', 'elementor-add-element', 'elementor-edit-element', 'elementor-delete-element', 'elementor-move-element',
+        // elementor design read abilities (Wave 3, Task 2)
+        'elementor-get-design-system', 'elementor-list-dynamic-tags',
     ];
     // NOTE: gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
 }
