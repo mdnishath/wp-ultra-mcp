@@ -62,12 +62,16 @@ function wpultra_el_collect_ids(array $elements, int $depth = 0): array {
     return $ids;
 }
 
-/** Scan rendered Elementor HTML for data-id markers; report which expected ids are present/dropped. */
+/** Scan rendered Elementor HTML for data-id / data-interaction-id markers; report which expected ids are present/dropped. */
 function wpultra_el_render_digest(string $html, array $expectedIds): array {
     $present = [];
-    if (preg_match_all('/data-id="([a-z0-9]+)"/i', $html, $m)) {
-        $present = array_values(array_unique($m[1]));
+    // Classic elements use data-id; atomic widgets use data-interaction-id.
+    foreach (['/data-id="([a-z0-9]+)"/i', '/data-interaction-id="([a-z0-9]+)"/i'] as $pattern) {
+        if (preg_match_all($pattern, $html, $m)) {
+            $present = array_merge($present, $m[1]);
+        }
     }
+    $present = array_values(array_unique($present));
     $dropped = array_values(array_diff(array_map('strval', $expectedIds), $present));
     return ['rendered_count' => count($present), 'present_ids' => $present, 'dropped_ids' => $dropped];
 }
@@ -95,7 +99,7 @@ function wpultra_el_atomic_type_object(array $node) {
     return null;
 }
 
-/** Default per-node validator: scalar-wrap + Props_Parser. Non-atomic nodes pass through. */
+/** Default per-node validator: scalar-wrap + Props_Parser + unknown-key check. Non-atomic nodes pass through. */
 function wpultra_el_validate_node(array $node): array {
     $settings = is_array($node['settings'] ?? null) ? $node['settings'] : [];
     $obj = wpultra_el_atomic_type_object($node);
@@ -109,6 +113,12 @@ function wpultra_el_validate_node(array $node): array {
             if (is_object($prop)) { $compact[$k] = wpultra_el_compact_prop($prop); }
         }
         $wrapped = wpultra_el_wrap_settings($settings, $compact);
+        // Reject keys that are not declared in the schema — Props_Parser silently ignores them.
+        $unknown = array_values(array_diff(array_keys($settings), array_keys($compact)));
+        if ($unknown !== []) {
+            $errs = array_map(fn($k) => "$k: unknown_prop", $unknown);
+            return ['valid' => false, 'errors' => $errs, 'settings' => $wrapped];
+        }
         $result = \Elementor\Modules\AtomicWidgets\Parsers\Props_Parser::make($schema)->parse($wrapped);
         if (!$result->is_valid()) {
             $errs = array_values(array_filter(array_map('trim', explode("\n", (string) $result->errors()->to_string()))));

@@ -23,16 +23,49 @@ function wpultra_el_wrap_settings(array $settings, array $compactSchema): array 
             $out[$key] = wpultra_el_wrap_value($val, $type);
         } elseif ($type === 'union') {
             // Many atomic props (tag, text, …) are unions whose value is stored wrapped.
-            // Wrap a scalar using the default's $$type (e.g. tag/text default -> "string").
             $def = $compactSchema[$key]['default'] ?? null;
-            $out[$key] = (is_array($def) && isset($def['$$type']))
-                ? wpultra_el_wrap_value($val, (string) $def['$$type'])
-                : $val;
+            if (!is_array($def) || !isset($def['$$type'])) {
+                $out[$key] = $val;
+                continue;
+            }
+            $defType  = (string) $def['$$type'];
+            $defValue = $def['value'] ?? null;
+            if (!is_array($defValue)) {
+                // Simple union (e.g. tag → {$$type:"string", value:"h2"}): wrap scalar directly.
+                $out[$key] = wpultra_el_wrap_value($val, $defType);
+            } else {
+                // Complex union (e.g. html-v3 → {$$type:"html-v3", value:{content:{…}, children:[]}}).
+                // Substitute the scalar into the innermost string slot of the default value shape.
+                $out[$key] = wpultra_el_wrap_value(
+                    wpultra_el_inject_scalar_into_shape($defValue, $val),
+                    $defType
+                );
+            }
         } else {
             $out[$key] = $val;
         }
     }
     return $out;
+}
+
+/**
+ * Walk the default-value shape and replace the first leaf {$$type:"string", value:...}
+ * with {$$type:"string", value:$scalar}. All other leaves are kept as-is.
+ * Returns the modified shape array.
+ */
+function wpultra_el_inject_scalar_into_shape(array $shape, $scalar): array {
+    $result = $shape;
+    foreach ($result as $k => $v) {
+        if (is_array($v) && isset($v['$$type']) && $v['$$type'] === 'string') {
+            $result[$k] = ['$$type' => 'string', 'value' => (string) $scalar];
+            return $result; // inject only into the first string slot
+        }
+        if (is_array($v) && !isset($v['$$type'])) {
+            $result[$k] = wpultra_el_inject_scalar_into_shape($v, $scalar);
+            return $result;
+        }
+    }
+    return $result;
 }
 
 function wpultra_el_validate_settings(string $widgetType, array $settings) {
