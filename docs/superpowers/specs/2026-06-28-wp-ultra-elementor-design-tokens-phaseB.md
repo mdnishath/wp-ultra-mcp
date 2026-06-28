@@ -4,99 +4,97 @@
 
 ## Problem
 
-Phase A made Elementor writes *valid* (no silently-dropped props). The remaining gap is *fidelity*: when recreating a design from a reference (a URL like Uber, or an image), the result should match the reference's look — its colors, fonts, and spacing — not generic defaults. Today the AI hardcodes guessed values per element, so nothing is consistent and nothing is tied to the reference.
+Phase A made Elementor writes *valid* (no silently-dropped props). The remaining gap is *fidelity*: when recreating a design from a reference (a URL like Uber, or an image), the result should match the reference's look — its colors, fonts, and sizes — not generic defaults. Today the AI hardcodes guessed values per element, so nothing is consistent and nothing is tied to the reference.
 
 ## Decision: who perceives the reference
 
-**The client (Claude) perceives the reference; the plugin applies the tokens.** Claude is multimodal — it sees an image directly, and via Claude Code's browser tools it can navigate to a URL and screenshot it. That perception is far more accurate than pure-PHP scraping, especially for JS-rendered sites (Uber and modern SPAs) — exactly the references that matter — which `wp_remote_get` + DOM parsing cannot read (minified/external/JS-injected CSS). So Phase B does **no server-side scraping**. The plugin's durable value-add is the part only it can do: writing the perceived tokens into Elementor's global design system and returning the references the build should use. This also keeps Phase B pure-PHP-light, consistent with the Phase A feedback-loop decision.
+**The client (Claude) perceives the reference; the plugin applies the tokens.** Claude is multimodal — it sees an image directly, and via Claude Code's browser tools it can navigate to a URL and screenshot it. That perception is far more accurate than pure-PHP scraping, especially for JS-rendered sites (Uber and modern SPAs) — exactly the references that matter — which `wp_remote_get` + DOM parsing cannot read (minified/external/JS-injected CSS). So Phase B does **no server-side scraping**. The plugin's durable value-add is the part only it can do: writing the perceived tokens into Elementor's design system and returning the references the build should use. This keeps Phase B pure-PHP-light, consistent with the Phase A feedback-loop decision.
+
+## Decision: tokens are Elementor **Variables**, not classic kit globals
+
+Tokens are written as Elementor **Variables** (`global-color-variable`, `global-font-variable`, `global-size-variable`) via the existing `wpultra_el_variables_create`, **not** the classic kit `custom_colors`/`custom_typography` palette. Reason: the target build path is **atomic v4** widgets, and atomic settings reference a variable cleanly as `{ "$$type": "<variable-type>", "value": "<variable-id>" }`. Classic kit globals are a v3 concept that atomic style props cannot reference cleanly. Variables are the atomic-native token system, give one uniform ref shape for all three families, and reuse code that already exists — so Phase B adds **no new kit writer**. Variables require the `e_variables` experiment; Phase B ensures it is on (mirroring the v0.6.1 atomic-experiment auto-enable).
 
 ## Scope: tokens now, blueprints later
 
-Phase B is **design-token application only**. A curated section-blueprint library (navbar/hero/feature-grid/CTA/footer) is deferred to **Phase B2** — it is large curation work, risks staleness across Elementor versions, and is low marginal value once tokens exist and Phase A validation is in place (the AI can build sections from validated, token-referencing settings). YAGNI.
+Phase B is **design-token application only**. A curated section-blueprint library (navbar/hero/feature-grid/CTA/footer) is deferred to **Phase B2** — it is large curation work, risks staleness across Elementor versions, and is low marginal value once tokens exist and Phase A validation is in place. YAGNI. Weight/line-height/letter-spacing are not tokenized (set per element); only the three variable families above. YAGNI.
 
 ## The mechanism
 
 ```
-client perceives reference  →  structured design brief  →  elementor-apply-design-tokens
-   (image/URL screenshot)        (colors, type, spacing)        ↓
-                                                          writes Elementor global
-                                                          colors + typography + size variables
-                                                                 ↓
-                                                          returns token REFS  →  AI references
-                                                          (global-color-variable ids, etc.)     them in element settings
+client perceives reference  →  design brief  →  elementor-apply-design-tokens
+   (image / URL screenshot)     (colors,fonts,sizes)        ↓
+                                                     ensure e_variables on, then create
+                                                     color + font + size Variables
+                                                            ↓
+                                                     return token REFS  →  AI references them in
+                                                     {$$type, value:id}        Phase A-validated builds
 ```
 
-The AI then builds (via the Phase A-validated set-content/add-element) using `{$$type: global-color-variable, value: '<ref>'}`-style settings instead of hardcoded values, so the page is token-consistent and reference-faithful, and a later token change re-themes the whole page.
+The AI then builds (via the Phase A-validated set-content/add-element) using `{ "$$type": "global-color-variable", "value": "<id>" }`-style settings instead of hardcoded values, so the page is token-consistent and reference-faithful, and a later token change re-themes the whole page.
 
 ## Component: `elementor-apply-design-tokens` (new ability)
 
-One cohesive ability that takes a full design brief and writes all three token families in a single call, returning the references.
+One cohesive ability that takes a design brief and creates all three variable families in a single call, returning their references.
 
 **Input (the client builds this from its perception of the reference):**
 ```
 {
-  colors:     [ { role: string, title: string, hex: string } ],   // role e.g. primary/secondary/accent/background/text/muted
-  typography: [ { role: string, title: string, font_family: string, weight?: string|int, size?: { size: number, unit: string } } ],
-  spacing?:   [ { title: string, size: number, unit: string } ],  // optional spacing scale → size variables
-  replace?:   boolean                                             // default false = upsert/merge; true = replace the custom set
+  colors?: [ { role: string, title: string, hex: string } ],          // role e.g. primary/secondary/accent/background/text
+  fonts?:  [ { role: string, title: string, family: string } ],       // font-family tokens
+  sizes?:  [ { role: string, title: string, size: number, unit: string } ],  // one numeric scale for spacing AND font-size
 }
 ```
+At least one of `colors`/`fonts`/`sizes` must be present. Titles non-empty; hex validated via the existing `wpultra_el_is_hex_color`; unit defaults to `px`.
 
 **Output:**
 ```
 {
   success: true,
-  colors:     [ { id, title, ref } ],   // ref = how to use it in settings (global-color-variable id / global color _id)
-  typography: [ { id, title, ref } ],
-  spacing:    [ { id, title, ref } ],
+  colors: [ { title, id, ref: { "$$type": "global-color-variable", "value": id } } ],
+  fonts:  [ { title, id, ref: { "$$type": "global-font-variable",  "value": id } } ],
+  sizes:  [ { title, id, ref: { "$$type": "global-size-variable",  "value": id } } ],
   notes?: string
 }
 ```
 
-**Behavior:** validate inputs (hex colors via the existing `wpultra_el_is_hex_color`; non-empty titles); map roles→titles to kit entries; write each family via the engine functions below; collect each written entry's id and a usable `ref` string; return them. Partial-failure safe: if one family fails (e.g. variables experiment off for spacing), write the others and report the failure in `notes` rather than aborting the whole call. Mutating → calls `wpultra_audit_log`.
+**Behavior:** ensure `e_variables` is active (auto-enable; if it cannot be enabled, return a clear error). Validate the brief (pure). For each item, call `wpultra_el_variables_create(<type>, title, value)` where value is the hex / family / `"{size}{unit}"`. Collect each created variable's id and assemble its `ref`. **Partial-safe:** if one family's create fails, keep the successes and record the failure in `notes` rather than aborting. Mutating → calls `wpultra_audit_log`.
 
-## Engine (in `includes/elementor/design.php` — reuse + one addition)
+## Engine (reuse + tiny additions in `includes/elementor/design.php`)
 
-- **Colors** — reuse existing `wpultra_el_set_global_colors(array $colors, 'custom')`. Already writes kit `custom_colors` `[{_id,title,color}]` and clears cache.
-- **Spacing** — reuse existing `wpultra_el_variables_create('global-size-variable', $label, $value)` when the `e_variables` experiment is active; if inactive, skip spacing and note it (do not fail the call).
-- **Typography — NEW `wpultra_el_set_global_typography(array $items, string $target = 'custom')`.** Mirrors `wpultra_el_set_global_colors`: reads the kit's `custom_typography` (or `system_typography`), upserts entries by `_id` (slug of title), writes back via `$kit->update_settings([...])`, clears file cache. **Each entry's exact field shape must be verified against live Elementor 4.1.4** (the established wave workflow) — expected shape per entry:
-  ```
-  { _id, title,
-    typography_typography: 'custom',
-    typography_font_family: <string>,
-    typography_font_weight: <string|int>,         // when provided
-    typography_font_size: { unit: <string>, size: <number> } }   // when provided
-  ```
-  Returns the written list or `WP_Error`. Guarded in try/catch like the colors writer (kit writes throw "Access denied" if unauthenticated — real MCP is authed).
+- **Variable creation** — reuse existing `wpultra_el_variables_create(string $type, string $label, $value)` (validates the three types, calls the Variables service, returns `wpultra_ok(['variable'=>...])` or `WP_Error`). Already present.
+- **NEW `wpultra_el_variables_enable(): bool`** — persist the `e_variables` experiment active (mirror `wpultra_el_atomic_enable` from setup.php: `update_option('elementor_experiment-e_variables', STATE_ACTIVE)`; return whether the option now reads active). Same caching caveat as atomic (Elementor reads experiment state at boot; a mid-request flip only applies next request). The ability surfaces an "enabled — re-run" message when the current request still sees it inactive, matching the v0.6.1 atomic pattern.
+- **NEW pure `wpultra_el_build_token_plan(array $brief): array`** — map the brief to a flat list of `{ family, type, title, value }` create-instructions and a list of validation errors. Pure (no Elementor); unit-tested. `family` ∈ color|font|size; `type` is the variable type; `value` is hex / family / `"{size}{unit}"`. Rejects empty titles and invalid hex.
+- The ability orchestrates: enable variables → build plan (pure) → for each instruction call `wpultra_el_variables_create` → assemble refs.
 
-The ability is thin orchestration over these three writers plus ref-collection; the brief→kit mapping is the only new pure logic.
-
-## Reference: how the AI uses the returned refs
-
-- Global color variable in a setting: `{ "$$type": "global-color-variable", "value": "<color ref>" }`.
-- Global colors also remain usable by their kit `_id`.
-- Size variables: `{ "$$type": "global-size-variable", "value": "<spacing ref>" }`.
-The ability's job ends at returning the refs; the AI wires them through the Phase A-validated write abilities.
+**Variable id / ref shape must be confirmed against live Elementor 4.1.4** (the established wave workflow): `wpultra_el_variables_create` returns the created variable; the live test reads back the id used in `{$$type,value}` and confirms an atomic element can reference it and render. Expected variable id form is an `e-gv-…`-style string (per the parent reliability notes).
 
 ## Bootstrap wiring
 
-`elementor-apply-design-tokens` added to BOTH `wpultra_ability_files()` (elementor design-write group) and the `'elementor'` array in `wpultra_ability_category_map()`; `tests/bootstrap.test.php` count bumped 49 → 50. design.php is already in the Elementor engine require loop, so the new typography writer needs no new require.
+`elementor-apply-design-tokens` added to BOTH `wpultra_ability_files()` (elementor design-write group) and the `'elementor'` array in `wpultra_ability_category_map()`; `tests/bootstrap.test.php` count bumped 49 → 50. `design.php` and `setup.php` are already in the Elementor engine require loop, so the new engine functions need no new require.
+
+## Reference: how the AI uses the returned refs
+
+The ability returns each token's `ref` object verbatim — the AI drops it straight into an atomic setting:
+- Color prop: `{ "$$type": "global-color-variable", "value": "<id>" }`
+- Font-family prop: `{ "$$type": "global-font-variable", "value": "<id>" }`
+- Size prop (padding/gap/font-size): `{ "$$type": "global-size-variable", "value": "<id>" }`
+The ability's job ends at returning the refs; the AI wires them through the Phase A-validated write abilities, whose validation then confirms the referenced props are well-formed.
 
 ## Testing
 
-- **Pure unit (zero-dep harness):** the brief→kit mapping (role/title→entry, slug ids, hex validation rejects bad colors, ref assembly, partial-family handling). Stub the kit writers.
-- **Live (token-gated script on the running Local site):** apply a brief with 2 colors + 1 typography + 1 spacing; confirm the kit's `custom_colors`/`custom_typography`/size variables now contain them and the returned refs resolve; confirm a built element can reference a returned color ref and render with it (ties back to Phase A render-check). Confirm the typography field shape against real Elementor 4.1.4.
+- **Pure unit (zero-dep harness):** `wpultra_el_build_token_plan` — colors/fonts/sizes map to the right variable types and values (`"16px"` assembled from `{size:16,unit:'px'}`, default unit px), empty/invalid items rejected with errors, empty brief → error, partial brief (only fonts) works.
+- **Live (token-gated script on the running Local site):** call the ability path with a small brief (2 colors + 1 font + 1 size); confirm `e_variables` gets enabled, the variables are created, and the returned refs carry real ids; then build an atomic element that references a returned color ref and run Phase A `elementor-render-check` to confirm it renders. Confirm the variable id/ref shape against real Elementor 4.1.4.
 
 ## Out of scope
 
 - Section blueprint library (Phase B2).
 - Design skill encoding the full capture→tokens→build→render→compare loop (Phase C).
 - Server-side URL scraping / headless rendering (client perceives instead).
-- Per-breakpoint responsive token sets (single set for now; YAGNI).
+- Classic kit global colors/typography writers; weight/line-height tokenization; per-breakpoint responsive token sets (YAGNI).
 
 ## Success criteria
 
-- One `elementor-apply-design-tokens` call writes a reference's palette, fonts, and spacing into Elementor's global design system and returns usable refs.
-- Colors and typography survive a kit round-trip (re-read shows them); spacing written when `e_variables` is active, gracefully skipped+noted otherwise.
-- A subsequent Phase A-validated build can reference a returned token and render with it (live-verified).
-- All existing tests stay green; new unit tests green; live verification passes on Elementor 4.1.4. Released as v0.7.0 (50 abilities).
+- One `elementor-apply-design-tokens` call creates a reference's color/font/size Variables and returns usable `{$$type,value}` refs.
+- `e_variables` is auto-enabled; if it only takes effect next request, the ability says so (no false failure).
+- A subsequent Phase A-validated build can reference a returned token and render with it (live-verified on Elementor 4.1.4).
+- All existing tests stay green; new unit tests green. Released as v0.7.0 (50 abilities).
