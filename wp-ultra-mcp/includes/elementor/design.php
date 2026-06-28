@@ -152,3 +152,21 @@ function wpultra_el_build_token_plan(array $brief): array {
     }
     return ['plan' => $plan, 'errors' => $errors];
 }
+
+/**
+ * Persist the Elementor "e_variables" experiment as active (the Variables token system needs it).
+ * Returns true if the option now reads active. Mirrors wpultra_el_atomic_enable(); same boot-time
+ * caching caveat — a mid-request flip only takes effect on the next request.
+ */
+function wpultra_el_variables_enable(): bool {
+    if (!function_exists('update_option')) { return false; }
+    $state = class_exists('\\Elementor\\Core\\Experiments\\Manager')
+        ? \Elementor\Core\Experiments\Manager::STATE_ACTIVE
+        : 'active';
+    try {
+        update_option('elementor_experiment-e_variables', $state);
+    } catch (\Throwable $e) {
+        return false;
+    }
+    return get_option('elementor_experiment-e_variables') === $state;
+}
