@@ -38,6 +38,13 @@ wp_register_ability('wpultra/execute-php', [
 function wpultra_execute_php(array $input) {
     $code = (string) ($input['code'] ?? '');
     if ($code === '') { return wpultra_err('empty_code', 'code is required.'); }
+
+    // Safe-mode guard: refuse execution if sandbox previously crashed.
+    // function_exists check ensures no-op when runtime.php is not loaded (e.g. unit tests).
+    if (function_exists('wpultra_sandbox_crashed') && wpultra_sandbox_crashed()) {
+        return wpultra_err('safe_mode', 'Sandbox safe mode is active after a crash. Read the debug log, fix the offending sandbox file, then clear safe mode in wp-admin.');
+    }
+
     $code = preg_replace('/^\s*<\?php/', '', $code); // tolerate a leading tag
     $warnings = [];
     set_error_handler(function ($no, $str) use (&$warnings) { $warnings[] = $str; return true; });
@@ -45,7 +52,10 @@ function wpultra_execute_php(array $input) {
     if (function_exists('set_time_limit')) { @set_time_limit(defined('WPULTRA_CLI_TIMEOUT') ? WPULTRA_CLI_TIMEOUT : 30); }
     ob_start();
     try {
-        $return = eval($code);
+        // Wrap eval in sandbox guard so a fatal records the .crashed sentinel.
+        // Falls back to a plain closure call when runtime.php is not loaded (unit tests).
+        $evalFn = function () use ($code) { return eval($code); };
+        $return = function_exists('wpultra_sandbox_guard') ? wpultra_sandbox_guard($evalFn) : $evalFn();
         $output = ob_get_clean();
         restore_error_handler();
         if (function_exists('set_time_limit')) { @set_time_limit((int) $prev); }

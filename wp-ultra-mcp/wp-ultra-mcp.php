@@ -27,7 +27,19 @@ if (is_readable(WPULTRA_VENDOR_AUTOLOAD)) {
 }
 
 require_once WPULTRA_DIR . 'includes/helpers.php';
+require_once WPULTRA_DIR . 'includes/sandbox/runtime.php';
 require_once WPULTRA_DIR . 'includes/bootstrap-mcp.php';
+
+add_action('admin_notices', function () {
+    if (function_exists('wpultra_sandbox_crashed') && wpultra_sandbox_crashed()) {
+        $url = wp_nonce_url(admin_url('admin-post.php?action=wpultra_clear_safe'), 'wpultra_clear_safe');
+        echo '<div class="notice notice-error"><p><strong>WP-Ultra-MCP safe mode:</strong> AI-written sandbox code crashed and is suspended. <a href="' . esc_url($url) . '">Clear safe mode</a> after fixing.</p></div>';
+    }
+});
+add_action('admin_post_wpultra_clear_safe', function () {
+    if (current_user_can('manage_options') && check_admin_referer('wpultra_clear_safe')) { wpultra_sandbox_clear(); }
+    wp_safe_redirect(admin_url('admin.php?page=wpultra')); exit;
+});
 
 if (is_admin()) {
     require_once WPULTRA_DIR . 'includes/admin/connect-page.php';
