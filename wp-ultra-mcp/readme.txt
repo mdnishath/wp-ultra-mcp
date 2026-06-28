@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -27,7 +27,9 @@ Install, enable AI control, generate an application password, and paste the conf
 
 **Wave 2 (shipped):** schema-driven Elementor v4 atomic layout control — 9 elementor-* abilities. Requires the `e_atomic_elements` experiment enabled in Elementor.
 
-**Wave 3+ (planned):** design-token system, Gutenberg block injection, Bricks Builder support, ACF/Meta Box/Pods field-plugin integration.
+**Wave 4a (shipped):** Gutenberg core block control — 7 abilities for positional-path block tree ops + block-type discovery (gutenberg-get-content, gutenberg-list-blocks, gutenberg-get-block-schema, gutenberg-insert-block, gutenberg-update-block, gutenberg-delete-block, gutenberg-move-block). Core WordPress APIs only, no browser tab.
+
+**Wave 4b+ (planned):** Gutenberg patterns/reusable blocks, FSE template control, Bricks Builder support, ACF/Meta Box/Pods field-plugin integration.
 
 == Installation ==
 1. Upload the release ZIP (with vendor/) and activate.
@@ -46,6 +48,16 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.5.0 =
+* Wave 4a — Gutenberg core block control via positional-path tree ops + block-type discovery; core WordPress APIs only, no browser tab.
+* `gutenberg-get-content` — read a post's block tree as a compact JSON array (type, attrs, innerBlocks).
+* `gutenberg-list-blocks` — list all registered block types available on the site (namespace/name + title).
+* `gutenberg-get-block-schema` — introspect a block type's full attribute schema and default values.
+* `gutenberg-insert-block` — insert a new block at a positional path inside a post's content; best-effort attribute validation with unknown-block warning.
+* `gutenberg-update-block` — deep-merge new attributes into an existing block at a given path; unknown blocks emit a warning but are allowed.
+* `gutenberg-delete-block` — remove a block (and its innerBlocks subtree) from a post.
+* `gutenberg-move-block` — relocate a block from one positional path to another within the same post.
 
 = 0.4.0 =
 * Activity log — a capped audit trail of every privileged action (PHP, WP-CLI, SQL writes, file writes/edits/deletes, HTTP recipes): who ran it, when, and the outcome. New "Activity" admin page with a one-click clear.

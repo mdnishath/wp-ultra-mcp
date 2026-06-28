@@ -99,8 +99,20 @@ Reusable CSS classes and entrance animations for Elementor v4 elements. Requires
 
 The built-in **`elementor-v4-architect`** skill is extended with a "Reusable classes & animations" section that teaches the AI the class-creation, application, and interaction-setting shapes.
 
-### Wave 3+ — Planned
-**Gutenberg** block injection, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
+### Wave 4a — Gutenberg core block control (shipped)
+
+Positional-path block tree ops for Gutenberg posts and pages. Core WordPress APIs only — no browser tab required.
+
+- **`gutenberg-get-content`** — read a post's block tree as a compact JSON array (type, attrs, innerBlocks)
+- **`gutenberg-list-blocks`** — list all registered block types available on the site (namespace/name + title)
+- **`gutenberg-get-block-schema`** — introspect a block type's full attribute schema and default values; use this before inserting to avoid guessing props
+- **`gutenberg-insert-block`** — insert a new block at a positional path inside a post's block tree; best-effort attribute validation with unknown-block warning; every write is audit-logged
+- **`gutenberg-update-block`** — deep-merge new attributes into an existing block at a given path without touching sibling props
+- **`gutenberg-delete-block`** — remove a block (and its innerBlocks subtree) from a post
+- **`gutenberg-move-block`** — relocate a block from one positional path to another within the same post
+
+### Wave 4b+ — Planned
+**Gutenberg patterns/reusable blocks**, **FSE (Full Site Editing)** template control, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
 
 ---
 
