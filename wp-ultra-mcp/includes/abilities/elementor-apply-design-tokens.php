@@ -79,7 +79,10 @@ function wpultra_elementor_apply_design_tokens(array $input) {
         if (is_wp_error($res)) { $notes[] = $ins['title'] . ': ' . $res->get_error_message(); continue; }
         $var = is_array($res) ? ($res['variable'] ?? $res) : $res;
         $id = is_array($var) ? (string) ($var['id'] ?? ($var['_id'] ?? '')) : '';
-        $out[$famKey[$ins['family']]][] = ['title' => $ins['title'], 'id' => $id, 'ref' => ['$$type' => $ins['type'], 'value' => $id]];
+        if ($id === '') { $notes[] = $ins['title'] . ': created but variable id could not be extracted.'; continue; }
+        $bucket = $famKey[$ins['family']] ?? null;
+        if ($bucket === null) { $notes[] = $ins['title'] . ': unknown token family ' . $ins['family'] . '.'; continue; }
+        $out[$bucket][] = ['title' => $ins['title'], 'id' => $id, 'ref' => ['$$type' => $ins['type'], 'value' => $id]];
     }
     $payload = ['colors' => $out['colors'], 'fonts' => $out['fonts'], 'sizes' => $out['sizes']];
     if ($notes) { $payload['notes'] = implode(' | ', $notes); }
