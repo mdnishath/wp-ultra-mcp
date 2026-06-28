@@ -32,6 +32,8 @@ function wpultra_ability_files(): array {
         'elementor-get-design-system', 'elementor-list-dynamic-tags',
         // elementor design write abilities (Wave 3, Task 3)
         'elementor-manage-global-colors', 'elementor-manage-variables',
+        // elementor global-class + interaction abilities (Wave 3.5, Task 2)
+        'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
     ];
     // NOTE: gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
 }
