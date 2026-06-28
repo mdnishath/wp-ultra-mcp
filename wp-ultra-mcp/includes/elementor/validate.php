@@ -71,3 +71,51 @@ function wpultra_el_render_digest(string $html, array $expectedIds): array {
     $dropped = array_values(array_diff(array_map('strval', $expectedIds), $present));
     return ['rendered_count' => count($present), 'present_ids' => $present, 'dropped_ids' => $dropped];
 }
+
+/** Resolve the atomic widget/element type object for a node, or null if not atomic/unknown. */
+function wpultra_el_atomic_type_object(array $node) {
+    if (!function_exists('wpultra_el_active') || !wpultra_el_active()) { return null; }
+    $elType = (string) ($node['elType'] ?? '');
+    try {
+        if ($elType === 'widget') {
+            $wt = (string) ($node['widgetType'] ?? '');
+            if ($wt === '') { return null; }
+            $obj = \Elementor\Plugin::$instance->widgets_manager->get_widget_types($wt);
+        } else {
+            if ($elType === '') { return null; }
+            $obj = \Elementor\Plugin::$instance->elements_manager->get_element_types($elType);
+        }
+    } catch (\Throwable $e) {
+        return null;
+    }
+    if (!$obj) { return null; }
+    if ($obj instanceof \Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Widget_Base) { return $obj; }
+    $elementBase = '\\Elementor\\Modules\\AtomicWidgets\\Elements\\Base\\Atomic_Element_Base';
+    if (class_exists($elementBase) && $obj instanceof $elementBase) { return $obj; }
+    return null;
+}
+
+/** Default per-node validator: scalar-wrap + Props_Parser. Non-atomic nodes pass through. */
+function wpultra_el_validate_node(array $node): array {
+    $settings = is_array($node['settings'] ?? null) ? $node['settings'] : [];
+    $obj = wpultra_el_atomic_type_object($node);
+    if ($obj === null) {
+        return ['valid' => true, 'errors' => [], 'settings' => $settings];
+    }
+    try {
+        $schema = call_user_func([get_class($obj), 'get_props_schema']);
+        $compact = [];
+        foreach ($schema as $k => $prop) {
+            if (is_object($prop)) { $compact[$k] = wpultra_el_compact_prop($prop); }
+        }
+        $wrapped = wpultra_el_wrap_settings($settings, $compact);
+        $result = \Elementor\Modules\AtomicWidgets\Parsers\Props_Parser::make($schema)->parse($wrapped);
+        if (!$result->is_valid()) {
+            $errs = array_values(array_filter(array_map('trim', explode("\n", (string) $result->errors()->to_string()))));
+            return ['valid' => false, 'errors' => $errs ?: ['settings failed Elementor validation'], 'settings' => $wrapped];
+        }
+        return ['valid' => true, 'errors' => [], 'settings' => $result->unwrap()];
+    } catch (\Throwable $e) {
+        return ['valid' => false, 'errors' => ['validation error: ' . $e->getMessage()], 'settings' => $settings];
+    }
+}
