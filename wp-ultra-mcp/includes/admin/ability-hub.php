@@ -2,6 +2,8 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) { exit(); }
 
+require_once WPULTRA_DIR . 'includes/recipes/cpt.php';
+
 // ---------------------------------------------------------------------------
 // Save handler — textarea or uploaded file → parse → validate → CPT upsert.
 // ---------------------------------------------------------------------------
