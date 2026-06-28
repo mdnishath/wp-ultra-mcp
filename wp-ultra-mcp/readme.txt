@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,12 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.6.0 =
+* Phase A: Reliable Elementor builds — schema validation before every write + server-side render check.
+* `elementor-validate` — dry-run schema validation of Elementor pages/sections/containers; validates atomic settings, container layout props, and detects silently-dropped props before write.
+* `elementor-render-check` — server-side render verification: confirms what actually rendered after set-content/add/edit/move (catches design breakage from dropped props).
+* Elementor writes now validate before commit: `elementor-set-content` enforces strict atomic-settings validation (with `force:true` escape hatch); container layout properties always validated to prevent broken designs.
 
 = 0.5.0 =
 * Wave 4a — Gutenberg core block control via positional-path tree ops + block-type discovery; core WordPress APIs only, no browser tab.

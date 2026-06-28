@@ -99,6 +99,14 @@ Reusable CSS classes and entrance animations for Elementor v4 elements. Requires
 
 The built-in **`elementor-v4-architect`** skill is extended with a "Reusable classes & animations" section that teaches the AI the class-creation, application, and interaction-setting shapes.
 
+### Phase A — Elementor Reliability (shipped)
+
+Reliable Elementor builds — schema validation before every write + server-side render check. Catches silently-dropped atomic props that cause broken designs.
+
+- **`elementor-validate`** — dry-run schema validation of Elementor pages; validates atomic settings and container layout props; detects silently-dropped properties before they break the design
+- **`elementor-render-check`** — server-side render verification: confirms what actually rendered after `set-content` / `add-element` / `edit-element` / `move-element` (catches design breakage)
+- **Validate-before-commit:** Elementor writes now enforce strict atomic-settings validation (with `force:true` escape hatch); container layout properties always validated to prevent broken designs
+
 ### Wave 4a — Gutenberg core block control (shipped)
 
 Positional-path block tree ops for Gutenberg posts and pages. Core WordPress APIs only — no browser tab required.
