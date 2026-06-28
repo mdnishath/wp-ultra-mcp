@@ -160,8 +160,10 @@ function wpultra_el_build_token_plan(array $brief): array {
  */
 function wpultra_el_variables_enable(): bool {
     if (!function_exists('update_option')) { return false; }
-    $state = class_exists('\\Elementor\\Core\\Experiments\\Manager')
-        ? \Elementor\Core\Experiments\Manager::STATE_ACTIVE
+    // Reuse the single source for the experiment "active" state string (setup.php); both engine
+    // files load together in the abilities require loop, so it is available at call time.
+    $state = function_exists('wpultra_el_atomic_active_state')
+        ? wpultra_el_atomic_active_state()
         : 'active';
     try {
         update_option('elementor_experiment-e_variables', $state);
