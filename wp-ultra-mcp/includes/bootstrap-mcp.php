@@ -34,8 +34,10 @@ function wpultra_ability_files(): array {
         'elementor-manage-global-colors', 'elementor-manage-variables',
         // elementor global-class + interaction abilities (Wave 3.5, Task 2)
         'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
+        // gutenberg read abilities (Wave 4a)
+        'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
     ];
-    // NOTE: gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
+    // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
 
 /** Map of category slug => the ability file slugs it owns. Mirrors each file's declared category. */
@@ -55,6 +57,9 @@ function wpultra_ability_category_map(): array {
             'elementor-get-design-system', 'elementor-list-dynamic-tags',
             'elementor-manage-global-colors', 'elementor-manage-variables',
             'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
+        ],
+        'gutenberg' => [
+            'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
         ],
     ];
 }
@@ -105,6 +110,12 @@ function wpultra_load_abilities(): void {
         foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes'] as $elf) {
             $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
             if (is_readable($elp)) { require_once $elp; }
+        }
+    }
+    if (!in_array('gutenberg', $disabled, true)) {
+        foreach (['tree', 'engine', 'registry'] as $gbf) {
+            $gbp = WPULTRA_DIR . 'includes/gutenberg/' . $gbf . '.php';
+            if (is_readable($gbp)) { require_once $gbp; }
         }
     }
     foreach (wpultra_ability_files() as $file) {

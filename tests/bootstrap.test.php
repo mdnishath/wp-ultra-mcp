@@ -11,7 +11,7 @@ require __DIR__ . '/../wp-ultra-mcp/includes/bootstrap-mcp.php';
 
 it('ability file list is complete and unique', function () {
     $files = wpultra_ability_files();
-    assert_eq(40, count($files), 'count');
+    assert_eq(43, count($files), 'count');
     assert_eq(count($files), count(array_unique($files)), 'unique');
     assert_true(in_array('execute-wp-query', $files, true), 'has sql');
     assert_true(in_array('memory-save', $files, true), 'has memory');
@@ -22,6 +22,7 @@ it('ability file list is complete and unique', function () {
     assert_true(in_array('elementor-get-design-system', $files, true), 'has design');
     assert_true(in_array('elementor-manage-global-colors', $files, true), 'has design write');
     assert_true(in_array('elementor-upsert-global-class', $files, true), 'has classes');
+    assert_true(in_array('gutenberg-get-content', $files, true), 'has gutenberg read');
 });
 it('adapter-unavailable boot is a no-op (no throw)', function () {
     wpultra_boot();
