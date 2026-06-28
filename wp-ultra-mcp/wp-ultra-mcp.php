@@ -46,6 +46,7 @@ if (is_admin()) {
     require_once WPULTRA_DIR . 'includes/admin/abilities-page.php';
     require_once WPULTRA_DIR . 'includes/admin/ability-hub.php';
     require_once WPULTRA_DIR . 'includes/admin/skill-hub.php';
+    require_once WPULTRA_DIR . 'includes/admin/memory-hub.php';
 }
 
 // Boot the MCP adapter + abilities (guarded internally on enabled-flag and adapter availability).
