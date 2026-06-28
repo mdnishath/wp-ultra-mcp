@@ -113,6 +113,13 @@ Apply a reference's design palette, typography system, and token sizes as Elemen
 
 - **`elementor-apply-design-tokens`** — create color, font, and size Variables from a perceived reference's palette, typography, and sizes; returns refs in the form `{$$type,value}` for use in atomic-build workflows
 
+### Phase B2 — Elementor Blueprints (shipped)
+
+Insert ready-made structural section skeletons — navbar, hero, feature-grid, CTA, footer — with fresh ids, layout, and placeholder copy (no styling). Style them afterward with design tokens + global classes.
+
+- **`elementor-list-blueprints`** — list available built-in blueprint skeletons with descriptions
+- **`elementor-insert-blueprint`** — insert a blueprint skeleton at a given parent and position; re-ids for the page, validates, and writes atomically. Carries layout + placeholder text only; style with tokens + classes
+
 ### Wave 4a — Gutenberg core block control (shipped)
 
 Positional-path block tree ops for Gutenberg posts and pages. Core WordPress APIs only — no browser tab required.

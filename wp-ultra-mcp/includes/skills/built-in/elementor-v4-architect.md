@@ -43,3 +43,7 @@ The node-local `styles` array is not authored directly — global classes are th
 - **Classes & motion:** `elementor-upsert-global-class`, `elementor-list-global-classes`, `elementor-apply-class`, `elementor-set-interaction`.
 
 Data model: `_elementor_data` is an array of nodes. Widget = `{id, elType:"widget", widgetType, settings:{prop:{$$type,value}}, elements:[]}`; container = `{id, elType:"e-flexbox"|"e-div-block", settings, elements:[…]}`. The engine writes atomic-safe (it bypasses `Document::save`, which would strip atomic widgets) and clears Elementor's CSS cache for you. Reserved CPTs (skills/memory/abilities) are write-protected.
+
+## Start sections fast with blueprints
+
+`wpultra/elementor-list-blueprints` shows built-in structural skeletons (navbar, hero, feature-grid, cta, footer). `wpultra/elementor-insert-blueprint` `{post_id, blueprint, parent_id?, position?}` inserts one with fresh ids, validated — it carries layout + placeholder text only (no styling). Then style it with design tokens + global classes, and edit the placeholder copy with `elementor-edit-element`.
