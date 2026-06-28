@@ -46,7 +46,13 @@ function wpultra_memory_save(array $input) {
         'post_type' => 'wpultra_memory', 'post_status' => 'publish', 'post_title' => $name,
         'post_excerpt' => (string) ($input['description'] ?? ''), 'post_content' => (string) ($input['content'] ?? ''),
     ];
-    if (!empty($input['id'])) { $postarr['ID'] = (int) $input['id']; }
+    if (!empty($input['id'])) {
+        $existing = get_post((int) $input['id']);
+        if (!$existing || $existing->post_type !== 'wpultra_memory') {
+            return wpultra_err('not_a_memory', 'The given id does not reference an existing memory.');
+        }
+        $postarr['ID'] = (int) $input['id'];
+    }
     $id = wp_insert_post($postarr, true);
     if (is_wp_error($id)) { return $id; }
     update_post_meta((int) $id, '_wpultra_memory_type', $type);

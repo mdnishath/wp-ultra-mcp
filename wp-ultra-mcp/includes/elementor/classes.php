@@ -3,7 +3,7 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) { exit(); }
 
 function wpultra_el_gc_id(): string {
-    return 'e-gc-' . bin2hex(random_bytes(4))[0] . substr(bin2hex(random_bytes(4)), 0, 6);
+    return 'e-gc-' . substr(bin2hex(random_bytes(8)), 0, 7);
 }
 
 function wpultra_el_fade_interaction(string $trigger, string $effect, string $type, int $duration): array {
@@ -90,6 +90,10 @@ function wpultra_el_gc_upsert(string $label, array $props, ?string $id = null) {
         ];
         if (!in_array($cid, $order, true)) { $order[] = $cid; }
         $repo->put($items, $order);
+        // Regenerate front-end CSS so the new/updated class actually renders.
+        if (class_exists('\\Elementor\\Plugin') && isset(\Elementor\Plugin::$instance->files_manager)) {
+            try { \Elementor\Plugin::$instance->files_manager->clear_cache(); } catch (\Throwable $e) {}
+        }
         return wpultra_ok(['id' => $cid, 'label' => $items[$cid]['label']]);
     } catch (\Throwable $e) { return wpultra_err('classes_upsert_failed', $e->getMessage()); }
 }

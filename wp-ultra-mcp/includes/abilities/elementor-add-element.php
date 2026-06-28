@@ -44,7 +44,12 @@ function wpultra_elementor_add_element(array $input) {
     $post_id = (int) ($input['post_id'] ?? 0);
     if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
     $elType = (string) ($input['element_type'] ?? '');
-    $id = (string) ($input['element_id'] ?? '') ?: wpultra_el_new_id();
+    $data = wpultra_el_raw($post_id);
+    $suppliedId = (string) ($input['element_id'] ?? '');
+    if ($suppliedId !== '' && wpultra_el_find($data, $suppliedId) !== null) {
+        return wpultra_err('duplicate_id', "An element with id '$suppliedId' already exists on this page.");
+    }
+    $id = $suppliedId !== '' ? $suppliedId : wpultra_el_new_id($data);
     $settings = (array) ($input['settings'] ?? []);
     $node = ['id' => $id, 'elType' => $elType, 'settings' => [], 'elements' => []];
     if ($elType === 'widget') {
@@ -61,7 +66,6 @@ function wpultra_elementor_add_element(array $input) {
         // container (e-flexbox / e-div-block): settings passed through (style-level), wrap if scalar via style schema is out of scope here
         $node['settings'] = $settings;
     }
-    $data = wpultra_el_raw($post_id);
     $parent = isset($input['parent_id']) && $input['parent_id'] !== '' ? (string) $input['parent_id'] : null;
     $pos = (int) ($input['position'] ?? PHP_INT_MAX);
     $updated = wpultra_el_insert($data, $parent, $pos, $node);

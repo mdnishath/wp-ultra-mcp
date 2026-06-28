@@ -26,7 +26,9 @@ function wpultra_el_write(int $post_id, array $elements) {
     // Atomic-safe: write meta directly (Document::save strips atomic widgets).
     update_post_meta($post_id, '_elementor_data', wp_slash(wp_json_encode($elements)));
     update_post_meta($post_id, '_elementor_edit_mode', 'builder');
-    update_post_meta($post_id, '_elementor_version', defined('ELEMENTOR_VERSION') ? ELEMENTOR_VERSION : '4.0.0');
+    // Stamp the real installed version only; writing a fabricated '4.0.0' can mislead
+    // Elementor's data upgrader on the next load.
+    if (defined('ELEMENTOR_VERSION')) { update_post_meta($post_id, '_elementor_version', ELEMENTOR_VERSION); }
     // Full CSS invalidation.
     try {
         if (class_exists('\\Elementor\\Plugin')) {

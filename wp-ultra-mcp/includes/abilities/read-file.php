@@ -38,7 +38,12 @@ function wpultra_read_file(array $input) {
     $resolved = wpultra_resolve_path((string) ($input['path'] ?? ''), true);
     if (is_wp_error($resolved)) { return $resolved; }
     $max = max(1, (int) ($input['max_bytes'] ?? 200000));
-    $content = file_get_contents($resolved);
+    // Read at most $max+1 bytes so a multi-GB file can't OOM the request; the extra
+    // byte lets us detect truncation without loading the whole file.
+    $fh = @fopen($resolved, 'rb');
+    if ($fh === false) { return wpultra_err('read_failed', "Could not read: $resolved"); }
+    $content = stream_get_contents($fh, $max + 1);
+    fclose($fh);
     if ($content === false) { return wpultra_err('read_failed', "Could not read: $resolved"); }
     $truncated = false;
     if (strlen($content) > $max) { $content = substr($content, 0, $max); $truncated = true; }

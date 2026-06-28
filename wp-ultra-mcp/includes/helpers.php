@@ -33,14 +33,25 @@ function wpultra_is_valid_identifier(string $name): bool {
     return (bool) preg_match('/^[A-Za-z0-9_]+$/', $name);
 }
 
-/** Return ['verb'=>UPPER, 'destructive'=>bool]. Pure. */
+/** The plugin's own private CPTs — the generic content abilities must not touch these. */
+function wpultra_reserved_post_types(): array {
+    return ['wpultra_memory', 'wpultra_skill', 'wpultra_ability'];
+}
+
+/**
+ * Return ['verb'=>UPPER, 'destructive'=>bool]. Pure.
+ *
+ * Allow-list approach: only genuinely read-only verbs (and INSERT, which only adds
+ * rows) are non-destructive. Everything else — DELETE/UPDATE (even with a WHERE,
+ * since `WHERE 1=1` is a trivial bypass), DDL (DROP/TRUNCATE/ALTER/RENAME/CREATE),
+ * privilege changes (GRANT/REVOKE), CTEs that can wrap a DELETE (WITH …), and any
+ * unrecognised verb — requires `confirm: true`.
+ */
 function wpultra_classify_query(string $sql): array {
     $trimmed = trim($sql);
     $verb = strtoupper(preg_split('/\s+/', $trimmed)[0] ?? '');
-    $has_where = (bool) preg_match('/\bWHERE\b/i', $trimmed);
-    $destructive = false;
-    if (in_array($verb, ['DROP', 'TRUNCATE', 'ALTER'], true)) { $destructive = true; }
-    if (in_array($verb, ['DELETE', 'UPDATE'], true) && !$has_where) { $destructive = true; }
+    $safe = ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'INSERT'];
+    $destructive = !in_array($verb, $safe, true);
     return ['verb' => $verb, 'destructive' => $destructive];
 }
 
@@ -49,10 +60,12 @@ function wpultra_filesystem_base_dir(): string {
 }
 
 function wpultra_path_requires_sandbox(string $path): bool {
-    $name = strtolower(basename($path));
-    if (str_ends_with($name, '.php')) { return true; }
-    if (str_ends_with($name, '.ini')) { return true; }
-    return in_array($name, ['.htaccess', 'php.ini', 'web.config', '.user.ini'], true);
+    // Trailing dots/spaces are stripped by some filesystems on open, so `shell.php.`
+    // and `shell.php ` resolve to `shell.php` — strip them before matching.
+    $name = strtolower(rtrim(basename($path), " ."));
+    // Any extension the PHP handler (or a server config) commonly maps to executable code.
+    if (preg_match('/\.(php\d*|phtml|phps|pht|phar|ini)$/', $name)) { return true; }
+    return in_array($name, ['.htaccess', 'web.config'], true);
 }
 
 /**
@@ -62,6 +75,10 @@ function wpultra_path_requires_sandbox(string $path): bool {
 function wpultra_resolve_path(string $path, bool $must_exist = false) {
     $path = trim($path);
     if ($path === '') { return wpultra_err('missing_path', 'Path is required.'); }
+    // Reject null bytes / control chars: they bypass extension checks and break FS calls.
+    if (strpbrk($path, "\0") !== false || preg_match('/[\x00-\x1f]/', $path)) {
+        return wpultra_err('invalid_path', 'Path contains illegal control characters.');
+    }
 
     $base = wpultra_filesystem_base_dir();
     $is_abs = (bool) preg_match('#^([A-Za-z]:[\\\\/]|[\\\\/])#', $path);

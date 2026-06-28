@@ -48,6 +48,24 @@ it('move relocates subtree', function () {
     assert_eq('head001', $out[0]['id']);
     assert_eq(1, count($out[1]['elements']));
 });
+it('move within same parent places element at the requested final index', function () {
+    // Siblings a,b,c. `pos` is the desired FINAL index: move a→2 yields b,c,a; move c→0 yields c,a,b.
+    $tree = [['id' => 'p', 'elType' => 'e-flexbox', 'settings' => [], 'elements' => [
+        ['id' => 'a', 'elType' => 'widget', 'elements' => []],
+        ['id' => 'b', 'elType' => 'widget', 'elements' => []],
+        ['id' => 'c', 'elType' => 'widget', 'elements' => []],
+    ]]];
+    $fwd = wpultra_el_move($tree, 'a', 'p', 2);
+    assert_eq(['b', 'c', 'a'], array_map(fn($n) => $n['id'], $fwd[0]['elements']));
+    $back = wpultra_el_move($tree, 'c', 'p', 0);
+    assert_eq(['c', 'a', 'b'], array_map(fn($n) => $n['id'], $back[0]['elements']));
+});
+it('locate reports parent and index', function () {
+    $loc = wpultra_el_locate(el_fix(), 'btn0001');
+    assert_eq('row0001', $loc['parent_id']);
+    assert_eq(1, $loc['index']);
+    assert_eq('', wpultra_el_locate(el_fix(), 'row0001')['parent_id']);
+});
 it('merge settings shallow', function () {
     $out = wpultra_el_merge_settings(el_fix(), 'head001', ['title' => ['$$type' => 'html-v3', 'value' => 'x']], false);
     $node = wpultra_el_find($out, 'head001');

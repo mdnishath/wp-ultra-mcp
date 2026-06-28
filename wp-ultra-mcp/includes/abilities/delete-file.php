@@ -36,7 +36,13 @@ function wpultra_delete_file(array $input) {
     $resolved = wpultra_resolve_path((string) ($input['path'] ?? ''), false);
     if (is_wp_error($resolved)) { return $resolved; }
     $protected = array_map('wpultra_normalize_absolute_path', [
+        // Core directories.
         rtrim(ABSPATH, '/\\'), ABSPATH . 'wp-admin', ABSPATH . 'wp-includes', WP_CONTENT_DIR . '/mu-plugins',
+        // Critical files whose removal takes the site down or triggers the install flow.
+        ABSPATH . 'wp-config.php', dirname(rtrim(ABSPATH, '/\\')) . '/wp-config.php',
+        ABSPATH . 'index.php', ABSPATH . '.htaccess', ABSPATH . 'wp-load.php',
+        ABSPATH . 'wp-settings.php', ABSPATH . 'wp-blog-header.php', ABSPATH . 'wp-login.php',
+        ABSPATH . 'wp-cron.php', ABSPATH . 'wp-activate.php',
     ]);
     if (in_array(wpultra_normalize_absolute_path($resolved), $protected, true)) {
         return wpultra_err('protected_path', "Refusing to delete a protected path: $resolved");

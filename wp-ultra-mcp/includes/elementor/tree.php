@@ -15,11 +15,13 @@ function wpultra_el_compact_tree(array $elements, int $depth = 0): array {
     return $out;
 }
 
-function wpultra_el_walk(array &$elements, string $id, callable $fn): bool {
+function wpultra_el_walk(array &$elements, string $id, callable $fn, int $depth = 0): bool {
+    if ($depth > 100) { return false; } // guard against pathologically deep / cyclic data
     foreach ($elements as $i => &$n) {
+        if (!is_array($n)) { continue; }
         if (($n['id'] ?? null) === $id) { $fn($n, $elements, $i); return true; }
         if (!empty($n['elements']) && is_array($n['elements'])) {
-            if (wpultra_el_walk($n['elements'], $id, $fn)) { return true; }
+            if (wpultra_el_walk($n['elements'], $id, $fn, $depth + 1)) { return true; }
         }
     }
     return false;
@@ -29,6 +31,20 @@ function wpultra_el_find(array $elements, string $id): ?array {
     $found = null;
     wpultra_el_walk($elements, $id, function ($node) use (&$found) { $found = $node; });
     return $found;
+}
+
+/** Locate a node and report its parent id ('' at root) and index. Pure, depth-guarded. */
+function wpultra_el_locate(array $elements, string $id, string $parentId = '', int $depth = 0): ?array {
+    if ($depth > 100) { return null; }
+    foreach ($elements as $i => $n) {
+        if (!is_array($n)) { continue; }
+        if (($n['id'] ?? null) === $id) { return ['parent_id' => $parentId, 'index' => $i, 'node' => $n]; }
+        if (!empty($n['elements']) && is_array($n['elements'])) {
+            $hit = wpultra_el_locate($n['elements'], $id, (string) ($n['id'] ?? ''), $depth + 1);
+            if ($hit !== null) { return $hit; }
+        }
+    }
+    return null;
 }
 
 function wpultra_el_insert(array $elements, ?string $parentId, int $pos, array $node) {
@@ -51,6 +67,9 @@ function wpultra_el_remove(array $elements, string $id) {
 }
 
 function wpultra_el_move(array $elements, string $id, ?string $toParentId, int $pos) {
+    // `pos` is the desired FINAL index. Removing then re-inserting at `pos` already yields
+    // that final index in every case (including same-parent forward moves), because
+    // wpultra_el_insert clamps against the post-removal sibling count.
     $node = wpultra_el_find($elements, $id);
     if ($node === null) { return wpultra_err('element_not_found', "No element with id '$id'."); }
     $removed = wpultra_el_remove($elements, $id);

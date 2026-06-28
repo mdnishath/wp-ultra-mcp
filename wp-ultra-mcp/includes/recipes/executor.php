@@ -44,7 +44,9 @@ function wpultra_recipe_execute(array $parsed, array $input) {
     if ($run === 'http') {
         $url = wpultra_recipe_subst_scalar((string) ($recipe['url'] ?? ''), $input);
         $method = strtoupper((string) ($recipe['method'] ?? 'GET'));
-        $resp = wp_remote_request($url, ['method' => $method, 'timeout' => 20]);
+        // wp_safe_remote_request applies WP's SSRF protections (rejects private/loopback/
+        // link-local hosts unless explicitly allowed), unlike the unguarded wp_remote_request.
+        $resp = wp_safe_remote_request($url, ['method' => $method, 'timeout' => 20]);
         if (is_wp_error($resp)) { return $resp; }
         return wpultra_ok(['status' => wp_remote_retrieve_response_code($resp), 'body' => wp_remote_retrieve_body($resp)]);
     }
