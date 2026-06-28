@@ -50,5 +50,6 @@ function wpultra_delete_file(array $input) {
     if (!file_exists($resolved)) { return wpultra_ok(['path' => $resolved, 'deleted' => false]); }
     if (is_dir($resolved)) { return wpultra_err('is_directory', 'Refusing to delete a directory.'); }
     if (!unlink($resolved)) { return wpultra_err('delete_failed', "Could not delete: $resolved"); }
+    wpultra_audit_log('delete-file', $resolved, true);
     return wpultra_ok(['path' => $resolved, 'deleted' => true]);
 }

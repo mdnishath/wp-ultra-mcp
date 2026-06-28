@@ -28,4 +28,27 @@ it('adapter-unavailable boot is a no-op (no throw)', function () {
     assert_true(true, 'did not throw');
 });
 
+it('category map covers every ability file exactly once', function () {
+    $files = wpultra_ability_files();
+    $mapped = [];
+    foreach (wpultra_ability_category_map() as $cat => $list) {
+        foreach ($list as $f) { $mapped[] = $f; }
+    }
+    sort($files); $u = array_unique($mapped); sort($u);
+    assert_eq(count($files), count($mapped), 'no file mapped twice');
+    assert_eq($files, $u, 'mapped set equals ability file set');
+});
+
+it('file_category reverse lookup works', function () {
+    assert_eq('code-execution', wpultra_file_category('execute-php'));
+    assert_eq('elementor', wpultra_file_category('elementor-add-element'));
+    assert_eq('custom', wpultra_file_category('ability-write'));
+    assert_eq('', wpultra_file_category('does-not-exist'));
+});
+
+it('no categories disabled by default', function () {
+    assert_eq([], wpultra_disabled_categories());
+    assert_true(wpultra_category_enabled('code-execution'), 'enabled by default');
+});
+
 run_tests();

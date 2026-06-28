@@ -26,6 +26,41 @@ add_action('wp_ajax_wpultra_toggle_ability', function () {
 });
 
 /**
+ * AJAX: toggle a whole capability category on/off. A disabled category's abilities
+ * are never registered (enforced in wpultra_load_abilities).
+ */
+add_action('wp_ajax_wpultra_toggle_category', function () {
+    if (!current_user_can('manage_options') || !check_ajax_referer('wpultra_toggle', 'nonce', false)) {
+        wp_send_json_error(['message' => 'forbidden'], 403);
+    }
+    $cat = sanitize_text_field((string) ($_POST['category'] ?? ''));
+    $disabled = ((string) ($_POST['disabled'] ?? '')) === '1';
+    if (!array_key_exists($cat, wpultra_ability_category_map())) {
+        wp_send_json_error(['message' => 'unknown category'], 400);
+    }
+    $list = wpultra_disabled_categories();
+    if ($disabled) { if (!in_array($cat, $list, true)) { $list[] = $cat; } }
+    else { $list = array_values(array_diff($list, [$cat])); }
+    update_option('wpultra_disabled_categories', $list);
+    wp_send_json_success(['category' => $cat, 'disabled' => $disabled]);
+});
+
+/** Friendly label + blurb + dashicon for each capability category. */
+function wpultra_category_ui_labels(): array {
+    return [
+        'filesystem'     => ['label' => 'Filesystem', 'desc' => 'Read/write/delete files in the WP root.', 'icon' => 'portfolio'],
+        'code-execution' => ['label' => 'Code Execution', 'desc' => 'Run PHP and WP-CLI. The most powerful group.', 'icon' => 'editor-code'],
+        'database'       => ['label' => 'Database', 'desc' => 'Direct parameterized SQL.', 'icon' => 'database'],
+        'diagnostics'    => ['label' => 'Diagnostics', 'desc' => 'Read the debug log.', 'icon' => 'visibility'],
+        'content'        => ['label' => 'WordPress Content', 'desc' => 'Create/update/delete posts, pages, CPTs.', 'icon' => 'admin-post'],
+        'memory'         => ['label' => 'Memory', 'desc' => 'Persistent cross-session memory.', 'icon' => 'lightbulb'],
+        'skills'         => ['label' => 'Skills', 'desc' => 'Reusable AI skill documents.', 'icon' => 'welcome-learn-more'],
+        'custom'         => ['label' => 'Custom Abilities', 'desc' => 'Declarative recipe engine (ability-write).', 'icon' => 'admin-plugins'],
+        'elementor'      => ['label' => 'Elementor', 'desc' => 'Elementor v4 layout & design engine.', 'icon' => 'layout'],
+    ];
+}
+
+/**
  * Grouped, labelled view of the Wave 1 abilities for the admin UI.
  *
  * @return array<string, array{icon:string, items:array<string, array{label:string, desc:string}>}>
@@ -108,6 +143,27 @@ function wpultra_abilities_render(): void {
             <div class="wpu-counter">
                 <span class="wpu-pill wpu-pill-on"><strong id="wpu-enabled"><?php echo (int) $enabled_count; ?></strong> enabled</span>
                 <span class="wpu-pill wpu-pill-off"><strong id="wpu-disabled"><?php echo (int) $disabled_count; ?></strong> disabled</span>
+            </div>
+        </div>
+
+        <?php $cat_labels = wpultra_category_ui_labels(); $disabled_cats = wpultra_disabled_categories(); ?>
+        <div class="wpu-card" style="margin-bottom:22px;">
+            <div class="wpu-card-head"><span class="dashicons dashicons-shield-alt"></span><span>Capability categories</span>
+                <span style="margin-left:auto;font-weight:400;color:#787c82;font-size:12px;">Turn a whole group off — its abilities won't load at all.</span></div>
+            <div class="wpu-list">
+            <?php foreach ($cat_labels as $cat => $meta) : $coff = in_array($cat, $disabled_cats, true); ?>
+                <div class="wpu-row">
+                    <div class="wpu-info">
+                        <div class="wpu-row-title"><span class="dashicons dashicons-<?php echo esc_attr($meta['icon']); ?>" style="color:#6d4afe;"></span> <?php echo esc_html($meta['label']); ?>
+                            <code class="wpu-slug"><?php echo esc_html($cat); ?></code></div>
+                        <div class="wpu-desc"><?php echo esc_html($meta['desc']); ?></div>
+                    </div>
+                    <label class="wpu-switch" title="<?php echo $coff ? 'Disabled' : 'Enabled'; ?>">
+                        <input type="checkbox" class="wpu-cat-toggle" data-cat="<?php echo esc_attr($cat); ?>" <?php checked(!$coff); ?>>
+                        <span class="wpu-track"><span class="wpu-knob"></span></span>
+                    </label>
+                </div>
+            <?php endforeach; ?>
             </div>
         </div>
 
@@ -249,6 +305,31 @@ function wpultra_abilities_render(): void {
                         input.checked = !input.checked; // revert
                         showToast('Network error — not saved', true);
                     });
+            });
+        });
+
+        // Category-level toggles (turn a whole group off).
+        document.querySelectorAll('.wpu-cat-toggle').forEach(function (input) {
+            input.addEventListener('change', function () {
+                var cat = input.getAttribute('data-cat');
+                var disabled = input.checked ? '0' : '1';
+                var sw = input.closest('.wpu-switch');
+                sw.classList.add('wpu-saving');
+                var body = new URLSearchParams();
+                body.append('action', 'wpultra_toggle_category');
+                body.append('nonce', nonce);
+                body.append('category', cat);
+                body.append('disabled', disabled);
+                fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        sw.classList.remove('wpu-saving');
+                        if (res && res.success) {
+                            sw.title = input.checked ? 'Enabled' : 'Disabled';
+                            showToast(input.checked ? cat + ' enabled' : cat + ' disabled', false);
+                        } else { input.checked = !input.checked; showToast('Could not save — try again', true); }
+                    })
+                    .catch(function () { sw.classList.remove('wpu-saving'); input.checked = !input.checked; showToast('Network error — not saved', true); });
             });
         });
     })();

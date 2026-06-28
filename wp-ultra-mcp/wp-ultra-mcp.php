@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP-Ultra-MCP
  * Description: Turn this WordPress site into an MCP server for AI CLIs — Elementor, SQL, WP-CLI, files, and more.
- * Version: 0.3.2
+ * Version: 0.4.0
  * Requires PHP: 8.0
  * Requires at least: 6.6
  * License: GPL-2.0-or-later
@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit(); }
 
-define('WPULTRA_VERSION', '0.3.2');
+define('WPULTRA_VERSION', '0.4.0');
 define('WPULTRA_FILE', __FILE__);
 define('WPULTRA_DIR', plugin_dir_path(__FILE__));
 define('WPULTRA_URL', plugin_dir_url(__FILE__));
@@ -47,6 +47,7 @@ if (is_admin()) {
     require_once WPULTRA_DIR . 'includes/admin/ability-hub.php';
     require_once WPULTRA_DIR . 'includes/admin/skill-hub.php';
     require_once WPULTRA_DIR . 'includes/admin/memory-hub.php';
+    require_once WPULTRA_DIR . 'includes/admin/activity-page.php';
 }
 
 // Boot the MCP adapter + abilities (guarded internally on enabled-flag and adapter availability).

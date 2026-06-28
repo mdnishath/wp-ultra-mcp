@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.3.2
+Stable tag: 0.4.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -46,6 +46,11 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.4.0 =
+* Activity log — a capped audit trail of every privileged action (PHP, WP-CLI, SQL writes, file writes/edits/deletes, HTTP recipes): who ran it, when, and the outcome. New "Activity" admin page with a one-click clear.
+* Per-category capability toggles — switch a whole group (Filesystem, Code Execution, Database, Elementor, etc.) off from the Abilities page; disabled categories' abilities never register.
+* Repo cleanup — removed the archived Node/stdio prototype (src/, npm tooling) that was superseded by the plugin and no longer shipped.
 
 = 0.3.2 =
 * Security & robustness hardening pass (no new abilities):

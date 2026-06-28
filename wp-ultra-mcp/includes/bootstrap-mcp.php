@@ -38,6 +38,45 @@ function wpultra_ability_files(): array {
     // NOTE: gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
 }
 
+/** Map of category slug => the ability file slugs it owns. Mirrors each file's declared category. */
+function wpultra_ability_category_map(): array {
+    return [
+        'filesystem'     => ['read-file', 'write-file', 'edit-file', 'delete-file', 'list-directory'],
+        'code-execution' => ['run-wp-cli', 'execute-php'],
+        'database'       => ['execute-wp-query'],
+        'diagnostics'    => ['read-debug-log'],
+        'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete'],
+        'content'        => ['create-post', 'update-post', 'delete-post'],
+        'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
+        'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
+        'elementor'      => [
+            'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content',
+            'elementor-set-content', 'elementor-add-element', 'elementor-edit-element', 'elementor-delete-element', 'elementor-move-element',
+            'elementor-get-design-system', 'elementor-list-dynamic-tags',
+            'elementor-manage-global-colors', 'elementor-manage-variables',
+            'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
+        ],
+    ];
+}
+
+/** Reverse lookup: which category a given ability file belongs to ('' if unknown). */
+function wpultra_file_category(string $file): string {
+    foreach (wpultra_ability_category_map() as $cat => $files) {
+        if (in_array($file, $files, true)) { return $cat; }
+    }
+    return '';
+}
+
+/** Categories the operator has switched off (whole groups of abilities never load). */
+function wpultra_disabled_categories(): array {
+    $v = function_exists('get_option') ? get_option('wpultra_disabled_categories', []) : [];
+    return is_array($v) ? array_values(array_filter($v, 'is_string')) : [];
+}
+
+function wpultra_category_enabled(string $cat): bool {
+    return !in_array($cat, wpultra_disabled_categories(), true);
+}
+
 function wpultra_register_categories(): void {
     if (!function_exists('wp_register_ability_category')) { return; }
     $cats = [
@@ -59,24 +98,31 @@ function wpultra_register_categories(): void {
 
 function wpultra_load_abilities(): void {
     if (!wpultra_is_enabled()) { return; }
-    // Load the Elementor engine so ability callbacks can reference its functions.
-    foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes'] as $elf) {
-        $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
-        if (is_readable($elp)) { require_once $elp; }
+    $disabled = wpultra_disabled_categories();
+    // Load the Elementor engine (only if the elementor category is enabled) so ability
+    // callbacks can reference its functions.
+    if (!in_array('elementor', $disabled, true)) {
+        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes'] as $elf) {
+            $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
+            if (is_readable($elp)) { require_once $elp; }
+        }
     }
     foreach (wpultra_ability_files() as $file) {
+        if (in_array(wpultra_file_category($file), $disabled, true)) { continue; }
         $path = WPULTRA_DIR . 'includes/abilities/' . $file . '.php';
         if (is_readable($path)) { require_once $path; }
     }
-    if (is_readable(WPULTRA_DIR . 'includes/memory/cpt.php')) { require_once WPULTRA_DIR . 'includes/memory/cpt.php'; }
+    if (!in_array('memory', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/memory/cpt.php')) {
+        require_once WPULTRA_DIR . 'includes/memory/cpt.php';
+    }
     // Skills subsystem (CPT + catalog + per-skill prompts) registers its own abilities/prompts.
-    if (is_readable(WPULTRA_DIR . 'includes/skills/cpt.php')) {
+    if (!in_array('skills', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/skills/cpt.php')) {
         require_once WPULTRA_DIR . 'includes/skills/cpt.php';
         require_once WPULTRA_DIR . 'includes/skills/sources.php';
         require_once WPULTRA_DIR . 'includes/skills/catalog.php';
         require_once WPULTRA_DIR . 'includes/skills/prompts.php';
     }
-    if (is_readable(WPULTRA_DIR . 'includes/recipes/cpt.php')) {
+    if (!in_array('custom', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/recipes/cpt.php')) {
         require_once WPULTRA_DIR . 'includes/recipes/cpt.php';
         add_action('wp_abilities_api_init', 'wpultra_recipe_register_all', 600);
     }

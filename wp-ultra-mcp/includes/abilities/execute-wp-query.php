@@ -55,5 +55,6 @@ function wpultra_execute_wp_query(array $input) {
         return wpultra_ok(['verb' => $class['verb'], 'rows' => $rows, 'row_count' => count($rows)]);
     }
     $affected = $wpdb->query($prepared);
+    wpultra_audit_log('execute-wp-query', $sql, $affected !== false);
     return wpultra_ok(['verb' => $class['verb'], 'rows_affected' => (int) $affected, 'insert_id' => (int) $wpdb->insert_id]);
 }

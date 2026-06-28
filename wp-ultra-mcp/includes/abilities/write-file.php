@@ -55,5 +55,6 @@ function wpultra_write_file(array $input) {
         $ok = strlen($content);
     }
     if ($ok === false) { return wpultra_err('write_failed', "Could not write: $resolved"); }
+    wpultra_audit_log($append ? 'write-file (append)' : 'write-file', $resolved, true);
     return wpultra_ok(['path' => $resolved, 'bytes_written' => strlen($content)]);
 }

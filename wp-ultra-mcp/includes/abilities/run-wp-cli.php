@@ -78,8 +78,10 @@ function wpultra_run_wp_cli(array $input) {
     if ($timed_out) {
         proc_terminate($proc, 9);
         proc_close($proc);
+        wpultra_audit_log('run-wp-cli', implode(' ', array_slice($args, 0, 8)), false);
         return wpultra_err('cli_timeout', "wp-cli timed out after {$timeout}s.");
     }
     $code = proc_close($proc);
+    wpultra_audit_log('run-wp-cli', implode(' ', array_slice($args, 0, 8)), $code === 0);
     return wpultra_ok(['exit_code' => $code, 'stdout' => $stdout, 'stderr' => $stderr]);
 }

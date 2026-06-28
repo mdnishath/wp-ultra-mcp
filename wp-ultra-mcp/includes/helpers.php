@@ -129,6 +129,27 @@ function wpultra_permission_callback(): bool {
     return wpultra_is_enabled() && wpultra_current_user_can_manage();
 }
 
+/**
+ * Append an entry to the privileged-action audit log (a capped ring buffer in an option).
+ * No-ops outside WordPress (e.g. unit tests) so callers can instrument freely. Best-effort.
+ */
+function wpultra_audit_log(string $action, string $summary, bool $ok = true): void {
+    if (!function_exists('get_option') || !function_exists('update_option')) { return; }
+    $log = get_option('wpultra_audit', []);
+    if (!is_array($log)) { $log = []; }
+    $log[] = [
+        'ts'      => function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s'),
+        'user'    => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+        'action'  => $action,
+        'summary' => function_exists('mb_substr') ? mb_substr($summary, 0, 300) : substr($summary, 0, 300),
+        'ok'      => $ok,
+    ];
+    $max = (int) (function_exists('apply_filters') ? apply_filters('wpultra_audit_max', 200) : 200);
+    if ($max < 1) { $max = 200; }
+    if (count($log) > $max) { $log = array_slice($log, -$max); }
+    update_option('wpultra_audit', $log, false);
+}
+
 function wpultra_ok(array $fields): array { return array_merge(['success' => true], $fields); }
 
 function wpultra_err(string $code, string $message, $data = ''): WP_Error {

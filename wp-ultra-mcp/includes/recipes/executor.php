@@ -66,6 +66,7 @@ function wpultra_recipe_execute(array $parsed, array $input) {
         // wp_safe_remote_request applies WP's SSRF protections (rejects private/loopback/
         // link-local hosts unless explicitly allowed), unlike the unguarded wp_remote_request.
         $resp = wp_safe_remote_request($url, ['method' => $method, 'timeout' => 20]);
+        wpultra_audit_log('recipe-http', $method . ' ' . $url, !is_wp_error($resp));
         if (is_wp_error($resp)) { return $resp; }
         return wpultra_ok(['status' => wp_remote_retrieve_response_code($resp), 'body' => wp_remote_retrieve_body($resp)]);
     }
