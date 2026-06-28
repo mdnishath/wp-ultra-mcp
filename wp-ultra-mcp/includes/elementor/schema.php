@@ -44,6 +44,7 @@ function wpultra_el_list_widgets(array $filter = []): array {
             'name' => (string) $name,
             'title' => method_exists($w, 'get_title') ? (string) $w->get_title() : (string) $name,
             'is_atomic' => $is_atomic,
+            'elType' => method_exists($w, 'get_type') ? (string) $w->get_type() : 'widget',
         ];
     }
     usort($out, fn($a, $b) => strcmp($a['name'], $b['name']));
