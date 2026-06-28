@@ -35,10 +35,14 @@ wp_register_ability('wpultra/elementor-validate', [
 
 function wpultra_elementor_validate(array $input) {
     $elements = $input['elements'] ?? null;
-    if (is_string($elements)) { $elements = json_decode($elements, true); }
+    if (is_string($elements)) {
+        $decoded = json_decode($elements, true);
+        if (!is_array($decoded)) { return wpultra_err('bad_json', 'elements was a string but is not valid JSON for an element array.'); }
+        $elements = $decoded;
+    }
     if (!is_array($elements)) {
         $post_id = (int) ($input['post_id'] ?? 0);
-        if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_input', 'Provide elements (array) or a valid post_id.'); }
+        if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_input', 'Provide elements (array or JSON string) or a valid post_id.'); }
         $elements = wpultra_el_raw($post_id);
     }
     $report = wpultra_el_validate_tree($elements);
