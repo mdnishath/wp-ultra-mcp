@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -46,6 +46,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.3.1 =
+* Wave 3.5 — Elementor global classes (list/upsert/apply) + element interactions/entrance animations; 4 abilities.
 
 = 0.3.0 =
 * Wave 3 — Elementor design systems: global colors/typography, design-token variables, dynamic-tag discovery (4 abilities: elementor-get-design-system, elementor-list-dynamic-tags, elementor-manage-global-colors, elementor-manage-variables).

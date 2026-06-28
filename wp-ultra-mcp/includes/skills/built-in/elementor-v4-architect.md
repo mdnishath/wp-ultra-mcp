@@ -22,3 +22,9 @@ A 3-column section = one `e-flexbox` container (settings display:flex via the st
 - `wpultra/elementor-manage-global-colors` — set/add brand colors (e.g. `{colors:[{title:"Brand",color:"#0055FF"}], target:"custom"}`). They become `--e-global-color-<id>` CSS vars site-wide.
 - `wpultra/elementor-manage-variables` — list/create v4 design-token variables (color/font/size). Reference one in a widget/style prop as `{ "$$type":"global-color-variable", "value":"e-gv-<id>" }`.
 - `wpultra/elementor-list-dynamic-tags` — list available dynamic tags. Bind a prop to data with `{ "$$type":"dynamic", "value":{ "name":"post-title", "group":"post", "settings":{} } }` (ACF/JetEngine tags appear here when those plugins are installed).
+
+## Reusable classes & animations
+- `wpultra/elementor-upsert-global-class` — create a reusable style class (pass `enable:true` once if the `e_classes` experiment is off). `props` are wrapped css props, e.g. `{ "color":{"$$type":"color","value":"#fff"}, "background":{"$$type":"background","value":{...}} }`. Returns an `e-gc-…` id.
+- `wpultra/elementor-list-global-classes` — list existing classes.
+- `wpultra/elementor-apply-class` — add/remove a class id on an element (`{post_id, element_id, class_id}`; `remove:true` to detach).
+- `wpultra/elementor-set-interaction` — add an entrance animation to an element (`{post_id, element_id, trigger:"scrollIn", effect:"fade"|"slide"|"scale", type:"in", duration:600}`).

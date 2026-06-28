@@ -88,7 +88,16 @@ Site-wide design control for Elementor v4. Requires Elementor (free or Pro).
 
 The built-in **`elementor-v4-architect`** skill is extended with a "Design systems (site-wide)" section that teaches the AI the variable-reference and dynamic-tag binding shapes.
 
-> **Wave 3.5 (planned):** global classes (`e_classes`) and Elementor interactions (`e_interactions`) — deferred because they depend on experiments that are off by default and involve complex schema. Planned for the next release.
+### Wave 3.5 — Global classes & interactions (shipped)
+
+Reusable CSS classes and entrance animations for Elementor v4 elements. Requires Elementor (free or Pro); global classes require the `e_classes` experiment enabled (the `elementor-upsert-global-class` ability can enable it automatically by passing `enable:true`).
+
+- **`elementor-list-global-classes`** — list all existing global classes in the active kit
+- **`elementor-upsert-global-class`** — create or update a reusable style class; `props` are atomic CSS props (e.g. `{ "color":{"$$type":"color","value":"#fff"} }`); returns an `e-gc-…` id usable across any page
+- **`elementor-apply-class`** — add or remove a global class id on any element (`{post_id, element_id, class_id}`; pass `remove:true` to detach); changes take effect site-wide wherever the class is applied
+- **`elementor-set-interaction`** — attach an entrance animation to any element (`{post_id, element_id, trigger:"scrollIn", effect:"fade"|"slide"|"scale", type:"in", duration:600}`); uses Elementor's native interactions system
+
+The built-in **`elementor-v4-architect`** skill is extended with a "Reusable classes & animations" section that teaches the AI the class-creation, application, and interaction-setting shapes.
 
 ### Wave 3+ — Planned
 **Gutenberg** block injection, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
