@@ -54,6 +54,18 @@ it('render_digest reports present and dropped ids from data-id markers', functio
     $d = wpultra_el_render_digest($html, ['row0001', 'head001', 'btn0001']);
     assert_eq(2, $d['rendered_count']);
     assert_eq(['btn0001'], $d['dropped_ids']);
+    assert_eq(['row0001', 'head001'], $d['present_ids']);
+});
+
+it('validate_tree depth guard fails closed on very deep trees without fatal', function () {
+    $node = ['id' => 'leaf', 'elType' => 'widget', 'widgetType' => 'e-button', 'settings' => [], 'elements' => []];
+    for ($i = 0; $i < 130; $i++) {
+        $node = ['id' => "n$i", 'elType' => 'e-flexbox', 'settings' => [], 'elements' => [$node]];
+    }
+    $r = wpultra_el_validate_tree([$node], 'ev_stub_validator');
+    assert_eq(false, $r['ok']);                                    // truncation makes the whole tree fail closed
+    assert_true($r['summary']['invalid'] >= 1, 'truncation marker counted as invalid');
+    assert_true(count(wpultra_el_collect_ids([$node])) > 0, 'collect_ids does not fatal on deep trees');
 });
 
 run_tests();

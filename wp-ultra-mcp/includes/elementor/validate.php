@@ -12,7 +12,14 @@ function wpultra_el_validate_tree(array $elements, ?callable $validator = null, 
     $nodes = [];
     $invalid = 0;
     $normalized = [];
-    if ($depth > 100) { return ['ok' => true, 'nodes' => [], 'summary' => ['total' => 0, 'invalid' => 0], 'normalized_tree' => $elements]; }
+    if ($depth > 100) {
+        return [
+            'ok'              => false,
+            'nodes'           => [['id' => '', 'elType' => '', 'widgetType' => null, 'valid' => false, 'errors' => ['max nesting depth (100) exceeded — subtree not validated']]],
+            'summary'         => ['total' => 1, 'invalid' => 1],
+            'normalized_tree' => $elements,
+        ];
+    }
     foreach ($elements as $n) {
         if (!is_array($n)) { $normalized[] = $n; continue; }
         $res = $validator($n);
