@@ -31,14 +31,6 @@ wp_register_ability('wpultra/elementor-insert-blueprint', [
     ],
 ]);
 
-function wpultra_bp_collect_ids(array $nodes, array &$acc): void {
-    foreach ($nodes as $n) {
-        if (!is_array($n)) { continue; }
-        if (!empty($n['id'])) { $acc[] = (string) $n['id']; }
-        if (!empty($n['elements']) && is_array($n['elements'])) { wpultra_bp_collect_ids($n['elements'], $acc); }
-    }
-}
-
 function wpultra_elementor_insert_blueprint(array $input) {
     $post_id = (int) ($input['post_id'] ?? 0);
     if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
@@ -56,7 +48,7 @@ function wpultra_elementor_insert_blueprint(array $input) {
     }
     $tree = $report['normalized_tree'];
 
-    $ids = []; wpultra_bp_collect_ids($tree, $ids);
+    $ids = wpultra_el_collect_ids($tree);
     $parent = isset($input['parent_id']) && $input['parent_id'] !== '' ? (string) $input['parent_id'] : null;
     $pos = isset($input['position']) ? (int) $input['position'] : PHP_INT_MAX;
     // Insert each top-level blueprint node at the target.
