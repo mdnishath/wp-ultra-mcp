@@ -119,3 +119,33 @@ function wpultra_el_validate_node(array $node): array {
         return ['valid' => false, 'errors' => ['validation error: ' . $e->getMessage()], 'settings' => $settings];
     }
 }
+
+/** Render the post's Elementor content server-side and report what actually rendered. */
+function wpultra_el_render_check(int $post_id) {
+    if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
+    $expected = wpultra_el_collect_ids(function_exists('wpultra_el_raw') ? wpultra_el_raw($post_id) : []);
+    $html = '';
+    try {
+        if (class_exists('\\Elementor\\Plugin')) {
+            $frontend = \Elementor\Plugin::$instance->frontend;
+            if (method_exists($frontend, 'get_builder_content_for_display')) {
+                $html = (string) $frontend->get_builder_content_for_display($post_id);
+            } elseif (method_exists($frontend, 'get_builder_content')) {
+                $html = (string) $frontend->get_builder_content($post_id, true);
+            }
+        }
+    } catch (\Throwable $e) {
+        return wpultra_err('render_failed', 'Elementor render failed: ' . $e->getMessage());
+    }
+    $digest = wpultra_el_render_digest($html, $expected);
+    $css = function_exists('get_post_meta') ? get_post_meta($post_id, '_elementor_css', true) : '';
+    $preview = function_exists('get_permalink') ? (string) get_permalink($post_id) : '';
+    return wpultra_ok([
+        'post_id'        => $post_id,
+        'preview_url'    => $preview,
+        'expected_count' => count($expected),
+        'rendered_count' => $digest['rendered_count'],
+        'dropped_ids'    => $digest['dropped_ids'],
+        'css_generated'  => !empty($css),
+    ]);
+}

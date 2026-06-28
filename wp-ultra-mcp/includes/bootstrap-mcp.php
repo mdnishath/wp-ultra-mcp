@@ -25,7 +25,7 @@ function wpultra_ability_files(): array {
         // recipe management (Wave 1.5, Task 5)
         'ability-write', 'ability-get', 'ability-delete',
         // elementor read abilities (Wave 2, Task 6) + reliability (Phase A)
-        'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content', 'elementor-validate',
+        'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content', 'elementor-validate', 'elementor-render-check',
         // elementor mutation abilities (Wave 2, Task 7)
         'elementor-set-content', 'elementor-add-element', 'elementor-edit-element', 'elementor-delete-element', 'elementor-move-element',
         // elementor design read abilities (Wave 3, Task 2)
@@ -54,7 +54,7 @@ function wpultra_ability_category_map(): array {
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
-            'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content', 'elementor-validate',
+            'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content', 'elementor-validate', 'elementor-render-check',
             'elementor-set-content', 'elementor-add-element', 'elementor-edit-element', 'elementor-delete-element', 'elementor-move-element',
             'elementor-get-design-system', 'elementor-list-dynamic-tags',
             'elementor-manage-global-colors', 'elementor-manage-variables',
