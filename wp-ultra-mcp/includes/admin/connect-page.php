@@ -6,6 +6,7 @@ add_action('admin_menu', function () {
     add_menu_page('WP-Ultra-MCP', 'WP-Ultra-MCP', 'manage_options', 'wpultra', 'wpultra_connect_render', 'dashicons-rest-api', 80);
     add_submenu_page('wpultra', 'Abilities', 'Abilities', 'manage_options', 'wpultra-abilities', 'wpultra_abilities_render');
     add_submenu_page('wpultra', 'Ability Hub', 'Ability Hub', 'manage_options', 'wpultra-ability-hub', 'wpultra_ability_hub_render');
+    add_submenu_page('wpultra', 'Skill Hub', 'Skill Hub', 'manage_options', 'wpultra-skill-hub', 'wpultra_skill_hub_render');
 });
 
 add_action('admin_post_wpultra_enable', function () {
