@@ -58,6 +58,7 @@ Any client that implements the Model Context Protocol 2025 spec. Claude Code and
 * read-file streams up to max_bytes instead of loading whole files (OOM fix); paths with control/null bytes are rejected.
 * Elementor: collision-checked element ids, depth-guarded tree walk, CSS cache cleared after global-class upsert, real version stamp only.
 * Content abilities validate post_type, refuse the plugin's internal CPTs, and memory-save won't clobber a non-memory post.
+* New WPULTRA_RECIPE_RUN_TYPES constant (and wpultra_recipe_allowed_run_types filter) to lock down which declarative-recipe run types are allowed — e.g. define('WPULTRA_RECIPE_RUN_TYPES','http') to stop the AI minting php/sql/wp-cli recipes. Disabled types are neither registered nor executable. Default: all allowed (unchanged behavior).
 
 = 0.3.1 =
 * Wave 3.5 — Elementor global classes (list/upsert/apply) + element interactions/entrance animations; 4 abilities.
