@@ -37,6 +37,20 @@ add_action('admin_post_wpultra_revoke_password', function () {
     exit;
 });
 
+add_action('wp_ajax_wpultra_toggle_enabled', function () {
+    if (!current_user_can('manage_options') || !check_ajax_referer('wpultra_toggle_enabled', 'nonce', false)) {
+        wp_send_json_error(['message' => 'forbidden'], 403);
+    }
+    $on = ((string) ($_POST['on'] ?? '')) === '1';
+    if ($on) {
+        update_option('wpultra_enabled', '1');
+        update_option('wpultra_domain', wp_parse_url(home_url(), PHP_URL_HOST));
+    } else {
+        update_option('wpultra_enabled', '0');
+    }
+    wp_send_json_success(['enabled' => $on]);
+});
+
 /**
  * Build the per-AI-client connection guide.
  *
@@ -129,6 +143,8 @@ function wpultra_connect_render(): void {
         ? (array) WP_Application_Passwords::get_user_application_passwords($user->ID) : [];
     $clients = wpultra_connect_clients($endpoint, $user->user_login);
     $post_url = esc_url(admin_url('admin-post.php'));
+    $toggle_nonce = wp_create_nonce('wpultra_toggle_enabled');
+    $domain = (string) (get_option('wpultra_domain') ?: wp_parse_url(home_url(), PHP_URL_HOST));
     ?>
     <div class="wrap wpu-wrap">
         <div class="wpu-head">
@@ -136,7 +152,7 @@ function wpultra_connect_render(): void {
                 <h1 class="wpu-title"><span class="dashicons dashicons-rest-api"></span> WP-Ultra-MCP</h1>
                 <p class="wpu-sub">Connect an AI client to control this WordPress site over MCP.</p>
             </div>
-            <span class="wpu-pill <?php echo $enabled ? 'wpu-pill-on' : 'wpu-pill-off'; ?>">
+            <span class="wpu-pill <?php echo $enabled ? 'wpu-pill-on' : 'wpu-pill-off'; ?>" id="wpu-status-pill">
                 <strong><?php echo $enabled ? 'ON' : 'OFF'; ?></strong> AI control
             </span>
         </div>
@@ -144,15 +160,16 @@ function wpultra_connect_render(): void {
         <!-- Step 1 -->
         <div class="wpu-card wpu-pad">
             <div class="wpu-step"><span class="wpu-num">1</span> Enable</div>
-            <?php if ($enabled) : ?>
-                <p class="wpu-ok">✅ AI control is ON for <code><?php echo esc_html((string) get_option('wpultra_domain')); ?></code></p>
-            <?php else : ?>
-                <form method="post" action="<?php echo $post_url; ?>">
-                    <?php wp_nonce_field('wpultra_enable'); ?>
-                    <input type="hidden" name="action" value="wpultra_enable">
-                    <button class="button button-primary button-hero">Turn on AI control</button>
-                </form>
-            <?php endif; ?>
+            <div class="wpu-enable-row">
+                <label class="wpu-switch" title="Toggle AI control">
+                    <input type="checkbox" id="wpu-enable-toggle" <?php checked($enabled); ?>>
+                    <span class="wpu-track"><span class="wpu-knob"></span></span>
+                </label>
+                <div>
+                    <strong id="wpu-enable-label"><?php echo $enabled ? 'AI control is ON' : 'AI control is OFF'; ?></strong>
+                    <div class="wpu-muted">When off, the MCP endpoint rejects requests and no abilities run. Site: <code><?php echo esc_html($domain); ?></code></div>
+                </div>
+            </div>
         </div>
 
         <!-- Step 2 -->
@@ -251,7 +268,16 @@ function wpultra_connect_render(): void {
         .wpu-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
             background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; font-size:13px; }
         .wpu-ok { font-size:14px; } .wpu-ok code, .wpu-muted code { background:#f0f0f4; color:#6d4afe; border-radius:6px; padding:2px 8px; }
-        .wpu-muted { color:#787c82; font-size:12.5px; }
+        .wpu-muted { color:#787c82; font-size:12.5px; margin-top:3px; }
+
+        .wpu-enable-row { display:flex; align-items:center; gap:14px; }
+        .wpu-switch { position:relative; display:inline-block; flex:0 0 auto; cursor:pointer; }
+        .wpu-switch input { position:absolute; opacity:0; width:0; height:0; }
+        .wpu-track { display:block; width:46px; height:26px; border-radius:999px; background:#cfd2da; transition:background .25s ease; box-shadow:inset 0 1px 3px rgba(0,0,0,.18); }
+        .wpu-knob { position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.28); transition:transform .25s cubic-bezier(.4,0,.2,1); }
+        .wpu-switch input:checked + .wpu-track { background:linear-gradient(135deg,#7b5cff,#5b34f2); }
+        .wpu-switch input:checked + .wpu-track .wpu-knob { transform:translateX(20px); }
+        .wpu-switch.wpu-saving .wpu-track { opacity:.6; }
 
         .wpu-reveal { background:#fff8e5; border:1px solid #f5d97a; border-radius:10px; padding:12px 14px; }
         .wpu-reveal-warn { color:#8a6d00; font-size:12.5px; margin-bottom:8px; }
@@ -287,8 +313,40 @@ function wpultra_connect_render(): void {
 
     <script>
     (function () {
+        var ajaxurl = window.ajaxurl || '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
+        var enableNonce = '<?php echo esc_js($toggle_nonce); ?>';
         var toast = document.getElementById('wpu-toast'), tt;
         function showToast(m) { toast.textContent = m; toast.classList.add('show'); clearTimeout(tt); tt = setTimeout(function(){ toast.classList.remove('show'); }, 1400); }
+
+        var enableToggle = document.getElementById('wpu-enable-toggle');
+        if (enableToggle) {
+            enableToggle.addEventListener('change', function () {
+                var on = enableToggle.checked;
+                var sw = enableToggle.closest('.wpu-switch');
+                sw.classList.add('wpu-saving');
+                var body = new URLSearchParams();
+                body.append('action', 'wpultra_toggle_enabled');
+                body.append('nonce', enableNonce);
+                body.append('on', on ? '1' : '0');
+                fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        sw.classList.remove('wpu-saving');
+                        if (res && res.success) {
+                            document.getElementById('wpu-enable-label').textContent = on ? 'AI control is ON' : 'AI control is OFF';
+                            var pill = document.getElementById('wpu-status-pill');
+                            pill.classList.toggle('wpu-pill-on', on);
+                            pill.classList.toggle('wpu-pill-off', !on);
+                            pill.querySelector('strong').textContent = on ? 'ON' : 'OFF';
+                            showToast(on ? 'AI control enabled' : 'AI control disabled');
+                        } else {
+                            enableToggle.checked = !on;
+                            showToast('Could not change — try again');
+                        }
+                    })
+                    .catch(function () { sw.classList.remove('wpu-saving'); enableToggle.checked = !on; showToast('Network error'); });
+            });
+        }
 
         document.querySelectorAll('.wpu-tab').forEach(function (tab) {
             tab.addEventListener('click', function () {
