@@ -30,8 +30,8 @@ function wpultra_ability_files(): array {
         'elementor-set-content', 'elementor-add-element', 'elementor-edit-element', 'elementor-delete-element', 'elementor-move-element',
         // elementor design read abilities (Wave 3, Task 2)
         'elementor-get-design-system', 'elementor-list-dynamic-tags',
-        // elementor design write abilities (Wave 3, Task 3)
-        'elementor-manage-global-colors', 'elementor-manage-variables',
+        // elementor design write abilities (Wave 3, Task 3) + design tokens (Phase B)
+        'elementor-manage-global-colors', 'elementor-manage-variables', 'elementor-apply-design-tokens',
         // elementor global-class + interaction abilities (Wave 3.5, Task 2)
         'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
         // gutenberg read abilities (Wave 4a)
@@ -57,7 +57,7 @@ function wpultra_ability_category_map(): array {
             'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content', 'elementor-validate', 'elementor-render-check',
             'elementor-set-content', 'elementor-add-element', 'elementor-edit-element', 'elementor-delete-element', 'elementor-move-element',
             'elementor-get-design-system', 'elementor-list-dynamic-tags',
-            'elementor-manage-global-colors', 'elementor-manage-variables',
+            'elementor-manage-global-colors', 'elementor-manage-variables', 'elementor-apply-design-tokens',
             'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
         ],
         'gutenberg' => [
