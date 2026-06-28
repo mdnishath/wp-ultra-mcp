@@ -24,8 +24,10 @@ function wpultra_ability_files(): array {
         'skill-get', 'skill-write', 'skill-edit', 'skill-delete',
         // recipe management (Wave 1.5, Task 5)
         'ability-write', 'ability-get', 'ability-delete',
+        // elementor read abilities (Wave 2, Task 6)
+        'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content',
     ];
-    // NOTE: elementor-*, gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
+    // NOTE: gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
 }
 
 function wpultra_register_categories(): void {
@@ -35,7 +37,7 @@ function wpultra_register_categories(): void {
         'code-execution' => 'Run WP-CLI and PHP.',
         'database' => 'Direct parameterized SQL.',
         'diagnostics' => 'Logs and self-healing.',
-        'elementor' => 'Elementor layout engine.',
+        'elementor' => 'Elementor v4 schema-driven layout engine.',
         'gutenberg' => 'Gutenberg block content.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
@@ -49,6 +51,11 @@ function wpultra_register_categories(): void {
 
 function wpultra_load_abilities(): void {
     if (!wpultra_is_enabled()) { return; }
+    // Load the Elementor engine so ability callbacks can reference its functions.
+    foreach (['setup', 'schema', 'tree', 'engine', 'coerce'] as $elf) {
+        $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
+        if (is_readable($elp)) { require_once $elp; }
+    }
     foreach (wpultra_ability_files() as $file) {
         $path = WPULTRA_DIR . 'includes/abilities/' . $file . '.php';
         if (is_readable($path)) { require_once $path; }
