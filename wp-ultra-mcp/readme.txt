@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.7.0
+Stable tag: 0.7.1
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,10 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.7.1 =
+* Phase C — rewrote the built-in `elementor-v4-architect` skill to encode the proven atomic authoring loop: perceive reference → apply design tokens → introspect schema → build with raw scalars → validate (dry-run) → set-content (strict) → render-check → compare. Documents the non-obvious rules that prevent broken designs (pass raw scalars not hand-wrapped `{$$type}`; visual styling lives in global classes, not widget settings; experiments auto-enable and apply next request) and how design tokens flow into elements via global classes.
+* Removed the obsolete `elementor-architect` skill that referenced non-existent abilities (elementor-schema/set-layout/patch-element).
 
 = 0.7.0 =
 * Phase B — Elementor design tokens: create color/font/size Variables from a perceived reference's palette/fonts/sizes and get back `{$$type,value}` refs to use in atomic builds.
