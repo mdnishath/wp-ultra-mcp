@@ -1,6 +1,6 @@
 # WP-Ultra-MCP
 
-**Free, open-source.** Turn any WordPress site into a [Model Context Protocol](https://modelcontextprotocol.io) server so AI clients (Claude Code, Claude Desktop, Cursor, Gemini CLI) can build and control the whole site — files, SQL, WP-CLI, PHP, content, Elementor*, and more — directly, with no relay service in the middle.
+**Free, open-source.** Turn any WordPress site into a [Model Context Protocol](https://modelcontextprotocol.io) server so AI clients (Claude Code, Claude Desktop, Cursor, Gemini CLI) can build and control the whole site — files, SQL, WP-CLI, PHP, content, Elementor, and more — directly, with no relay service in the middle.
 
 Install the plugin, flip a toggle, paste a config into your AI client. That's it. Your data never leaves your server.
 
@@ -38,7 +38,7 @@ Recipe run types: `wp-cli` · `sql` (parameter-bound) · `php` (sandboxed) · `h
 | **Data ownership** | Your server, your DB | May transit a 3rd-party service |
 | **Hubs** | Ability / Skill / Memory Hubs in wp-admin | Limited |
 | **Sandbox safety** | Crash-recovery safe-mode keeps the site up | Varies |
-| **Elementor** | Schema-driven, server-side *(Wave 2)* | Often paid-only |
+| **Elementor** | Schema-driven, server-side (shipped Wave 2) | Often paid-only |
 
 ---
 
@@ -61,8 +61,24 @@ Recipe run types: `wp-cli` · `sql` (parameter-bound) · `php` (sandboxed) · `h
 - **Sandbox safe-mode** — if AI-written PHP triggers a fatal, a sentinel suspends it and keeps the site up, with a one-click recovery
 - **Connect page** — managed Application-Password list + revoke, and per-client setup tabs (Claude Desktop / Claude Code / Cursor / Gemini / generic HTTP)
 
-### Wave 2+ — Planned
-Schema-driven **Elementor** (introspected widget schemas, v4 atomic widgets, dynamic tags, global styles), **Gutenberg** & **Bricks**, and **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
+### Wave 2 — Elementor (shipped)
+
+Schema-driven Elementor **v4 atomic** layout control. Requires Elementor (free or Pro) with the `e_atomic_elements` experiment enabled.
+
+- **`elementor-list-widgets`** — list all registered Elementor widgets; pass `atomic_only:true` to filter to v4 atomic widgets only (e-heading, e-button, e-image, e-paragraph, e-divider, e-flexbox, e-div-block, …)
+- **`elementor-get-widget-schema`** — introspect a widget's full prop schema: each prop's `$$type`, allowed `enum` values, and `default`; use this before setting any widget to avoid guessing
+- **`elementor-get-style-schema`** — introspect the style schema for a widget or container (CSS custom-properties, layout, spacing, typography tokens)
+- **`elementor-get-content`** — read a page's Elementor data as a compact element tree; pass `element_id` to drill into one node's full settings
+- **`elementor-set-content`** — replace a page's entire Elementor data array (atomic-safe write that bypasses Document::save, which would strip atomic widgets; clears the CSS cache)
+- **`elementor-add-element`** — insert a new element (container or widget) at a given parent and position; plain scalar settings are auto-wrapped into the `{$$type,value}` form and validated by Elementor's own Props_Parser
+- **`elementor-edit-element`** — deep-merge new settings into an existing element without touching sibling props
+- **`elementor-delete-element`** — remove an element (and its subtree) from the page
+- **`elementor-move-element`** — relocate an element to a new parent and/or position within the tree
+
+Built-in skill **`elementor-v4-architect`** is pre-loaded and teaches the AI the step-by-step atomic workflow: introspect → build → position → read back.
+
+### Wave 3+ — Planned
+**Gutenberg** block injection, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration, Elementor dynamic tags and global design tokens. The goal: literally do everything in WordPress through AI.
 
 ---
 
@@ -136,5 +152,3 @@ Contributions welcome — new built-in abilities and skills especially. Open an 
 ## License
 
 [GPL-2.0-or-later](LICENSE). WP-Ultra-MCP bundles the `wordpress/mcp-adapter` and `wordpress/php-mcp-schema` packages (also GPL-2.0-or-later). Free to use, modify, and redistribute.
-
-\* Elementor support is planned for Wave 2; it is not yet shipped.

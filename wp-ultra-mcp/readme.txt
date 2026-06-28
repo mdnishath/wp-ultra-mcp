@@ -3,10 +3,10 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 
-Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, and a skills system. Schema-driven Elementor control is planned (Wave 2).
+Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
 
 == Description ==
 
@@ -25,7 +25,9 @@ Install, enable AI control, generate an application password, and paste the conf
 - `wpultra/skill-get` / `wpultra/skill-write` / `wpultra/skill-edit` / `wpultra/skill-delete` — reusable skill prompt management
 - Admin: top-level **WP-Ultra-MCP** menu — Connect page (enable AI control, generate app password) and Abilities page (enable/disable individual abilities)
 
-**Wave 2 (planned):** schema-driven Elementor layout control, design-token system, Gutenberg block injection, Bricks Builder support, ACF/Meta Box/Pods field-plugin integration.
+**Wave 2 (shipped):** schema-driven Elementor v4 atomic layout control — 9 elementor-* abilities. Requires the `e_atomic_elements` experiment enabled in Elementor.
+
+**Wave 3+ (planned):** design-token system, Gutenberg block injection, Bricks Builder support, ACF/Meta Box/Pods field-plugin integration.
 
 == Installation ==
 1. Upload the release ZIP (with vendor/) and activate.
@@ -35,7 +37,7 @@ Install, enable AI control, generate an application password, and paste the conf
 == Frequently Asked Questions ==
 
 = Does this require Elementor? =
-No. All Wave 1 abilities work without Elementor. Elementor-specific layout tools are planned for Wave 2.
+No. All Wave 1 abilities work without Elementor. The Wave 2 elementor-* abilities require Elementor (free or Pro) with the `e_atomic_elements` experiment enabled.
 
 = Is it safe to leave AI control enabled permanently? =
 AI control is disabled by default. Enable it only when you need it. The SQL ability automatically classifies queries as destructive and requires `confirm: true` before executing them. Queries are always considered destructive if they contain `DROP`, `TRUNCATE`, or `ALTER`. `DELETE` and `UPDATE` are treated as destructive only when they are missing a `WHERE` clause. `INSERT` is never gated.
@@ -44,6 +46,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.2.0 =
+* Wave 2 — schema-driven Elementor v4 engine: list-widgets, get-widget-schema, get-style-schema, get-content, set-content, add/edit/delete/move-element (9 abilities). Built-in elementor-v4-architect skill.
 
 = 0.1.0 =
 * Initial Wave 1 release: files, WP-CLI, SQL, execute-php, diagnostics, memory, WP-content, skills, admin UI.
