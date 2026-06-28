@@ -36,6 +36,8 @@ function wpultra_ability_files(): array {
         'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
         // gutenberg read abilities (Wave 4a)
         'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
+        // gutenberg write abilities (Wave 4a)
+        'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
     ];
     // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
@@ -60,6 +62,7 @@ function wpultra_ability_category_map(): array {
         ],
         'gutenberg' => [
             'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
+            'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
         ],
     ];
 }
