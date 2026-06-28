@@ -114,3 +114,41 @@ function wpultra_el_list_dynamic_tags(): array {
     usort($out, fn($a, $b) => strcmp($a['name'], $b['name']));
     return $out;
 }
+
+/**
+ * Map a client design brief to a flat list of variable-create instructions (pure, no Elementor).
+ * Returns ['plan'=>[{family,type,title,value}], 'errors'=>string[]]. Invalid items are skipped + described.
+ */
+function wpultra_el_build_token_plan(array $brief): array {
+    $map = [
+        'colors' => ['family' => 'color', 'type' => 'global-color-variable'],
+        'fonts'  => ['family' => 'font',  'type' => 'global-font-variable'],
+        'sizes'  => ['family' => 'size',  'type' => 'global-size-variable'],
+    ];
+    $plan = [];
+    $errors = [];
+    foreach ($map as $key => $meta) {
+        if (!array_key_exists($key, $brief) || $brief[$key] === null) { continue; }
+        if (!is_array($brief[$key])) { $errors[] = "$key must be an array."; continue; }
+        foreach ($brief[$key] as $i => $item) {
+            if (!is_array($item)) { $errors[] = "$key[$i] must be an object."; continue; }
+            $title = trim((string) ($item['title'] ?? ''));
+            if ($title === '') { $errors[] = "$key item #$i needs a non-empty title."; continue; }
+            if ($key === 'colors') {
+                $hex = (string) ($item['hex'] ?? '');
+                if (!wpultra_el_is_hex_color($hex)) { $errors[] = "color '$title' has invalid hex '$hex'."; continue; }
+                $value = $hex;
+            } elseif ($key === 'fonts') {
+                $value = trim((string) ($item['family'] ?? ''));
+                if ($value === '') { $errors[] = "font '$title' needs a family."; continue; }
+            } else { // sizes
+                if (!isset($item['size']) || !is_numeric($item['size'])) { $errors[] = "size '$title' needs a numeric size."; continue; }
+                $unit = trim((string) ($item['unit'] ?? 'px'));
+                if ($unit === '') { $unit = 'px'; }
+                $value = (string) (0 + $item['size']) . $unit;
+            }
+            $plan[] = ['family' => $meta['family'], 'type' => $meta['type'], 'title' => $title, 'value' => $value];
+        }
+    }
+    return ['plan' => $plan, 'errors' => $errors];
+}
