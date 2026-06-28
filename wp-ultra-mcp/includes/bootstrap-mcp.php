@@ -22,6 +22,8 @@ function wpultra_ability_files(): array {
         'create-post', 'update-post', 'delete-post',
         // skills
         'skill-get', 'skill-write', 'skill-edit', 'skill-delete',
+        // recipe management (Wave 1.5, Task 5)
+        'ability-write', 'ability-get', 'ability-delete',
     ];
     // NOTE: elementor-*, gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
 }
