@@ -54,7 +54,7 @@ function wpultra_register_categories(): void {
 function wpultra_load_abilities(): void {
     if (!wpultra_is_enabled()) { return; }
     // Load the Elementor engine so ability callbacks can reference its functions.
-    foreach (['setup', 'schema', 'tree', 'engine', 'coerce'] as $elf) {
+    foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design'] as $elf) {
         $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
         if (is_readable($elp)) { require_once $elp; }
     }
