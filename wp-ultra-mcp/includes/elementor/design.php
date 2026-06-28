@@ -52,8 +52,12 @@ function wpultra_el_set_global_colors(array $colors, string $target = 'custom') 
         $byId[$id] = ['_id' => $id, 'title' => $title, 'color' => $hex];
     }
     $list = array_values($byId);
-    $kit->update_settings([$key => $list]);
-    try { \Elementor\Plugin::$instance->files_manager->clear_cache(); } catch (\Throwable $e) {}
+    try {
+        $kit->update_settings([$key => $list]);
+        \Elementor\Plugin::$instance->files_manager->clear_cache();
+    } catch (\Throwable $e) {
+        return wpultra_err('kit_write_failed', 'Could not write kit settings: ' . $e->getMessage());
+    }
     return wpultra_ok([$key => $list]);
 }
 
