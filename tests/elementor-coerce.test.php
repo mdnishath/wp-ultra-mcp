@@ -28,5 +28,14 @@ it('leaves unknown keys untouched', function () {
     $out = wpultra_el_wrap_settings(['foo' => 'bar'], ['tag' => ['type' => 'string']]);
     assert_eq('bar', $out['foo']);
 });
+it('wraps a union scalar using the default $$type', function () {
+    $schema = ['tag' => ['type' => 'union', 'default' => ['$$type' => 'string', 'value' => 'h2']]];
+    $out = wpultra_el_wrap_settings(['tag' => 'h1'], $schema);
+    assert_eq(['$$type' => 'string', 'value' => 'h1'], $out['tag']);
+});
+it('leaves a union scalar untouched when no wrapped default', function () {
+    $out = wpultra_el_wrap_settings(['x' => 'y'], ['x' => ['type' => 'union']]);
+    assert_eq('y', $out['x']);
+});
 
 run_tests();

@@ -19,7 +19,18 @@ function wpultra_el_wrap_settings(array $settings, array $compactSchema): array 
             continue;
         }
         $type = (string) ($compactSchema[$key]['type'] ?? '');
-        $out[$key] = in_array($type, $scalarTypes, true) ? wpultra_el_wrap_value($val, $type) : $val;
+        if (in_array($type, $scalarTypes, true)) {
+            $out[$key] = wpultra_el_wrap_value($val, $type);
+        } elseif ($type === 'union') {
+            // Many atomic props (tag, text, …) are unions whose value is stored wrapped.
+            // Wrap a scalar using the default's $$type (e.g. tag/text default -> "string").
+            $def = $compactSchema[$key]['default'] ?? null;
+            $out[$key] = (is_array($def) && isset($def['$$type']))
+                ? wpultra_el_wrap_value($val, (string) $def['$$type'])
+                : $val;
+        } else {
+            $out[$key] = $val;
+        }
     }
     return $out;
 }
