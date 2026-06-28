@@ -63,8 +63,10 @@ function wpultra_elementor_add_element(array $input) {
         if (is_wp_error($valid)) { return $valid; }
         $node['settings'] = $valid['settings'];
     } else {
-        // container (e-flexbox / e-div-block): settings passed through (style-level), wrap if scalar via style schema is out of scope here
-        $node['settings'] = $settings;
+        // container (e-flexbox / e-div-block): validate atomic container props (layout: flex/gap/padding/width).
+        $nv = wpultra_el_validate_node(['elType' => $elType, 'settings' => $settings]);
+        if (!$nv['valid']) { return wpultra_err('invalid_settings', 'Container settings failed validation: ' . implode('; ', $nv['errors'])); }
+        $node['settings'] = $nv['settings'];
     }
     $parent = isset($input['parent_id']) && $input['parent_id'] !== '' ? (string) $input['parent_id'] : null;
     $pos = (int) ($input['position'] ?? PHP_INT_MAX);

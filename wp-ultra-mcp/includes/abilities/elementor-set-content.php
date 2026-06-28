@@ -11,6 +11,7 @@ wp_register_ability('wpultra/elementor-set-content', [
         'properties' => [
             'post_id'  => ['type' => 'integer'],
             'elements' => ['type' => 'array'],
+            'force'    => ['type' => 'boolean'],
         ],
         'required'             => ['post_id', 'elements'],
         'additionalProperties' => false,
@@ -21,6 +22,7 @@ wp_register_ability('wpultra/elementor-set-content', [
             'success'         => ['type' => 'boolean'],
             'post_id'         => ['type' => 'integer'],
             'top_level_count' => ['type' => 'integer'],
+            'warning'         => ['type' => 'string'],
         ],
         'required' => ['success'],
     ],
@@ -38,5 +40,17 @@ function wpultra_elementor_set_content(array $input) {
     $elements = $input['elements'] ?? null;
     if (is_string($elements)) { $elements = json_decode($elements, true); }
     if (!is_array($elements)) { return wpultra_err('bad_elements', 'elements must be an array (or JSON string).'); }
-    return wpultra_el_write($post_id, $elements);
+    $force = ($input['force'] ?? false) === true;
+    $report = wpultra_el_validate_tree($elements);
+    if (!$report['ok'] && !$force) {
+        $bad = array_values(array_filter($report['nodes'], fn($n) => !$n['valid']));
+        return wpultra_err('tree_invalid', $report['summary']['invalid'] . ' element(s) have invalid settings. Fix them (see data) or pass force:true to write anyway.', ['summary' => $report['summary'], 'nodes' => $bad]);
+    }
+    $tree = $force ? $elements : $report['normalized_tree'];
+    $res = wpultra_el_write($post_id, $tree);
+    if (is_wp_error($res)) { return $res; }
+    if (!$report['ok'] && $force) {
+        $res['warning'] = $report['summary']['invalid'] . ' element(s) failed validation but were written (force=true).';
+    }
+    return $res;
 }

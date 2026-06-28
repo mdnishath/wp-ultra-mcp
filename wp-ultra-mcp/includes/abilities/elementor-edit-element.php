@@ -49,6 +49,12 @@ function wpultra_elementor_edit_element(array $input) {
         $settings = wpultra_el_wrap_settings($settings, $compact);
         $valid = wpultra_el_validate_settings((string) $node['widgetType'], array_merge((array) ($node['settings'] ?? []), $settings));
         if (is_wp_error($valid)) { return $valid; }
+    } elseif (($node['elType'] ?? '') !== 'widget') {
+        // container: validate the merged result so layout props can't be silently dropped.
+        $merged = array_merge((array) ($node['settings'] ?? []), $settings);
+        $nv = wpultra_el_validate_node(['elType' => (string) $node['elType'], 'settings' => $merged]);
+        if (!$nv['valid']) { return wpultra_err('invalid_settings', 'Container settings failed validation: ' . implode('; ', $nv['errors'])); }
+        $settings = $nv['settings'];
     }
     $updated = wpultra_el_merge_settings($data, $eid, $settings, ($input['deep'] ?? false) === true);
     if (is_wp_error($updated)) { return $updated; }
