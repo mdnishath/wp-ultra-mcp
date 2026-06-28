@@ -30,6 +30,8 @@ function wpultra_ability_files(): array {
         'elementor-set-content', 'elementor-add-element', 'elementor-edit-element', 'elementor-delete-element', 'elementor-move-element',
         // elementor design read abilities (Wave 3, Task 2)
         'elementor-get-design-system', 'elementor-list-dynamic-tags',
+        // elementor design write abilities (Wave 3, Task 3)
+        'elementor-manage-global-colors', 'elementor-manage-variables',
     ];
     // NOTE: gutenberg-*, bricks-*, and field-plugin abilities are added by later waves.
 }
