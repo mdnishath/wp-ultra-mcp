@@ -120,7 +120,7 @@ function wpultra_el_validate_node(array $node): array {
         // Excluding them here prevents false-rejecting legitimate round-tripped writes where the
         // caller reads a stored element (which already carries system keys) and writes it back.
         $allUnknown = array_diff(array_keys($settings), array_keys($compact));
-        $unknown    = array_values(array_filter($allUnknown, fn($k) => $k[0] !== '_'));
+        $unknown    = array_values(array_filter($allUnknown, fn($k) => $k !== '' && $k[0] !== '_'));
         if ($unknown !== []) {
             $errs = array_map(fn($k) => "$k: unknown_prop", $unknown);
             return ['valid' => false, 'errors' => $errs, 'settings' => $wrapped];
