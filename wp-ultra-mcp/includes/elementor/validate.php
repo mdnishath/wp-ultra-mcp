@@ -73,6 +73,7 @@ function wpultra_el_render_digest(string $html, array $expectedIds): array {
     }
     $present = array_values(array_unique($present));
     $dropped = array_values(array_diff(array_map('strval', $expectedIds), $present));
+    // rendered_count tallies unique id-like attribute values from both data-id and data-interaction-id — approximate element-render tally.
     return ['rendered_count' => count($present), 'present_ids' => $present, 'dropped_ids' => $dropped];
 }
 
@@ -114,7 +115,12 @@ function wpultra_el_validate_node(array $node): array {
         }
         $wrapped = wpultra_el_wrap_settings($settings, $compact);
         // Reject keys that are not declared in the schema — Props_Parser silently ignores them.
-        $unknown = array_values(array_diff(array_keys($settings), array_keys($compact)));
+        // Underscore-prefixed keys (e.g. _element_id, __globals__, __dynamic__) are Elementor
+        // system/meta keys that live in settings but are never declared in get_props_schema().
+        // Excluding them here prevents false-rejecting legitimate round-tripped writes where the
+        // caller reads a stored element (which already carries system keys) and writes it back.
+        $allUnknown = array_diff(array_keys($settings), array_keys($compact));
+        $unknown    = array_values(array_filter($allUnknown, fn($k) => $k[0] !== '_'));
         if ($unknown !== []) {
             $errs = array_map(fn($k) => "$k: unknown_prop", $unknown);
             return ['valid' => false, 'errors' => $errs, 'settings' => $wrapped];
