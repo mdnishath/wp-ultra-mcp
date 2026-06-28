@@ -9,6 +9,10 @@ function wpultra_gb_load(int $post_id) {
 }
 
 function wpultra_gb_save(int $post_id, array $blocks) {
+    $post_type = get_post_type($post_id);
+    if ($post_type !== false && in_array($post_type, wpultra_reserved_post_types(), true)) {
+        return new WP_Error('reserved_post_type', "Post $post_id is a plugin-internal post type; edit it via its dedicated ability.");
+    }
     $content = serialize_blocks($blocks);
     $res = wp_update_post(['ID' => $post_id, 'post_content' => $content], true);
     if (is_wp_error($res)) { return $res; }

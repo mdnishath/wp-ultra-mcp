@@ -68,6 +68,41 @@ it('move relocates node to new parent and index', function () {
     assert_eq('core/paragraph', $out[0]['innerBlocks'][0]['blockName']);
 });
 
+it('move same-parent reorder: group [1] to root pos 0', function () {
+    // Move the group (index 1) to root position 0. Root after remove = [paragraph].
+    // No index adjustment fires (source and target parent are both root).
+    // After insert at pos 0: root = [group, paragraph].
+    $out = wpultra_gb_move(gb_sample(), [1], [], 0);
+    assert_eq('core/group', $out[0]['blockName']);
+    assert_eq('core/paragraph', $out[1]['blockName']);
+    assert_eq(2, count($out));
+});
+
+it('move cross-level: paragraph [0] to group child pos 1, target parent index shifts', function () {
+    // Source is [0] (paragraph, root). Target parent is [1] (group).
+    // After removing [0], group drops to root index 0. The index-adjustment branch decrements
+    // toParentPath[0] from 1 to 0, so insertion targets the (now-index-0) group at pos 1.
+    // group.innerBlocks before: [heading, null]. Inserting at pos 1 → [heading, paragraph, null].
+    $out = wpultra_gb_move(gb_sample(), [0], [1], 1);
+    assert_eq(1, count($out)); // only group left at root level
+    assert_eq('core/group', $out[0]['blockName']);
+    assert_eq('core/heading', $out[0]['innerBlocks'][0]['blockName']);
+    assert_eq('core/paragraph', $out[0]['innerBlocks'][1]['blockName']);
+});
+
+it('move child out to root pos 0: heading [1,0] to root pos 0', function () {
+    // Move heading from group's innerBlocks to root position 0.
+    // After removing [1,0], root = [paragraph, group_without_heading].
+    // No index adjustment (target parent path [] has no elements at the divergence index).
+    // Insert heading at root pos 0 → [heading, paragraph, group_without_heading].
+    $out = wpultra_gb_move(gb_sample(), [1, 0], [], 0);
+    assert_eq('core/heading', $out[0]['blockName']);
+    assert_eq('core/paragraph', $out[1]['blockName']);
+    assert_eq('core/group', $out[2]['blockName']);
+    assert_eq(1, count($out[2]['innerBlocks'])); // group retains its null-name (whitespace) child; heading was removed
+    assert_eq(null, $out[2]['innerBlocks'][0]['blockName']); // the remaining child is the whitespace freeform block
+});
+
 it('merge_attrs shallow', function () {
     $out = wpultra_gb_merge_attrs(gb_sample(), [0], ['content' => 'B', 'align' => 'left'], false);
     assert_eq('B', $out[0]['attrs']['content']);

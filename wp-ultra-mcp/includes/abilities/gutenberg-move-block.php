@@ -12,7 +12,7 @@ wp_register_ability('wpultra/gutenberg-move-block', [
             'post_id'        => ['type' => 'integer'],
             'path'           => ['type' => 'string'],
             'to_parent_path' => ['type' => 'string'],
-            'position'       => ['type' => 'integer'],
+            'position'       => ['type' => 'integer', 'description' => 'Target index in the destination parent AFTER the source block has been removed. Sibling indices above the source are shifted down by one before insertion, so account for that when the destination shares the same parent as the source.'],
         ],
         'required'   => ['post_id', 'path', 'position'],
         'additionalProperties' => false,

@@ -54,8 +54,8 @@ Any client that implements the Model Context Protocol 2025 spec. Claude Code and
 * `gutenberg-get-content` — read a post's block tree as a compact JSON array (type, attrs, innerBlocks).
 * `gutenberg-list-blocks` — list all registered block types available on the site (namespace/name + title).
 * `gutenberg-get-block-schema` — introspect a block type's full attribute schema and default values.
-* `gutenberg-insert-block` — insert a new block at a positional path inside a post's content; best-effort attribute validation with unknown-block warning.
-* `gutenberg-update-block` — deep-merge new attributes into an existing block at a given path; unknown blocks emit a warning but are allowed.
+* `gutenberg-insert-block` — insert a new block at a positional path inside a post's content; best-effort attribute validation with unknown-block warning; container blocks with children should be inserted via `block.markup` (raw block HTML) to preserve wrapper markup.
+* `gutenberg-update-block` — deep-merge new attributes into an existing block at a given path.
 * `gutenberg-delete-block` — remove a block (and its innerBlocks subtree) from a post.
 * `gutenberg-move-block` — relocate a block from one positional path to another within the same post.
 

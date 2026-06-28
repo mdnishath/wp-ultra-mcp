@@ -111,6 +111,8 @@ Positional-path block tree ops for Gutenberg posts and pages. Core WordPress API
 - **`gutenberg-delete-block`** — remove a block (and its innerBlocks subtree) from a post
 - **`gutenberg-move-block`** — relocate a block from one positional path to another within the same post
 
+**Tip:** insert container blocks (group/columns/etc.) via `block.markup` (raw block HTML) rather than the structured form, so wrapper markup is preserved.
+
 ### Wave 4b+ — Planned
 **Gutenberg patterns/reusable blocks**, **FSE (Full Site Editing)** template control, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
 

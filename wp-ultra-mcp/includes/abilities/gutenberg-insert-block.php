@@ -39,6 +39,10 @@ function wpultra_gb_insert_block_cb(array $input) {
     if (is_wp_error($block)) { return $block; }
     $warning = (!empty($block['blockName']) && !wpultra_gb_is_registered($block['blockName']))
         ? "Block type '{$block['blockName']}' is not registered (allowed, but verify the name)." : '';
+    if (empty($input['block']['markup']) && !empty($input['block']['inner_blocks'])) {
+        $container_warn = "Container blocks with children should be inserted via block.markup (raw block HTML) to preserve wrapper markup (e.g. the <div class=\"wp-block-group\"> wrapping element). Structured mode produces children-only innerContent and may lose the wrapper HTML.";
+        $warning = $warning !== '' ? $warning . ' ' . $container_warn : $container_warn;
+    }
     $parentPath = wpultra_gb_str_to_path((string) ($input['parent_path'] ?? ''));
     $pos = isset($input['position']) ? (int) $input['position'] : PHP_INT_MAX;
     $updated = wpultra_gb_insert($loaded['blocks'], $parentPath, $pos, $block);
