@@ -38,6 +38,8 @@ function wpultra_ability_files(): array {
         'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
         // gutenberg write abilities (Wave 4a)
         'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
+        // gutenberg patterns (Wave 4b)
+        'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         // elementor blueprints (Phase B2)
         'elementor-list-blueprints', 'elementor-insert-blueprint',
     ];
@@ -66,6 +68,7 @@ function wpultra_ability_category_map(): array {
         'gutenberg' => [
             'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
+            'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
     ];
 }
@@ -119,7 +122,7 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('gutenberg', $disabled, true)) {
-        foreach (['tree', 'engine', 'registry'] as $gbf) {
+        foreach (['tree', 'engine', 'registry', 'patterns'] as $gbf) {
             $gbp = WPULTRA_DIR . 'includes/gutenberg/' . $gbf . '.php';
             if (is_readable($gbp)) { require_once $gbp; }
         }
