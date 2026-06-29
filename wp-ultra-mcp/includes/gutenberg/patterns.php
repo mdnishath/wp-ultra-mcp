@@ -60,6 +60,7 @@ function wpultra_gb_reusable_save(array $args) {
         $data = ['ID' => $id];
         if ($title !== '') { $data['post_title'] = $title; }
         if (array_key_exists('content', $args)) { $data['post_content'] = (string) $args['content']; }
+        if (count($data) === 1) { return wpultra_err('nothing_to_update', 'Provide title or content to update.'); }
         $res = wp_update_post($data, true);
     } else {
         if ($title === '') { return wpultra_err('missing_title', 'title is required to create a reusable block.'); }
@@ -68,5 +69,6 @@ function wpultra_gb_reusable_save(array $args) {
     if (is_wp_error($res)) { return $res; }
     $pid = (int) $res;
     $p = get_post($pid);
-    return ['id' => $pid, 'title' => $p ? $p->post_title : $title];
+    if (!$p) { return wpultra_err('reusable_save_failed', "Could not read reusable block $pid after save."); }
+    return ['id' => $pid, 'title' => $p->post_title];
 }
