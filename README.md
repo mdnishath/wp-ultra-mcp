@@ -134,8 +134,16 @@ Positional-path block tree ops for Gutenberg posts and pages. Core WordPress API
 
 **Tip:** insert container blocks (group/columns/etc.) via `block.markup` (raw block HTML) rather than the structured form, so wrapper markup is preserved.
 
-### Wave 4b+ — Planned
-**Gutenberg patterns/reusable blocks**, **FSE (Full Site Editing)** template control, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
+### Wave 4b — Gutenberg patterns + reusable blocks (shipped)
+
+Reuse WordPress's built-in primitives for fast page building.
+
+- **`gutenberg-list-patterns`** — list registered block patterns (name, title, categories), filterable by search/category
+- **`gutenberg-insert-pattern`** — insert a pattern's blocks into a post at a positional parent path + position
+- **`gutenberg-manage-reusable-block`** — create/update/get/list synced (reusable) blocks (`wp_block`); reference one into a post via a `core/block` block
+
+### Wave 4c+ — Planned
+**FSE (Full Site Editing)** template control, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
 
 ---
 
