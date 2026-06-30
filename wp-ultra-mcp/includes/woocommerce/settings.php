@@ -88,3 +88,43 @@ function wpultra_woo_update_settings(array $input) {
     }
     return ['updated' => $updated, 'rejected' => $rejected];
 }
+
+function wpultra_woo_manage_review(array $input) {
+    $action = (string) ($input['action'] ?? 'list');
+
+    if ($action === 'list') {
+        $args = ['type' => 'review', 'number' => (int) ($input['per_page'] ?? 50)];
+        if (!empty($input['product_id'])) { $args['post_id'] = (int) $input['product_id']; }
+        if (!empty($input['status']))     { $args['status'] = (string) $input['status']; }
+        $comments = get_comments($args);
+        $rows = [];
+        foreach ($comments as $cm) {
+            $rows[] = ['id' => (int) $cm->comment_ID, 'product_id' => (int) $cm->comment_post_ID, 'author' => $cm->comment_author, 'content' => $cm->comment_content, 'rating' => (int) get_comment_meta($cm->comment_ID, 'rating', true), 'approved' => ($cm->comment_approved === '1')];
+        }
+        return ['count' => count($rows), 'reviews' => $rows];
+    }
+
+    if ($action === 'create') {
+        $pid = (int) ($input['product_id'] ?? 0);
+        if (!$pid || get_post_type($pid) !== 'product') { return wpultra_err('invalid_product', 'create review requires a valid product_id.'); }
+        $cid = wp_insert_comment([
+            'comment_post_ID'  => $pid,
+            'comment_author'   => (string) ($input['author'] ?? 'Guest'),
+            'comment_author_email' => (string) ($input['email'] ?? ''),
+            'comment_content'  => (string) ($input['content'] ?? ''),
+            'comment_type'     => 'review',
+            'comment_approved' => 1,
+        ]);
+        if (!$cid) { return wpultra_err('review_create_failed', 'wp_insert_comment returned 0.'); }
+        if (isset($input['rating'])) { update_comment_meta($cid, 'rating', max(1, min(5, (int) $input['rating']))); }
+        return ['id' => (int) $cid, 'product_id' => $pid];
+    }
+
+    $id = (int) ($input['id'] ?? 0);
+    if (!$id || !get_comment($id)) { return wpultra_err('review_not_found', "No review with id $id."); }
+    if ($action === 'delete') { wp_delete_comment($id, !empty($input['force'])); return ['id' => $id, 'deleted' => true]; }
+    $map = ['approve' => 'approve', 'unapprove' => 'hold', 'spam' => 'spam', 'trash' => 'trash'];
+    if (!isset($map[$action])) { return wpultra_err('bad_action', "Unknown review action '$action'."); }
+    wp_set_comment_status($id, $map[$action]);
+    return ['id' => $id, 'status' => $map[$action]];
+}
