@@ -101,3 +101,30 @@ function wpultra_woo_create_order(array $input) {
     if (!$id) { return wpultra_err('order_save_failed', 'save() returned 0.'); }
     return ['id' => (int) $id, 'total' => $order->get_total(), 'status' => $order->get_status(), 'skipped' => $skipped];
 }
+
+function wpultra_woo_update_order(array $input) {
+    $id = (int) ($input['order_id'] ?? 0);
+    $order = wc_get_order($id);
+    if (!$order) { return wpultra_err('order_not_found', "No order with id $id."); }
+
+    $items_changed = false;
+    if (!empty($input['remove_item_ids']) && is_array($input['remove_item_ids'])) {
+        foreach ($input['remove_item_ids'] as $iid) { $order->remove_item((int) $iid); $items_changed = true; }
+    }
+    if (!empty($input['add_items']) && is_array($input['add_items'])) {
+        foreach ($input['add_items'] as $li) {
+            $pid = (int) ($li['variation_id'] ?? 0) ?: (int) ($li['product_id'] ?? 0);
+            $product = wc_get_product($pid);
+            if ($product) { $order->add_product($product, max(1, (int) ($li['quantity'] ?? 1))); $items_changed = true; }
+        }
+    }
+    if (!empty($input['billing']) && is_array($input['billing']))   { $order->set_address($input['billing'], 'billing'); }
+    if (!empty($input['shipping']) && is_array($input['shipping'])) { $order->set_address($input['shipping'], 'shipping'); }
+    if (isset($input['note']) && $input['note'] !== '') {
+        $order->add_order_note((string) $input['note'], !empty($input['note_to_customer']));
+    }
+    if ($items_changed) { $order->calculate_totals(); }
+    if (!empty($input['status'])) { $order->set_status((string) $input['status']); }
+    $order->save();
+    return ['id' => $id, 'status' => $order->get_status(), 'total' => $order->get_total()];
+}
