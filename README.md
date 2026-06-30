@@ -142,6 +142,46 @@ Reuse WordPress's built-in primitives for fast page building.
 - **`gutenberg-insert-pattern`** — insert a pattern's blocks into a post at a positional parent path + position
 - **`gutenberg-manage-reusable-block`** — create/update/get/list synced (reusable) blocks (`wp_block`); reference one into a post via a `core/block` block
 
+### Wave 6 — WooCommerce store control (shipped)
+
+Full WooCommerce store control — 22 abilities covering the complete store lifecycle. Requires WooCommerce active.
+
+**Products (8)**
+- **`woo-store-status`** — check WooCommerce availability and store configuration before starting store work
+- **`woo-list-products`** — list products with filtering (status, type, category, search, stock); pagination supported
+- **`woo-get-product`** — read a single product's full data (price, stock, images, attributes, variations summary)
+- **`woo-upsert-product`** — create or update a product (simple, variable, grouped, external); schema-validated via the WooCommerce CRUD API
+- **`woo-delete-product`** — delete or trash a product by ID
+- **`woo-manage-variation`** — create, update, or delete a variation on a variable product (price, stock, attributes, images)
+- **`woo-manage-product-category`** — create, update, delete, or list product categories; supports parent hierarchy and thumbnail
+- **`woo-manage-attribute`** — create, update, delete, or list global product attributes and their terms
+
+**Orders (5)**
+- **`woo-list-orders`** — list orders with filtering (status, customer, date range); HPOS-safe
+- **`woo-get-order`** — read a single order's full data (line items, billing, shipping, status history)
+- **`woo-create-order`** — create a new order programmatically (customer, line items, shipping, billing)
+- **`woo-update-order`** — update order status, notes, or metadata; HPOS-safe write
+- **`woo-refund-order`** — issue a full or partial refund on an order with optional line-item breakdown
+
+**Customers (3)**
+- **`woo-list-customers`** — list customers with search and pagination
+- **`woo-get-customer`** — read a customer's full profile, billing/shipping addresses, and order stats
+- **`woo-upsert-customer`** — create or update a customer account (billing, shipping, role, meta)
+
+**Marketing & Config (4)**
+- **`woo-manage-coupon`** — create, update, delete, or list discount coupons (percent/fixed-cart/fixed-product, usage limits, expiry)
+- **`woo-get-settings`** — read whitelisted store settings (currency, tax, checkout) and payment gateway list
+- **`woo-update-settings`** — update whitelisted store settings; toggle payment gateway enabled/disabled
+- **`woo-manage-review`** — create, update, approve, delete, or list product reviews
+
+**Reports (1)**
+- **`woo-get-reports`** — fetch sales summary, top-selling products, and low-stock reports with optional date range
+
+**Storefront bridge (1)**
+- **`woo-insert-product-block`** — insert a WooCommerce product shortcode block into any Gutenberg (`core/shortcode`) or Elementor page; accepts product IDs, slugs, or category filters
+
+Built-in skill **`woocommerce-architect`** encodes the store-building loop: check status → perceive existing data → build with schema-validated CRUD → verify.
+
 ### Wave 4c+ — Planned
 **FSE (Full Site Editing)** template control, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
 
