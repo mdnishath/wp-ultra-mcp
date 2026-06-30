@@ -174,3 +174,76 @@ function wpultra_woo_manage_variation(array $input) {
     if (!$newId) { return wpultra_err('variation_save_failed', 'save() returned 0.'); }
     return ['id' => (int) $newId, 'parent_id' => $parentId];
 }
+
+function wpultra_woo_manage_term(array $input) {
+    $taxonomy = (($input['taxonomy'] ?? 'category') === 'tag') ? 'product_tag' : 'product_cat';
+    $action = (string) ($input['action'] ?? 'list');
+
+    if ($action === 'list') {
+        $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
+        $rows = [];
+        foreach ($terms as $t) { $rows[] = ['id' => $t->term_id, 'name' => $t->name, 'slug' => $t->slug, 'parent' => $t->parent, 'count' => $t->count]; }
+        return ['terms' => $rows, 'count' => count($rows)];
+    }
+    if ($action === 'delete') {
+        $tid = (int) ($input['id'] ?? 0);
+        $r = wp_delete_term($tid, $taxonomy);
+        if (is_wp_error($r)) { return $r; }
+        return ['id' => $tid, 'deleted' => (bool) $r];
+    }
+    $name = (string) ($input['name'] ?? '');
+    $args = [];
+    if (isset($input['slug']))        { $args['slug'] = (string) $input['slug']; }
+    if (isset($input['parent']))      { $args['parent'] = (int) $input['parent']; }
+    if (isset($input['description'])) { $args['description'] = (string) $input['description']; }
+    if ($action === 'update') {
+        $tid = (int) ($input['id'] ?? 0);
+        if ($name !== '') { $args['name'] = $name; }
+        $r = wp_update_term($tid, $taxonomy, $args);
+    } else {
+        $r = wp_insert_term($name, $taxonomy, $args);
+    }
+    if (is_wp_error($r)) { return $r; }
+    return ['id' => (int) $r['term_id'], 'taxonomy' => $taxonomy];
+}
+
+function wpultra_woo_manage_attribute(array $input) {
+    $action = (string) ($input['action'] ?? 'list');
+
+    if ($action === 'list') {
+        $rows = [];
+        foreach (wc_get_attribute_taxonomies() as $a) {
+            $rows[] = ['id' => (int) $a->attribute_id, 'name' => $a->attribute_label, 'slug' => $a->attribute_name, 'type' => $a->attribute_type];
+        }
+        return ['attributes' => $rows, 'count' => count($rows)];
+    }
+    if ($action === 'delete') {
+        $id = (int) ($input['id'] ?? 0);
+        $ok = wc_delete_attribute($id);
+        return ['id' => $id, 'deleted' => (bool) $ok];
+    }
+    $payload = [
+        'name'         => (string) ($input['name'] ?? ''),
+        'slug'         => (string) ($input['slug'] ?? sanitize_title((string) ($input['name'] ?? ''))),
+        'type'         => (string) ($input['type'] ?? 'select'),
+        'order_by'     => 'menu_order',
+        'has_archives' => false,
+    ];
+    if ($action === 'update') {
+        $id = (int) ($input['id'] ?? 0);
+        $res = wc_update_attribute($id, $payload);
+    } else {
+        $res = wc_create_attribute($payload);
+    }
+    if (is_wp_error($res)) { return $res; }
+    $id = is_array($res) ? (int) ($res['id'] ?? 0) : (int) $res;
+    // Optionally add terms to the attribute taxonomy.
+    if (!empty($input['terms']) && is_array($input['terms'])) {
+        $tax = wc_attribute_taxonomy_name($payload['slug']);
+        if (!taxonomy_exists($tax)) { register_taxonomy($tax, 'product', []); }
+        foreach ($input['terms'] as $term) {
+            if (!term_exists((string) $term, $tax)) { wp_insert_term((string) $term, $tax); }
+        }
+    }
+    return ['id' => $id, 'slug' => $payload['slug']];
+}
