@@ -46,3 +46,34 @@ function wpultra_woo_get_customer(int $id) {
     if (!$c->get_id()) { return wpultra_err('customer_not_found', "No customer with id $id."); }
     return wpultra_woo_customer_full($c);
 }
+
+function wpultra_woo_upsert_customer(array $input) {
+    $id = isset($input['id']) ? (int) $input['id'] : 0;
+    unset($input['id']);
+    $validated = wpultra_woo_validate_customer($input);
+    $clean = $validated['clean'];
+
+    if ($id) {
+        $c = new WC_Customer($id);
+        if (!$c->get_id()) { return wpultra_err('customer_not_found', "No customer with id $id."); }
+    } else {
+        if (empty($clean['email'])) { return wpultra_err('email_required', 'Creating a customer requires a valid email.'); }
+        $c = new WC_Customer();
+    }
+
+    $setters = [
+        'email' => 'set_email', 'first_name' => 'set_first_name', 'last_name' => 'set_last_name',
+        'username' => 'set_username', 'password' => 'set_password', 'role' => 'set_role',
+    ];
+    foreach ($setters as $field => $method) {
+        if (array_key_exists($field, $clean) && method_exists($c, $method)) {
+            try { $c->{$method}($clean[$field]); } catch (\Throwable $e) { $validated['rejected'][] = ['field' => $field, 'reason' => 'setter_error']; }
+        }
+    }
+    if (!empty($clean['billing']) && is_array($clean['billing']))   { $c->set_billing($clean['billing']); }
+    if (!empty($clean['shipping']) && is_array($clean['shipping'])) { $c->set_shipping($clean['shipping']); }
+
+    $newId = $c->save();
+    if (!$newId) { return wpultra_err('customer_save_failed', 'WC_Customer save() returned 0.'); }
+    return ['id' => (int) $newId, 'rejected' => $validated['rejected']];
+}
