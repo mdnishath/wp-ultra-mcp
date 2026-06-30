@@ -66,3 +66,8 @@ if (is_admin()) {
 
 // Boot the MCP adapter + abilities (guarded internally on enabled-flag and adapter availability).
 add_action('plugins_loaded', 'wpultra_boot', 20);
+
+// Load SEO engine files on every request (front-end + admin) so head.php hooks fire.
+// Abilities registry (wp_abilities_api_init) only fires on REST calls, so this separate
+// loader ensures native SEO <head> tags render on regular page views.
+add_action('init', 'wpultra_load_seo_frontend', 1);

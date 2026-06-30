@@ -54,6 +54,8 @@ function wpultra_ability_files(): array {
         'woo-manage-review',
         'woo-get-reports',
         'woo-insert-product-block',
+        // seo (Wave 7, Plan 1)
+        'seo-status',
     ];
     // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
@@ -83,6 +85,7 @@ function wpultra_ability_category_map(): array {
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
         'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block'],
+        'seo' => ['seo-status'],
     ];
 }
 
@@ -114,6 +117,7 @@ function wpultra_register_categories(): void {
         'elementor' => 'Elementor v4 schema-driven layout engine.',
         'gutenberg' => 'Gutenberg block content.',
         'woocommerce' => 'WooCommerce store: products, orders, customers, settings.',
+        'seo' => 'SEO: on-page meta, internal links, technical + local SEO (Yoast/Rank Math/native).',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, and CPTs.',
@@ -147,6 +151,12 @@ function wpultra_load_abilities(): void {
             if (is_readable($wcp)) { require_once $wcp; }
         }
     }
+    if (!in_array('seo', $disabled, true)) {
+        foreach (['setup', 'meta', 'head', 'analyze'] as $sf) {
+            $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
+            if (is_readable($sp)) { require_once $sp; }
+        }
+    }
     foreach (wpultra_ability_files() as $file) {
         if (in_array(wpultra_file_category($file), $disabled, true)) { continue; }
         $path = WPULTRA_DIR . 'includes/abilities/' . $file . '.php';
@@ -176,6 +186,21 @@ function wpultra_apply_ability_policy(): void {
         if (is_array($rule) && !empty($rule['disabled'])) {
             wp_unregister_ability((string) $name);
         }
+    }
+}
+
+/**
+ * Load SEO engine files on every WordPress front-end (and admin) request so that
+ * head.php can register its wp_head / pre_get_document_title hooks.
+ * The abilities registry fires only on REST API requests, so we need a separate
+ * loader for the front-end rendering path.
+ */
+function wpultra_load_seo_frontend(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('seo', wpultra_disabled_categories(), true)) { return; }
+    foreach (['setup', 'meta', 'head', 'analyze'] as $sf) {
+        $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
+        if (is_readable($sp)) { require_once $sp; }
     }
 }
 
