@@ -176,7 +176,22 @@ Note: permanently deleting a customer (as opposed to deregistering them) require
 - Units: `woocommerce_weight_unit`, `woocommerce_dimension_unit`
 - Tax: `woocommerce_calc_taxes`, `woocommerce_prices_include_tax`, `woocommerce_tax_display_shop`, `woocommerce_tax_display_cart`
 - Coupons: `woocommerce_enable_coupons`
-- Payment gateway enable/disable: pass `gateway_id` + `enabled: true/false`
+- Payment gateway enable/disable: wrap in `gateway: { id: string, enabled: true/false }`
+
+Option updates go inside an `options{}` object; a payment-gateway toggle goes inside a `gateway{}` object. For example:
+
+```json
+{
+  "options": {
+    "woocommerce_currency": "EUR",
+    "woocommerce_weight_unit": "kg",
+    "woocommerce_calc_taxes": "yes"
+  },
+  "gateway": { "id": "stripe", "enabled": true }
+}
+```
+
+The response contains `updated` (keys that were written) and `rejected` (keys that were not on the whitelist and were not written).
 
 **Any key not on this whitelist is rejected** — it will appear in the `rejected` response field and will not be written to the database. This is intentional: it prevents accidentally overwriting WooCommerce internals. Do not attempt to write arbitrary `woocommerce_*` options through this ability.
 
@@ -190,38 +205,45 @@ Note: permanently deleting a customer (as opposed to deregistering them) require
 
 ## Analytics
 
-`woo-get-reports` returns aggregated store data. Supported report types:
+`woo-get-reports` returns aggregated store data. Supported report types and what they return:
 
-- `sales` — day-by-day sales totals for a date range
-- `revenue` — gross/net revenue, refunds, taxes, shipping
-- `top_products` — best-selling products by quantity or revenue
-- `low_stock` — products below their stock threshold
+- `sales` — `{type, order_count, gross, currency}` — order count and gross revenue for the date range
+- `revenue` — `{type, order_count, gross, currency}` — same shape as `sales` (gross total only; no net/refunds/taxes/shipping breakdown)
+- `top_products` — `{type, products:[{product_id, name, qty, revenue}]}` — top 10 products by quantity sold
+- `low_stock` — `{type, count, products:[{id, name, stock}]}` — products below their stock threshold
+
+Parameters: `type` (required), `date_from` (ISO date, optional), `date_to` (ISO date, optional). There is no `per_page` parameter.
 
 **Reports aggregate over `processing`, `completed`, and `on-hold` orders only.** Pending, cancelled, failed, and refunded orders are excluded from revenue figures. If numbers look low, check order statuses with `woo-list-orders`.
 
 Example:
 ```json
-{ "type": "top_products", "date_min": "2026-01-01", "date_max": "2026-06-30", "per_page": 10 }
+{ "type": "top_products", "date_from": "2026-01-01", "date_to": "2026-06-30" }
 ```
 
 ## Storefront — the woo-insert-product-block bridge
 
 `woo-insert-product-block` places a WooCommerce display block onto a Gutenberg post/page or an Elementor page **without opening a browser tab**. It injects a WooCommerce shortcode into the page content.
 
-Supported block types:
-- `grid` — product grid (equivalent to `[products]` shortcode; set `columns`, `rows`, `category`)
-- `single` — single product display (`[product id="42"]`)
-- `add_to_cart` — add-to-cart button only (`[add_to_cart id="42"]`)
-- `category_list` — category thumbnail grid
+Required parameters: `post_id` (int), `builder` (`"gutenberg"` or `"elementor"`), `display` (see values below). All grid/column/category/id options go inside a `params{}` object. Optional: `parent_path` (string), `position` (int).
 
-Example — build a shop page:
+Supported `display` values:
+- `"grid"` — product grid (`[products]` shortcode; use `params.limit`, `params.columns`, `params.category`)
+- `"single"` — single product page (`[product_page id="..."]`; use `params.id`)
+- `"add_to_cart"` — add-to-cart button only (`[add_to_cart id="..."]`; use `params.id`)
+- `"categories"` — category thumbnail grid
+- `"sale"` — on-sale products
+- `"featured"` — featured products
+- `"best_selling"` — best-selling products
+
+Example — build a shop page (Gutenberg, product grid):
 ```json
-{ "post_id": 15, "block_type": "grid", "columns": 3, "rows": 4, "category": "apparel" }
+{ "post_id": 12, "builder": "gutenberg", "display": "grid", "params": { "limit": 8, "columns": 4, "category": "shirts" } }
 ```
 
-Example — product landing page:
+Example — product landing page (Elementor, single product):
 ```json
-{ "post_id": 88, "block_type": "single", "product_id": 42 }
+{ "post_id": 12, "builder": "elementor", "display": "single", "params": { "id": 99 } }
 ```
 
 **Storefront architecture notes:**
