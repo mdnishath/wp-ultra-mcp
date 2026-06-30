@@ -125,3 +125,52 @@ function wpultra_woo_upsert_product(array $input) {
     if (!$newId) { return wpultra_err('product_save_failed', 'WooCommerce save() returned 0.'); }
     return ['id' => (int) $newId, 'rejected' => $validated['rejected']];
 }
+
+function wpultra_woo_delete_product(int $id, bool $force) {
+    $p = wc_get_product($id);
+    if (!$p) { return wpultra_err('product_not_found', "No product with id $id."); }
+    $ok = $p->delete($force);
+    return ['id' => $id, 'deleted' => (bool) $ok];
+}
+
+function wpultra_woo_manage_variation(array $input) {
+    $parentId = (int) ($input['parent_id'] ?? 0);
+    $parent = wc_get_product($parentId);
+    if (!$parent || $parent->get_type() !== 'variable') {
+        return wpultra_err('not_variable_product', "Product $parentId is not a variable product.");
+    }
+    $action = (string) ($input['action'] ?? 'list');
+
+    if ($action === 'list') {
+        $rows = [];
+        foreach ($parent->get_children() as $vid) {
+            $v = wc_get_product($vid);
+            if ($v) { $rows[] = ['id' => $vid, 'attributes' => $v->get_attributes(), 'price' => $v->get_price(), 'stock' => $v->get_stock_quantity(), 'sku' => $v->get_sku()]; }
+        }
+        return ['variations' => $rows, 'count' => count($rows)];
+    }
+
+    if ($action === 'delete') {
+        $vid = (int) ($input['variation_id'] ?? 0);
+        $v = wc_get_product($vid);
+        if (!$v || $v->get_parent_id() !== $parentId) { return wpultra_err('variation_not_found', "No variation $vid on product $parentId."); }
+        $v->delete(true);
+        return ['id' => $vid, 'deleted' => true];
+    }
+
+    // create or update
+    $vid = (int) ($input['variation_id'] ?? 0);
+    $v = ($action === 'update' && $vid) ? wc_get_product($vid) : new WC_Product_Variation();
+    if (!$v) { return wpultra_err('variation_not_found', "No variation $vid."); }
+    $v->set_parent_id($parentId);
+    if (isset($input['attributes']) && is_array($input['attributes'])) { $v->set_attributes($input['attributes']); }
+    if (isset($input['regular_price'])) { $v->set_regular_price((string) $input['regular_price']); }
+    if (isset($input['sale_price']))    { $v->set_sale_price((string) $input['sale_price']); }
+    if (isset($input['sku']))           { $v->set_sku((string) $input['sku']); }
+    if (isset($input['manage_stock']))  { $v->set_manage_stock(wpultra_woo_coerce_bool($input['manage_stock'])); }
+    if (isset($input['stock_quantity'])) { $v->set_stock_quantity((int) $input['stock_quantity']); }
+    if (isset($input['image_id']))      { $v->set_image_id((int) $input['image_id']); }
+    $newId = $v->save();
+    if (!$newId) { return wpultra_err('variation_save_failed', 'save() returned 0.'); }
+    return ['id' => (int) $newId, 'parent_id' => $parentId];
+}
