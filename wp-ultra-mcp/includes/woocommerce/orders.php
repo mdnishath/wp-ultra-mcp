@@ -128,3 +128,24 @@ function wpultra_woo_update_order(array $input) {
     $order->save();
     return ['id' => $id, 'status' => $order->get_status(), 'total' => $order->get_total()];
 }
+
+function wpultra_woo_refund_order(array $input) {
+    $id = (int) ($input['order_id'] ?? 0);
+    $order = wc_get_order($id);
+    if (!$order) { return wpultra_err('order_not_found', "No order with id $id."); }
+
+    $amount = isset($input['amount']) && $input['amount'] !== '' ? (string) $input['amount'] : (string) $order->get_remaining_refund_amount();
+    if ((float) $amount <= 0) { return wpultra_err('nothing_to_refund', 'Refund amount is zero or order is fully refunded.'); }
+
+    $args = [
+        'order_id'       => $id,
+        'amount'         => $amount,
+        'reason'         => (string) ($input['reason'] ?? ''),
+        'restock_items'  => array_key_exists('restock', $input) ? (bool) $input['restock'] : true,
+    ];
+    if (!empty($input['line_items']) && is_array($input['line_items'])) { $args['line_items'] = $input['line_items']; }
+
+    $refund = wc_create_refund($args);
+    if (is_wp_error($refund)) { return $refund; }
+    return ['refund_id' => $refund->get_id(), 'amount' => $refund->get_amount(), 'order_id' => $id];
+}
