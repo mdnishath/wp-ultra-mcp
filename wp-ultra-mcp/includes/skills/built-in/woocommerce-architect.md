@@ -227,7 +227,7 @@ Example — product landing page:
 **Storefront architecture notes:**
 
 - **Free Elementor:** `woo-insert-product-block` is your storefront path. Use it to place product grids and single-product displays on Elementor pages. Theme single-product templates (`single-product.php`) and the WooCommerce shop archive template (`archive-product.php`) require **Elementor Pro** to override with a canvas-style template. On free Elementor, rely on the shortcode injection approach.
-- **Gutenberg (block theme):** `woo-insert-product-block` inserts a classic shortcode block into the block editor. For full block-theme WooCommerce integration (using `woocommerce/product-collection` blocks natively), edit the page's raw block JSON via `woo-insert-product-block` with `format: "block"` if supported, or advise the user to use the block editor directly for native block templates.
+- **Gutenberg (block theme):** `woo-insert-product-block` inserts a `core/shortcode` block carrying the WooCommerce shortcode into the post. (It takes `post_id`, `builder`, `display`, `params`, and optional `parent_path`/`position` — there is no native-block output mode.) For full block-theme integration with native `woocommerce/product-collection` blocks, build those blocks directly with the Gutenberg abilities (`gutenberg-insert-block`) or advise the user to use the block editor.
 - **Classic theme:** shortcodes work natively. `woo-insert-product-block` is the correct approach.
 
 ## The end-to-end recipe — "build me an advanced store"
