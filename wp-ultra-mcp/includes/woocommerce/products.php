@@ -220,6 +220,7 @@ function wpultra_woo_manage_attribute(array $input) {
     if ($action === 'delete') {
         $id = (int) ($input['id'] ?? 0);
         $ok = wc_delete_attribute($id);
+        if (is_wp_error($ok)) { return $ok; }
         return ['id' => $id, 'deleted' => (bool) $ok];
     }
     $payload = [
@@ -238,12 +239,20 @@ function wpultra_woo_manage_attribute(array $input) {
     if (is_wp_error($res)) { return $res; }
     $id = is_array($res) ? (int) ($res['id'] ?? 0) : (int) $res;
     // Optionally add terms to the attribute taxonomy.
+    $notes = [];
     if (!empty($input['terms']) && is_array($input['terms'])) {
         $tax = wc_attribute_taxonomy_name($payload['slug']);
         if (!taxonomy_exists($tax)) { register_taxonomy($tax, 'product', []); }
         foreach ($input['terms'] as $term) {
-            if (!term_exists((string) $term, $tax)) { wp_insert_term((string) $term, $tax); }
+            if (!term_exists((string) $term, $tax)) {
+                $tr = wp_insert_term((string) $term, $tax);
+                if (is_wp_error($tr) && $tr->get_error_code() !== 'term_exists') {
+                    $notes[] = 'term_insert_failed:' . (string) $term . ':' . $tr->get_error_message();
+                }
+            }
         }
     }
-    return ['id' => $id, 'slug' => $payload['slug']];
+    $ret = ['id' => $id, 'slug' => $payload['slug']];
+    if (!empty($notes)) { $ret['notes'] = $notes; }
+    return $ret;
 }

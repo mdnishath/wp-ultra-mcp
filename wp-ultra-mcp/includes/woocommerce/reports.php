@@ -13,8 +13,13 @@ function wpultra_woo_get_reports(array $input): array {
     $type = (string) ($input['type'] ?? 'sales');
     $statuses = ['wc-processing', 'wc-completed', 'wc-on-hold'];
     $q = ['limit' => -1, 'return' => 'objects', 'status' => $statuses];
-    if (!empty($input['date_from'])) { $q['date_created'] = '>=' . $input['date_from']; }
-    if (!empty($input['date_to']))   { $q['date_created'] = '<=' . $input['date_to']; }
+    if (!empty($input['date_from']) && !empty($input['date_to'])) {
+        $q['date_created'] = $input['date_from'] . '...' . $input['date_to'];
+    } elseif (!empty($input['date_from'])) {
+        $q['date_created'] = '>=' . $input['date_from'];
+    } elseif (!empty($input['date_to'])) {
+        $q['date_created'] = '<=' . $input['date_to'];
+    }
 
     if ($type === 'low_stock') {
         $out = wc_get_products(['limit' => -1, 'stock_status' => 'outofstock', 'return' => 'objects']);

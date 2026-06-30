@@ -52,8 +52,13 @@ function wpultra_woo_list_orders(array $args): array {
     ];
     if (!empty($args['status']))    { $q['status'] = $args['status']; } // 'processing' or ['processing','completed']
     if (!empty($args['customer']))  { $q['customer_id'] = (int) $args['customer']; }
-    if (!empty($args['date_from'])) { $q['date_created'] = '>=' . $args['date_from']; }
-    if (!empty($args['date_to']))   { $q['date_created'] = '<=' . $args['date_to']; }
+    if (!empty($args['date_from']) && !empty($args['date_to'])) {
+        $q['date_created'] = $args['date_from'] . '...' . $args['date_to'];
+    } elseif (!empty($args['date_from'])) {
+        $q['date_created'] = '>=' . $args['date_from'];
+    } elseif (!empty($args['date_to'])) {
+        $q['date_created'] = '<=' . $args['date_to'];
+    }
     if (!empty($args['search']))    { $q['s'] = (string) $args['search']; }
     $orders = wc_get_orders($q);
     $rows = [];
