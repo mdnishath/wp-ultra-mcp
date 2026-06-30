@@ -49,6 +49,7 @@ function wpultra_ability_files(): array {
         'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order',
         'woo-refund-order',
         'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer',
+        'woo-manage-coupon',
     ];
     // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
@@ -77,7 +78,7 @@ function wpultra_ability_category_map(): array {
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
-        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer'],
+        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon'],
     ];
 }
 
@@ -137,7 +138,7 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('woocommerce', $disabled, true)) {
-        foreach (['setup', 'schema', 'products', 'orders', 'customers'] as $wcf) {
+        foreach (['setup', 'schema', 'products', 'orders', 'customers', 'coupons', 'settings', 'reports'] as $wcf) {
             $wcp = WPULTRA_DIR . 'includes/woocommerce/' . $wcf . '.php';
             if (is_readable($wcp)) { require_once $wcp; }
         }
