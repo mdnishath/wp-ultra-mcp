@@ -89,3 +89,37 @@ function wpultra_woo_validate_product(array $input): array {
     }
     return ['clean' => $clean, 'rejected' => $rejected];
 }
+
+function wpultra_woo_customer_schema(): array {
+    return [
+        'email'      => ['type' => 'email'],
+        'first_name' => ['type' => 'string'],
+        'last_name'  => ['type' => 'string'],
+        'username'   => ['type' => 'string'],
+        'password'   => ['type' => 'string'],
+        'role'       => ['type' => 'string'],
+        'billing'    => ['type' => 'array'],
+        'shipping'   => ['type' => 'array'],
+    ];
+}
+
+function wpultra_woo_validate_customer(array $input): array {
+    $schema = wpultra_woo_customer_schema();
+    $clean = [];
+    $rejected = [];
+    foreach ($input as $field => $value) {
+        if (!isset($schema[$field])) { $rejected[] = ['field' => $field, 'reason' => 'unknown_field']; continue; }
+        if ($schema[$field]['type'] === 'email') {
+            if (!is_string($value) || strpos($value, '@') === false || strpos($value, '.') === false) {
+                $rejected[] = ['field' => $field, 'reason' => 'invalid_email'];
+                continue;
+            }
+            $clean[$field] = $value;
+        } elseif ($schema[$field]['type'] === 'array') {
+            $clean[$field] = is_array($value) ? $value : [];
+        } else {
+            $clean[$field] = (string) $value;
+        }
+    }
+    return ['clean' => $clean, 'rejected' => $rejected];
+}

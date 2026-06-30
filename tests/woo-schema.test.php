@@ -38,4 +38,20 @@ it('validate rejects bad enum', function () {
     assert_true(!isset($r['clean']['type']));
 });
 
+it('customer validate keeps known + rejects unknown', function () {
+    $r = wpultra_woo_validate_customer(['email' => 'a@b.com', 'first_name' => 'Ann', 'bogus' => 1]);
+    assert_eq('a@b.com', $r['clean']['email']);
+    assert_eq('Ann', $r['clean']['first_name']);
+    assert_eq(1, count($r['rejected']));
+    assert_eq('bogus', $r['rejected'][0]['field']);
+    assert_eq('unknown_field', $r['rejected'][0]['reason']);
+});
+
+it('customer validate rejects bad email', function () {
+    $r = wpultra_woo_validate_customer(['email' => 'not-an-email']);
+    assert_eq(1, count($r['rejected']));
+    assert_eq('invalid_email', $r['rejected'][0]['reason']);
+    assert_true(!isset($r['clean']['email']));
+});
+
 run_tests();
