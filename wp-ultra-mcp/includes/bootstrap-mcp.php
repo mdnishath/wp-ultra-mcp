@@ -43,7 +43,7 @@ function wpultra_ability_files(): array {
         // elementor blueprints (Phase B2)
         'elementor-list-blueprints', 'elementor-insert-blueprint',
         // woocommerce (Wave 6, Plan 1)
-        'woo-store-status', 'woo-list-products', 'woo-get-product',
+        'woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product',
     ];
     // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
@@ -72,7 +72,7 @@ function wpultra_ability_category_map(): array {
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
-        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product'],
+        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product'],
     ];
 }
 
