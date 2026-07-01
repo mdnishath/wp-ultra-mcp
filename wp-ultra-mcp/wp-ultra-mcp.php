@@ -71,3 +71,8 @@ add_action('plugins_loaded', 'wpultra_boot', 20);
 // Abilities registry (wp_abilities_api_init) only fires on REST calls, so this separate
 // loader ensures native SEO <head> tags render on regular page views.
 add_action('init', 'wpultra_load_seo_frontend', 1);
+
+// Load the fields engine on every request (front-end + admin) so the Meta Box
+// rwmb_meta_boxes filter registers persisted groups; the ability engine-loop only
+// runs on REST calls, so persisted MB groups need this separate always-on hook.
+add_action('init', 'wpultra_load_fields_frontend', 1);
