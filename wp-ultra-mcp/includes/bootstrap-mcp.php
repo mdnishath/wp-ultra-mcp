@@ -60,6 +60,8 @@ function wpultra_ability_files(): array {
         'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit',
         'seo-keyword-research', 'seo-content-gap',
         'seo-competitor-analysis', 'seo-optimize-content',
+        // seo (Wave 7, Plan 3)
+        'seo-manage-sitemap', 'seo-manage-robots',
     ];
     // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
@@ -89,7 +91,7 @@ function wpultra_ability_category_map(): array {
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
         'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block'],
-        'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content'],
+        'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots'],
     ];
 }
 
