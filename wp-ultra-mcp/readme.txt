@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.10.0
+Stable tag: 0.11.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.11.0 =
+* Wave 7 — SEO: 19 new abilities for full on-site SEO. Works with Yoast or Rank Math (auto-detected) or a built-in native mode. On-page meta (title/description/focus keyword/robots/OG), page scoring + content optimization, internal-link suggestions/insertion/audit, keyword research + content-gap + competitor analysis (on-site + AI, no external API), technical SEO (sitemap, robots, 301/302 redirects, JSON-LD schema), LocalBusiness structured data, a site-wide SEO audit, rule-based bulk meta, and a Google-recommended quick-setup. New seo-architect skill encodes the ranking loop.
 
 = 0.10.0 =
 * Wave 6 — WooCommerce: 22 new abilities for full store control. Products (simple/variable/grouped/external + variations, categories, global attributes), HPOS-safe orders (create/update/status/refund) + customers, coupons, whitelisted store settings + payment-gateway toggle, product reviews, sales/top-product/low-stock reports, and a storefront bridge that inserts product blocks into Gutenberg/Elementor pages as shortcodes. New woocommerce-architect skill encodes the store-building loop. All schema-validated, all via the WooCommerce CRUD API.

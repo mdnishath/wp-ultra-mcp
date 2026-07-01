@@ -182,6 +182,39 @@ Full WooCommerce store control — 22 abilities covering the complete store life
 
 Built-in skill **`woocommerce-architect`** encodes the store-building loop: check status → perceive existing data → build with schema-validated CRUD → verify.
 
+### Wave 7 — SEO (shipped)
+
+Full on-site SEO control — 19 abilities. Works with **Yoast SEO** or **Rank Math** (auto-detected) or a built-in native mode when neither is active.
+
+**Foundation (4)**
+- **`seo-status`** — detect the active SEO plugin (Yoast / Rank Math / native), confirm readiness, and report site-level SEO config
+- **`seo-get-meta`** — read on-page SEO meta for any post: title, description, focus keyword, robots directives, and Open Graph fields
+- **`seo-set-meta`** — write on-page SEO meta (title, description, focus keyword, robots, OG title/description/image) for any post via the active plugin's own API or native meta
+- **`seo-analyze-page`** — score a post's SEO: title + meta-desc length, keyword density, readability, internal links, image alt coverage; returns an actionable recommendations list
+
+**Linking + Research (7)**
+- **`seo-suggest-internal-links`** — suggest relevant internal-link opportunities for a post based on keyword overlap with other published posts
+- **`seo-insert-internal-link`** — insert an internal link anchor into a post's Gutenberg content at the best-match phrase location
+- **`seo-link-audit`** — audit internal and external links across one post or the whole site: broken links, nofollow usage, orphan pages
+- **`seo-keyword-research`** — analyse keyword opportunities using on-site data (post titles, meta, headings, search-console if available) and AI scoring; no external paid API required
+- **`seo-content-gap`** — identify topics covered by the site that are thin or missing compared to a target keyword list
+- **`seo-competitor-analysis`** — compare the site's content coverage and keyword footprint against a given competitor URL (on-site fetch + AI analysis; no external SEO-API dependency)
+- **`seo-optimize-content`** — rewrite or augment a post's content to improve keyword placement, heading structure, and readability score; returns a diff-style suggestion
+
+**Technical + Local (5)**
+- **`seo-manage-sitemap`** — read, regenerate, or toggle the XML sitemap (Yoast / Rank Math / WP native); return the current sitemap URL and post-type inclusion settings
+- **`seo-manage-robots`** — read or write the `robots.txt` virtual file; validate directives before writing
+- **`seo-manage-redirects`** — create, update, delete, or list 301/302 redirects via Yoast Premium, Rank Math, or a lightweight native store
+- **`seo-manage-schema`** — add, update, or remove JSON-LD schema blocks (Article, FAQ, HowTo, BreadcrumbList, etc.) on any post
+- **`seo-manage-local-business`** — create or update a LocalBusiness JSON-LD schema (name, address, geo, hours, phone) for local SEO
+
+**Audit + Setup (3)**
+- **`seo-site-audit`** — run a site-wide SEO audit: missing meta, duplicate titles, pages blocked by robots, posts with no internal links, images missing alt text; returns a prioritised issues list
+- **`seo-bulk-set-meta`** — apply a meta template rule to multiple posts in a single call; dry-run by default (`apply: true` to commit), bounded by `limit`
+- **`seo-quick-setup`** — apply Google-recommended baseline settings in one call: set homepage meta, enable sitemap, set `blog_public`, configure permalinks; idempotent
+
+Built-in skill **`seo-architect`** encodes the ranking loop: audit → keyword-research → on-page meta → internal linking → schema → technical SEO → verify.
+
 ### Wave 4c+ — Planned
 **FSE (Full Site Editing)** template control, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
 
