@@ -93,10 +93,15 @@ function wpultra_seo_redirects(): array {
     $m = get_option('wpultra_seo_redirects', []);
     return ['redirects' => is_array($m) ? $m : []];
 }
-function wpultra_seo_add_redirect(string $source, string $target, int $type): array {
+/** @return array|WP_Error */
+function wpultra_seo_add_redirect(string $source, string $target, int $type) {
     $map = get_option('wpultra_seo_redirects', []);
     if (!is_array($map)) { $map = []; }
     $type = in_array($type, [301, 302], true) ? $type : 301;
+    $targetPath = (string) wp_parse_url($target, PHP_URL_PATH);
+    if ($targetPath !== '' && wpultra_seo_norm_path($targetPath) === wpultra_seo_norm_path($source)) {
+        return wpultra_err('redirect_loop', 'Redirect source and target resolve to the same path (would loop).');
+    }
     $n = wpultra_seo_norm_path($source);
     $map = array_values(array_filter($map, function ($r) use ($n) { return wpultra_seo_norm_path((string) ($r['source'] ?? '')) !== $n; }));
     $map[] = ['source' => $source, 'target' => esc_url_raw($target), 'type' => $type];

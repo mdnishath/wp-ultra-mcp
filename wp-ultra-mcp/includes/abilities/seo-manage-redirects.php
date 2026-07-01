@@ -19,6 +19,7 @@ function wpultra_seo_manage_redirects_cb(array $input) {
         $src = (string) ($input['source'] ?? '');
         if ($src === '' || empty($input['target'])) { return wpultra_err('missing_fields', 'add requires source + target.'); }
         $res = wpultra_seo_add_redirect($src, (string) $input['target'], (int) ($input['type'] ?? 301));
+        if (is_wp_error($res)) { return $res; }
         wpultra_audit_log('seo-manage-redirects', "add $src", true);
     } elseif ($action === 'delete') {
         $res = wpultra_seo_delete_redirect((string) ($input['source'] ?? ''));
