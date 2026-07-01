@@ -64,3 +64,32 @@ function wpultra_fields_pods_write(array $target, array $atomic, array $complex)
     }
     return $res;
 }
+
+/** @return array<int,array> */
+function wpultra_fields_pods_list_groups(): array {
+    if (!function_exists('pods_api')) { return []; }
+    $out = [];
+    $pods = pods_api()->load_pods();
+    foreach ((array) $pods as $p) {
+        $name = is_array($p) ? ($p['name'] ?? '') : (is_object($p) ? ($p->pod ?? ($p->name ?? '')) : '');
+        if ($name === '') { continue; }
+        $fields = pods_api()->load_fields(['pod' => $name]);
+        $out[] = ['key' => (string) $name, 'title' => (string) $name, 'provider' => 'pods', 'field_count' => is_array($fields) ? count($fields) : 0, 'location' => is_array($p) ? ($p['type'] ?? null) : null];
+    }
+    return $out;
+}
+
+/** @return array|WP_Error */
+function wpultra_fields_pods_get_group(string $key) {
+    if (!function_exists('pods_api')) { return new WP_Error('group_not_found', 'Pods not available'); }
+    $pod = pods_api()->load_pod(['name' => $key]);
+    if (!$pod) { return new WP_Error('group_not_found', "Pod not found: {$key}"); }
+    $fields = pods_api()->load_fields(['pod' => $key]);
+    $slim = [];
+    foreach ((array) $fields as $f) {
+        $fn = is_array($f) ? ($f['name'] ?? '') : (is_object($f) ? ($f->name ?? '') : '');
+        $ft = is_array($f) ? ($f['type'] ?? '') : (is_object($f) ? ($f->type ?? '') : '');
+        $slim[] = ['key' => (string) $fn, 'name' => (string) $fn, 'label' => (string) $fn, 'type' => (string) $ft];
+    }
+    return ['key' => $key, 'title' => $key, 'provider' => 'pods', 'fields' => $slim, 'location' => is_array($pod) ? ($pod['type'] ?? null) : null];
+}

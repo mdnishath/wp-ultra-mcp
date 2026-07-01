@@ -56,3 +56,45 @@ function wpultra_fields_mb_write(array $target, array $atomic, array $complex): 
     }
     return $res;
 }
+
+/** @return array<int,array> */
+function wpultra_fields_metabox_list_groups(): array {
+    $out = [];
+    $seen = [];
+    foreach (wpultra_fields_mb_stored_groups() as $g) {
+        if (!is_array($g)) { continue; }
+        $entry = wpultra_fields_mb_group_entry($g);
+        $seen[$entry['key']] = true;
+        $out[] = $entry;
+    }
+    foreach ((array) apply_filters('rwmb_meta_boxes', []) as $g) {
+        if (!is_array($g)) { continue; }
+        $entry = wpultra_fields_mb_group_entry($g);
+        if (isset($seen[$entry['key']])) { continue; } // don't double-count our own filter output
+        $out[] = $entry;
+    }
+    return $out;
+}
+
+/** @return array|WP_Error */
+function wpultra_fields_metabox_get_group(string $key) {
+    foreach (wpultra_fields_mb_stored_groups() as $g) {
+        if (is_array($g) && (string) ($g['id'] ?? '') === $key) {
+            $fields = [];
+            foreach ((array) ($g['fields'] ?? []) as $f) {
+                $fields[] = ['key' => $f['id'] ?? '', 'name' => $f['id'] ?? '', 'label' => $f['name'] ?? '', 'type' => $f['type'] ?? ''];
+            }
+            return ['key' => $key, 'title' => $g['title'] ?? $key, 'provider' => 'metabox', 'fields' => $fields, 'location' => $g['post_types'] ?? null];
+        }
+    }
+    foreach ((array) apply_filters('rwmb_meta_boxes', []) as $g) {
+        if (is_array($g) && (string) ($g['id'] ?? ($g['title'] ?? '')) === $key) {
+            $fields = [];
+            foreach ((array) ($g['fields'] ?? []) as $f) {
+                $fields[] = ['key' => $f['id'] ?? '', 'name' => $f['id'] ?? '', 'label' => $f['name'] ?? '', 'type' => $f['type'] ?? ''];
+            }
+            return ['key' => $key, 'title' => $g['title'] ?? $key, 'provider' => 'metabox', 'fields' => $fields, 'location' => $g['post_types'] ?? null];
+        }
+    }
+    return new WP_Error('group_not_found', "Meta Box field group not found: {$key}");
+}
