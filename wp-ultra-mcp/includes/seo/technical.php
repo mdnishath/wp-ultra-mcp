@@ -1,0 +1,138 @@
+<?php
+declare(strict_types=1);
+if (!defined('ABSPATH') && !defined('WPULTRA_TEST')) { /* allow harness load */ }
+
+/** PURE. Normalize a path for comparison: leading slash, single trailing slash, lowercased. */
+function wpultra_seo_norm_path(string $p): string {
+    $p = strtolower(trim($p));
+    if ($p === '') { return '/'; }
+    if ($p[0] !== '/') { $p = '/' . $p; }
+    return rtrim($p, '/') . '/';
+}
+
+/** PURE. Find a redirect whose source matches $path (normalized). */
+function wpultra_seo_match_redirect(string $path, array $map): ?array {
+    $n = wpultra_seo_norm_path($path);
+    foreach ($map as $r) {
+        if (wpultra_seo_norm_path((string) ($r['source'] ?? '')) === $n) { return $r; }
+    }
+    return null;
+}
+
+/** PURE. Build a JSON-LD assoc for a supported schema type. */
+function wpultra_seo_build_jsonld(string $type, array $f): array {
+    $base = ['@context' => 'https://schema.org', '@type' => $type];
+    switch ($type) {
+        case 'Article':
+            return $base + array_filter([
+                'headline' => $f['headline'] ?? '', 'author' => isset($f['author']) ? ['@type' => 'Person', 'name' => $f['author']] : null,
+                'datePublished' => $f['date'] ?? '', 'image' => $f['image'] ?? '',
+            ]);
+        case 'Product':
+            return $base + array_filter([
+                'name' => $f['name'] ?? '', 'description' => $f['description'] ?? '', 'image' => $f['image'] ?? '',
+                'offers' => isset($f['price']) ? ['@type' => 'Offer', 'price' => (string) $f['price'], 'priceCurrency' => $f['currency'] ?? 'USD'] : null,
+            ]);
+        case 'FAQPage':
+            $entities = [];
+            foreach (($f['qa'] ?? []) as $pair) {
+                $entities[] = ['@type' => 'Question', 'name' => (string) ($pair['q'] ?? ''), 'acceptedAnswer' => ['@type' => 'Answer', 'text' => (string) ($pair['a'] ?? '')]];
+            }
+            return $base + ['mainEntity' => $entities];
+        case 'BreadcrumbList':
+            $items = [];
+            $i = 1;
+            foreach (($f['items'] ?? []) as $it) {
+                $items[] = ['@type' => 'ListItem', 'position' => $i++, 'name' => (string) ($it['name'] ?? ''), 'item' => (string) ($it['url'] ?? '')];
+            }
+            return $base + ['itemListElement' => $items];
+        default:
+            return $base + $f;
+    }
+}
+
+// ---- WP: sitemap ----
+function wpultra_seo_sitemap_state(): array {
+    $mode = function_exists('wpultra_seo_mode') ? wpultra_seo_mode() : 'native';
+    $url = home_url('/wp-sitemap.xml');
+    if ($mode === 'yoast') { $url = home_url('/sitemap_index.xml'); }
+    if ($mode === 'rankmath') { $url = home_url('/sitemap_index.xml'); }
+    $disabled = (bool) get_option('wpultra_seo_sitemap_disabled', false);
+    return ['provider' => $mode === 'native' ? 'wp-core' : $mode, 'url' => $url, 'enabled' => !$disabled];
+}
+function wpultra_seo_set_sitemap(bool $enabled): array {
+    update_option('wpultra_seo_sitemap_disabled', !$enabled);
+    return wpultra_seo_sitemap_state();
+}
+add_filter('wp_sitemaps_enabled', 'wpultra_seo_sitemaps_enabled_filter');
+function wpultra_seo_sitemaps_enabled_filter($enabled) {
+    return get_option('wpultra_seo_sitemap_disabled', false) ? false : $enabled;
+}
+
+// ---- WP: robots ----
+function wpultra_seo_get_robots(): array {
+    $rules = get_option('wpultra_seo_robots_rules', []);
+    return ['rules' => is_array($rules) ? $rules : []];
+}
+function wpultra_seo_set_robots(array $rules, bool $replace): array {
+    $clean = [];
+    foreach ($rules as $r) { $r = trim((string) $r); if ($r !== '') { $clean[] = $r; } }
+    if (!$replace) { $clean = array_merge((get_option('wpultra_seo_robots_rules', []) ?: []), $clean); }
+    update_option('wpultra_seo_robots_rules', array_values(array_unique($clean)));
+    return wpultra_seo_get_robots();
+}
+add_filter('robots_txt', 'wpultra_seo_robots_filter', 20);
+function wpultra_seo_robots_filter($output) {
+    $rules = get_option('wpultra_seo_robots_rules', []);
+    if (is_array($rules) && $rules) { $output .= "\n# WP-Ultra-MCP SEO\n" . implode("\n", array_map('sanitize_text_field', $rules)) . "\n"; }
+    return $output;
+}
+
+// ---- WP: redirects ----
+function wpultra_seo_redirects(): array {
+    $m = get_option('wpultra_seo_redirects', []);
+    return ['redirects' => is_array($m) ? $m : []];
+}
+function wpultra_seo_add_redirect(string $source, string $target, int $type): array {
+    $map = get_option('wpultra_seo_redirects', []);
+    if (!is_array($map)) { $map = []; }
+    $type = in_array($type, [301, 302], true) ? $type : 301;
+    $n = wpultra_seo_norm_path($source);
+    $map = array_values(array_filter($map, function ($r) use ($n) { return wpultra_seo_norm_path((string) ($r['source'] ?? '')) !== $n; }));
+    $map[] = ['source' => $source, 'target' => esc_url_raw($target), 'type' => $type];
+    update_option('wpultra_seo_redirects', $map);
+    return ['redirects' => $map];
+}
+function wpultra_seo_delete_redirect(string $source): array {
+    $map = get_option('wpultra_seo_redirects', []);
+    $n = wpultra_seo_norm_path($source);
+    $map = array_values(array_filter(is_array($map) ? $map : [], function ($r) use ($n) { return wpultra_seo_norm_path((string) ($r['source'] ?? '')) !== $n; }));
+    update_option('wpultra_seo_redirects', $map);
+    return ['redirects' => $map];
+}
+add_action('template_redirect', 'wpultra_seo_apply_redirects', 0);
+function wpultra_seo_apply_redirects() {
+    if (is_admin()) { return; }
+    $path = (string) wp_parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    $hit = wpultra_seo_match_redirect($path, get_option('wpultra_seo_redirects', []) ?: []);
+    if ($hit && !empty($hit['target'])) { wp_redirect($hit['target'], (int) ($hit['type'] ?? 301)); exit; }
+}
+
+// ---- WP: schema ----
+function wpultra_seo_set_schema(int $post_id, string $type, array $fields): array {
+    if (!get_post($post_id)) { return ['ok' => false]; }
+    update_post_meta($post_id, '_wpultra_seo_schema', ['type' => $type, 'fields' => $fields]);
+    return ['post_id' => $post_id, 'type' => $type];
+}
+function wpultra_seo_get_schema(int $post_id): array {
+    $s = get_post_meta($post_id, '_wpultra_seo_schema', true);
+    return is_array($s) ? $s : [];
+}
+add_action('wp_head', 'wpultra_seo_render_schema', 5);
+function wpultra_seo_render_schema() {
+    if (!is_singular()) { return; }
+    $s = wpultra_seo_get_schema(get_queried_object_id());
+    if (empty($s['type'])) { return; }
+    $json = wpultra_seo_build_jsonld((string) $s['type'], is_array($s['fields'] ?? null) ? $s['fields'] : []);
+    echo "\n<script type=\"application/ld+json\">" . wp_json_encode($json) . "</script>\n"; // phpcs:ignore
+}
