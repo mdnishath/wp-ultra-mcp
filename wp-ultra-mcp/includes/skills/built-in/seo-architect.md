@@ -23,13 +23,13 @@ Call `seo-status` before any other seo-* ability. It confirms:
 - Redirect count
 - Site-level meta counts (how many posts are missing titles or descriptions)
 
-If the site has no SEO plugin, `seo-quick-setup` writes baseline site meta into the native store; output only appears through `wp_head`. If Yoast or Rank Math is active, `seo-quick-setup` populates their respective options instead. Never skip the status check — mode detection determines which keys every subsequent meta write targets.
+Never skip the status check — mode detection determines which keys every subsequent meta write targets. (In native mode, per-post SEO output appears only through `wp_head`, and only when no third-party SEO plugin is active.)
 
 ## The ranking loop — follow this order
 
 ### 1. Baseline — `seo-quick-setup`
 
-After confirming the active plugin, call `seo-quick-setup` to write the site title, tagline, separator, and default meta template once. This is a one-time setup; subsequent per-post meta takes precedence.
+After confirming the active plugin, call `seo-quick-setup` to apply a Google-recommended baseline: it enables the XML sitemap and ensures the site is not discouraging search engines from indexing it, then returns a prioritized checklist of what to do next (audit, fill meta, set focus keywords, add internal links). It is idempotent — safe to re-run. It does NOT write per-post meta or title templates; those are the per-post/bulk steps below. (Title templates, breadcrumbs, and organization schema live in the Yoast/Rank Math plugin's own settings when one is active.)
 
 ### 2. Site-wide audit — `seo-site-audit`
 
@@ -45,7 +45,7 @@ Use the audit output as your work queue for step 3.
 
 **Single post:** `seo-set-meta` writes title, meta description, focus keyword, and robots directives for one post at a time.
 
-**Bulk:** `seo-bulk-set-meta` accepts a `posts` array and writes meta for many posts in one call.
+**Bulk:** `seo-bulk-set-meta` is rule-based: pass a `filter` (`missing_title` | `missing_description` | `all`) plus a `title_template` and/or `description_template` (tokens `%title%`, `%sitename%`, `%sep%`) — it finds the matching posts and writes the expanded meta for the whole batch in one call. `noindex` and `limit` are also supported.
 
 **CRITICAL GOTCHAS:**
 - `seo-set-meta` returns a `rejected` field and a `warnings` array. **Always read both.** `rejected` lists fields that failed validation and were not written. `warnings` flags soft issues (title too long, description too short) that were written but may hurt rankings.
@@ -110,7 +110,7 @@ You do not need to branch logic on the active plugin — the same ability call w
 Follow this exact order:
 
 1. **`seo-status`** — confirm active plugin, sitemap state, current meta coverage. Fix anything broken.
-2. **`seo-quick-setup`** — write baseline site meta (title, tagline, separator, default template).
+2. **`seo-quick-setup`** — apply the baseline (enable sitemap + ensure the site is indexable) and get the recommended checklist. Idempotent.
 3. **`seo-site-audit`** — get the full list of posts with missing/thin/noindex issues. This is your work queue.
 4. **Fix meta** — for ≤ 10 posts: `seo-set-meta` per post. For > 10 posts: `seo-bulk-set-meta` dry-run first, then with `apply: true`. Always read `rejected` and `warnings`.
 5. **Per-page optimization** — for each priority page: `seo-analyze-page` → review issues → `seo-optimize-content` → write back improved content.
@@ -124,7 +124,7 @@ Follow this exact order:
 | Ability | What it does |
 |---|---|
 | `seo-status` | Active plugin, sitemap URL, robots state, redirect count, meta coverage — always call first |
-| `seo-quick-setup` | Write baseline site meta (title, tagline, separator, default template) to the active plugin's store |
+| `seo-quick-setup` | Apply a Google-recommended baseline (enable sitemap + ensure indexable) + return a next-steps checklist; idempotent |
 | `seo-site-audit` | Scan all published posts: missing meta, thin content, noindex, missing alt |
 | `seo-get-meta` | Read title, description, focus keyword, robots for a post — mode-aware |
 | `seo-set-meta` | Write meta for one post — mode-aware; read `rejected` + `warnings` |
