@@ -34,9 +34,11 @@ wp-ultra-mcp/includes/abilities/
   field-status.php          — field-status ability
   field-read-values.php     — field-read-values ability
   field-write-values.php    — field-write-values ability
-wp-ultra-mcp/tests/
-  fields-values.test.php    — pure helper unit tests
+tests/                      — repo-root suite dir globbed by tests/run-all.ps1
+  fields-values.test.php    — pure helper unit tests (require path prefix ../wp-ultra-mcp/includes/…)
 ```
+
+> NOTE (correction during execution): the suite lives at repo-root `tests/` (globbed by `tests/run-all.ps1`), NOT `wp-ultra-mcp/tests/`. New test files go in repo-root `tests/` and require the plugin via `../wp-ultra-mcp/includes/…`. Any wave that adds ability slugs must also bump the count assertion in `tests/bootstrap.test.php`.
 
 Wiring edits (all in `wp-ultra-mcp/includes/bootstrap-mcp.php`):
 - `wpultra_register_categories()` — add `'fields'` slug.
