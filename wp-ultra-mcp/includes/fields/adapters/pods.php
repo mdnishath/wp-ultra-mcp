@@ -30,7 +30,12 @@ function wpultra_fields_pods_read(array $target, ?array $fields, bool $format): 
         return is_array($data) ? $data : [];
     }
     foreach ($fields as $name) {
-        $out[$name] = $format ? $pod->display($name) : $pod->field($name);
+        $val = $format ? $pod->display($name) : $pod->field($name);
+        // Pods returns single non-schema meta on auto-wrapped built-in Pods as a
+        // 1-element list; collapse to scalar for cross-provider parity with ACF/MB.
+        // Leave multi-element / assoc arrays (real multi-value or repeatable fields) intact.
+        if (is_array($val) && count($val) === 1 && array_key_exists(0, $val)) { $val = $val[0]; }
+        $out[$name] = $val;
     }
     return $out;
 }
