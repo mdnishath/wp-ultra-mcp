@@ -6,7 +6,7 @@ $__fails = 0;
 function ok($cond, $msg) { global $__fails; if ($cond) { echo "PASS: $msg\n"; } else { $__fails++; echo "FAIL: $msg\n"; } }
 
 // setup.php must be requireable without any field plugin present and report zero providers.
-require __DIR__ . '/../includes/fields/setup.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/fields/setup.php';
 $providers = wpultra_fields_providers();
 ok(is_array($providers), 'wpultra_fields_providers returns array');
 ok(count($providers) === 0, 'no providers detected in bare CLI (no ACF/MB/Pods constants)');
@@ -22,7 +22,7 @@ if (!class_exists('WP_Error')) {
     }
 }
 function is_wp_error($t) { return $t instanceof WP_Error; }
-require __DIR__ . '/../includes/fields/values.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/fields/values.php';
 
 $t = wpultra_fields_resolve_target(['type' => 'post', 'id' => '42']);
 ok(is_array($t) && $t['type'] === 'post' && $t['id'] === 42, 'resolve_target coerces post id to int');
