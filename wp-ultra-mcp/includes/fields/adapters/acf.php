@@ -82,3 +82,35 @@ function wpultra_fields_acf_get_group(string $key) {
     }
     return ['key' => $g['key'] ?? $key, 'title' => $g['title'] ?? '', 'provider' => 'acf', 'fields' => $slim, 'location' => $g['location'] ?? null];
 }
+
+/**
+ * Create/update/delete an ACF field group from a native-export payload.
+ * @return array|WP_Error
+ */
+function wpultra_fields_acf_define_group(array $payload, string $mode) {
+    if (!function_exists('acf_import_field_group')) { return new WP_Error('acf_unavailable', 'ACF is not active'); }
+    if ($mode === 'delete') {
+        $key = (string) ($payload['key'] ?? '');
+        if ($key === '') { return new WP_Error('key_required', 'delete requires payload.key'); }
+        $g = acf_get_field_group($key);
+        if (!$g) { return new WP_Error('group_not_found', "ACF group not found: {$key}"); }
+        acf_delete_field_group($g['ID'] ?? $key);
+        return ['key' => $key, 'id' => (int) ($g['ID'] ?? 0), 'mode' => 'delete'];
+    }
+    if (empty($payload['title'])) { return new WP_Error('title_required', 'payload.title is required'); }
+    // Reject ACF-Pro-only field types on the free edition (they silently drop otherwise).
+    $edition = (class_exists('acf_pro') || defined('ACF_PRO')) ? 'pro' : 'free';
+    if ($edition === 'free') {
+        $pro_types = ['repeater', 'flexible_content', 'gallery', 'clone', 'group'];
+        foreach ((array) ($payload['fields'] ?? []) as $f) {
+            if (in_array($f['type'] ?? '', $pro_types, true)) {
+                return new WP_Error('pro_field_type', "Field type '{$f['type']}' requires ACF Pro (this site runs ACF free).");
+            }
+        }
+    }
+    if (empty($payload['key'])) { $payload['key'] = 'group_' . substr(md5($payload['title'] . wp_rand()), 0, 13); }
+    if (!isset($payload['location'])) { $payload['location'] = []; }
+    $result = acf_import_field_group($payload); // returns the imported group array (with ID)
+    if (!is_array($result)) { return new WP_Error('acf_import_failed', 'acf_import_field_group did not return a group'); }
+    return ['key' => (string) ($result['key'] ?? $payload['key']), 'id' => (int) ($result['ID'] ?? 0), 'mode' => $mode];
+}

@@ -68,7 +68,7 @@ function wpultra_ability_files(): array {
         // fields (Wave 5, Plan 1)
         'field-status', 'field-read-values', 'field-write-values',
         // fields (Wave 5, Plan 2)
-        'field-list-groups', 'field-get-group',
+        'field-list-groups', 'field-get-group', 'acf-define-field-group',
     ];
     // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
@@ -99,7 +99,7 @@ function wpultra_ability_category_map(): array {
         ],
         'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block'],
         'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup'],
-        'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group'],
+        'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group'],
     ];
 }
 
