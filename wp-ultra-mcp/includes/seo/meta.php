@@ -2,6 +2,15 @@
 declare(strict_types=1);
 if (!defined('ABSPATH') && !defined('WPULTRA_TEST')) { /* allow harness load */ }
 
+if (!function_exists('wpultra_seo_strlen')) {
+    /** PURE. UTF-8-aware character count. Uses mb_strlen when available, else counts code
+     *  points so non-Latin (Bengali/CJK) titles aren't over-counted as raw bytes. */
+    function wpultra_seo_strlen(string $s): int {
+        if (function_exists('mb_strlen')) { return (int) wpultra_seo_strlen($s); }
+        return (int) preg_match_all('/./us', $s, $__m);
+    }
+}
+
 function wpultra_seo_fields(): array {
     return ['title', 'description', 'focus_keyword', 'canonical', 'robots_noindex', 'robots_nofollow', 'og_title', 'og_description', 'og_image', 'twitter_title', 'twitter_description'];
 }
@@ -25,11 +34,11 @@ function wpultra_seo_validate_meta(array $input): array {
         if (in_array($k, $bools, true)) { $clean[$k] = wpultra_seo_coerce_bool($v); continue; }
         $clean[$k] = (string) $v;
     }
-    if (isset($clean['title']) && strlen($clean['title']) > 60) {
+    if (isset($clean['title']) && wpultra_seo_strlen($clean['title']) > 60) {
         $warnings[] = ['field' => 'title', 'note' => 'Title over 60 chars may be truncated in search results.'];
     }
     if (isset($clean['description'])) {
-        $len = strlen($clean['description']);
+        $len = wpultra_seo_strlen($clean['description']);
         if ($len > 0 && $len < 120) { $warnings[] = ['field' => 'description', 'note' => 'Meta description under 120 chars; aim for 120–160.']; }
         if ($len > 160) { $warnings[] = ['field' => 'description', 'note' => 'Meta description over 160 chars may be truncated.']; }
     }
@@ -93,16 +102,29 @@ function wpultra_seo_set_meta(int $post_id, array $fields) {
     $mode = wpultra_seo_mode();
     $map = wpultra_seo_keymap($mode);
     foreach ($v['clean'] as $field => $val) {
-        if (isset($map[$field])) { update_post_meta($post_id, $map[$field], $val); continue; }
-        // robots specials
+        // update_post_meta() runs wp_unslash on the stored value; slash first so literal
+        // backslashes / quotes in titles & descriptions round-trip intact.
+        if (isset($map[$field])) { update_post_meta($post_id, $map[$field], wp_slash($val)); continue; }
+        // robots specials. When a flag is turned OFF we DELETE the meta so the post follows the
+        // SEO plugin's site defaults, rather than writing an "explicitly index/follow" value.
         if ($field === 'robots_noindex') {
             if ($mode === 'rankmath') { wpultra_seo_rankmath_robots($post_id, 'noindex', (bool) $val); }
-            elseif ($mode === 'yoast') { update_post_meta($post_id, '_yoast_wpseo_meta-robots-noindex', $val ? '1' : '2'); }
-            else { update_post_meta($post_id, '_wpultra_seo_noindex', $val ? '1' : '0'); }
+            elseif ($mode === 'yoast') {
+                if ($val) { update_post_meta($post_id, '_yoast_wpseo_meta-robots-noindex', '1'); }
+                else { delete_post_meta($post_id, '_yoast_wpseo_meta-robots-noindex'); }
+            } else {
+                if ($val) { update_post_meta($post_id, '_wpultra_seo_noindex', '1'); }
+                else { delete_post_meta($post_id, '_wpultra_seo_noindex'); }
+            }
         } elseif ($field === 'robots_nofollow') {
             if ($mode === 'rankmath') { wpultra_seo_rankmath_robots($post_id, 'nofollow', (bool) $val); }
-            elseif ($mode === 'yoast') { update_post_meta($post_id, '_yoast_wpseo_meta-robots-nofollow', $val ? '1' : ''); }
-            else { update_post_meta($post_id, '_wpultra_seo_nofollow', $val ? '1' : '0'); }
+            elseif ($mode === 'yoast') {
+                if ($val) { update_post_meta($post_id, '_yoast_wpseo_meta-robots-nofollow', '1'); }
+                else { delete_post_meta($post_id, '_yoast_wpseo_meta-robots-nofollow'); }
+            } else {
+                if ($val) { update_post_meta($post_id, '_wpultra_seo_nofollow', '1'); }
+                else { delete_post_meta($post_id, '_wpultra_seo_nofollow'); }
+            }
         }
     }
     return ['post_id' => $post_id, 'rejected' => $v['rejected'], 'warnings' => $v['warnings']];

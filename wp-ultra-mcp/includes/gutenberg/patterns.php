@@ -61,10 +61,11 @@ function wpultra_gb_reusable_save(array $args) {
         if ($title !== '') { $data['post_title'] = $title; }
         if (array_key_exists('content', $args)) { $data['post_content'] = (string) $args['content']; }
         if (count($data) === 1) { return wpultra_err('nothing_to_update', 'Provide title or content to update.'); }
-        $res = wp_update_post($data, true);
+        // Slash so block-attribute \u00xx escapes / backslashes survive wp_update_post's unslash.
+        $res = wp_update_post(wp_slash($data), true);
     } else {
         if ($title === '') { return wpultra_err('missing_title', 'title is required to create a reusable block.'); }
-        $res = wp_insert_post(['post_type' => 'wp_block', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => (string) ($args['content'] ?? '')], true);
+        $res = wp_insert_post(wp_slash(['post_type' => 'wp_block', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => (string) ($args['content'] ?? '')]), true);
     }
     if (is_wp_error($res)) { return $res; }
     $pid = (int) $res;

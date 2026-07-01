@@ -38,6 +38,17 @@ it('insert at root', function () {
 it('insert errors on missing parent', function () {
     assert_wp_error(wpultra_el_insert(el_fix(), 'nope', 0, ['id' => 'x', 'elType' => 'widget', 'widgetType' => 'e-image', 'elements' => []]));
 });
+it('insert rejects a leaf-widget parent (parent_not_container)', function () {
+    $node = ['id' => 'x', 'elType' => 'widget', 'widgetType' => 'e-image', 'settings' => [], 'elements' => []];
+    $err = wpultra_el_insert(el_fix(), 'btn0001', 0, $node); // btn0001 is a leaf widget
+    assert_wp_error($err);
+    assert_eq('parent_not_container', $err->get_error_code());
+});
+it('container-type helper accepts flexbox/div-block but not widget', function () {
+    assert_true(wpultra_el_is_container_type('e-flexbox'), 'flexbox is a container');
+    assert_true(wpultra_el_is_container_type('e-div-block'), 'div-block is a container');
+    assert_eq(false, wpultra_el_is_container_type('widget'));
+});
 it('remove deletes node', function () {
     $out = wpultra_el_remove(el_fix(), 'head001');
     assert_eq(1, count($out[0]['elements']));

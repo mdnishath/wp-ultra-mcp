@@ -43,7 +43,9 @@ function wpultra_skill_edit(array $input) {
     $count = substr_count($post->post_content, $old);
     if ($count === 0) { return wpultra_err('not_found', 'old_string not found.'); }
     if ($count > 1) { return wpultra_err('not_unique', "old_string occurs $count times."); }
-    $res = wp_update_post(['ID' => $post->ID, 'post_content' => str_replace($old, $new, $post->post_content)], true);
+    // Re-slash before writing: wp_update_post unslashes, and without this every edit would
+    // strip one backslash layer from the (untouched) rest of the skill body.
+    $res = wp_update_post(['ID' => $post->ID, 'post_content' => wp_slash(str_replace($old, $new, $post->post_content))], true);
     if (is_wp_error($res)) { return $res; }
     return wpultra_ok(['slug' => $slug]);
 }

@@ -123,12 +123,15 @@ function wpultra_woo_update_order(array $input) {
             if ($product) { $order->add_product($product, max(1, (int) ($li['quantity'] ?? 1))); $items_changed = true; }
         }
     }
-    if (!empty($input['billing']) && is_array($input['billing']))   { $order->set_address($input['billing'], 'billing'); }
-    if (!empty($input['shipping']) && is_array($input['shipping'])) { $order->set_address($input['shipping'], 'shipping'); }
+    $address_changed = false;
+    if (!empty($input['billing']) && is_array($input['billing']))   { $order->set_address($input['billing'], 'billing'); $address_changed = true; }
+    if (!empty($input['shipping']) && is_array($input['shipping'])) { $order->set_address($input['shipping'], 'shipping'); $address_changed = true; }
     if (isset($input['note']) && $input['note'] !== '') {
         $order->add_order_note((string) $input['note'], !empty($input['note_to_customer']));
     }
-    if ($items_changed) { $order->calculate_totals(); }
+    // Recalc when items OR addresses change — a new tax jurisdiction from an address
+    // change would otherwise leave tax stale.
+    if ($items_changed || $address_changed) { $order->calculate_totals(); }
     if (!empty($input['status'])) { $order->set_status((string) $input['status']); }
     $order->save();
     return ['id' => $id, 'status' => $order->get_status(), 'total' => $order->get_total()];

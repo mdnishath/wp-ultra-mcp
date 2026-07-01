@@ -37,5 +37,22 @@ it('leaves a union scalar untouched when no wrapped default', function () {
     $out = wpultra_el_wrap_settings(['x' => 'y'], ['x' => ['type' => 'union']]);
     assert_eq('y', $out['x']);
 });
+it('injects scalar into a string slot in a LATER sibling branch', function () {
+    // First plain-array child ("meta") has no string leaf; the string slot lives in a later sibling.
+    $shape = [
+        'meta'    => ['count' => ['$$type' => 'number', 'value' => 0]],
+        'content' => ['text' => ['$$type' => 'string', 'value' => 'old']],
+    ];
+    $out = wpultra_el_inject_scalar_into_shape($shape, 'NEW');
+    assert_eq('NEW', $out['content']['text']['value']);
+    // the sibling without a string slot is left untouched
+    assert_eq(0, $out['meta']['count']['value']);
+});
+it('inject_scalar injects into the first string slot only', function () {
+    $shape = ['a' => ['$$type' => 'string', 'value' => 'x'], 'b' => ['$$type' => 'string', 'value' => 'y']];
+    $out = wpultra_el_inject_scalar_into_shape($shape, 'Z');
+    assert_eq('Z', $out['a']['value']);
+    assert_eq('y', $out['b']['value']);
+});
 
 run_tests();

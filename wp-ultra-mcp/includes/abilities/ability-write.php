@@ -41,6 +41,12 @@ function wpultra_ability_write(array $input) {
     $valid = wpultra_recipe_validate($parsed);
     if (is_wp_error($valid)) { return $valid; }
     $slug = sanitize_title($parsed['name']);
+    if ($slug === '') { return wpultra_err('bad_slug', 'Recipe name did not produce a usable slug.'); }
+    // A slug that collides with a built-in ability file would register as 'wpultra/<slug>' and be
+    // silently rejected as a duplicate — report it now instead of a phantom success.
+    if (function_exists('wpultra_ability_files') && in_array($slug, wpultra_ability_files(), true)) {
+        return wpultra_err('slug_reserved', "'$slug' collides with a built-in ability; choose a different recipe name.");
+    }
     $existing = get_page_by_path($slug, OBJECT, 'wpultra_ability');
     $arr = [
         'post_type'    => 'wpultra_ability',
@@ -51,7 +57,8 @@ function wpultra_ability_write(array $input) {
         'post_content' => $raw,
     ];
     if ($existing) { $arr['ID'] = $existing->ID; }
-    $id = wp_insert_post($arr, true);
+    // Slash so the raw recipe body (JSON blocks, regex, Windows paths) survives wp_insert_post's unslash.
+    $id = wp_insert_post(wp_slash($arr), true);
     if (is_wp_error($id)) { return $id; }
     return wpultra_ok(['slug' => $slug, 'post_id' => (int) $id]);
 }

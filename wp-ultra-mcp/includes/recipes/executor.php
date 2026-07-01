@@ -4,7 +4,22 @@ if (!defined('ABSPATH')) { exit(); }
 
 function wpultra_recipe_subst_scalar(string $tpl, array $input): string {
     return preg_replace_callback('/\{([a-zA-Z0-9_]+)\}/', function ($m) use ($input) {
-        return array_key_exists($m[1], $input) ? (string) $input[$m[1]] : '';
+        if (!array_key_exists($m[1], $input)) { return ''; }
+        $v = $input[$m[1]];
+        // Non-scalars would cast to "Array"/throw — JSON-encode them instead of corrupting.
+        if (is_array($v) || is_object($v)) { return (string) wp_json_encode($v); }
+        return (string) $v;
+    }, $tpl);
+}
+
+/**
+ * Substitute tokens into PHP recipe code as SAFE PHP LITERALS (var_export), so a value like
+ * "1); wp_delete_post(1); (" can't break out of the intended expression into injected code.
+ * Recipe authors therefore write `return get_post({id});` and {id} becomes a quoted/typed literal.
+ */
+function wpultra_recipe_subst_php(string $tpl, array $input): string {
+    return preg_replace_callback('/\{([a-zA-Z0-9_]+)\}/', function ($m) use ($input) {
+        return array_key_exists($m[1], $input) ? var_export($input[$m[1]], true) : 'null';
     }, $tpl);
 }
 
@@ -57,7 +72,9 @@ function wpultra_recipe_execute(array $parsed, array $input) {
         ]);
     }
     if ($run === 'php') {
-        $code = wpultra_recipe_subst_scalar((string) ($recipe['code'] ?? ''), $input);
+        // Inputs become PHP literals, not raw text, so a recipe with `{token}` in its code
+        // can't be turned into an arbitrary-code-injection vector by the caller's values.
+        $code = wpultra_recipe_subst_php((string) ($recipe['code'] ?? ''), $input);
         return wpultra_execute_php(['code' => $code]);
     }
     if ($run === 'http') {

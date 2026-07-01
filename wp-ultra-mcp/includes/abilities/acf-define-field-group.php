@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) { exit(); }
 
 wp_register_ability('wpultra/acf-define-field-group', [
     'label'       => __('Define ACF Field Group', 'wp-ultra-mcp'),
-    'description' => __('Create/update/delete an ACF field group from a native ACF export payload (`{key?, title, fields[], location[][], ...}`). Pro-only field types (repeater/flexible_content/gallery/clone/group) are rejected on ACF free.', 'wp-ultra-mcp'),
+    'description' => __('Create/update/delete an ACF field group from a native ACF export payload (`{key?, title, fields[], location[][], ...}`). Pro-only field types (repeater/flexible_content/gallery/clone), including ones nested inside a free group/layout, are rejected on ACF free.', 'wp-ultra-mcp'),
     'category'    => 'fields',
     'input_schema'  => [
         'type' => 'object',

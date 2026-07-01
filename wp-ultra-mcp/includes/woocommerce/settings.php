@@ -13,6 +13,7 @@ function wpultra_woo_settings_whitelist(): array {
         'woocommerce_weight_unit',
         'woocommerce_dimension_unit',
         'woocommerce_allowed_countries',
+        'woocommerce_specific_allowed_countries',
         'woocommerce_ship_to_countries',
         'woocommerce_calc_taxes',
         'woocommerce_prices_include_tax',
@@ -21,6 +22,45 @@ function wpultra_woo_settings_whitelist(): array {
         'woocommerce_store_city',
         'woocommerce_store_postcode',
     ];
+}
+
+/**
+ * Validate a single whitelisted setting value.
+ * Returns ['ok' => true, 'value' => <coerced>] or ['ok' => false, 'reason' => <why>].
+ * $all is the full options map being written (so companion-key checks can see siblings).
+ */
+function wpultra_woo_validate_setting(string $key, $val, array $all): array {
+    // yes/no toggles
+    $yesno = [
+        'woocommerce_calc_taxes', 'woocommerce_prices_include_tax',
+        'woocommerce_manage_stock', 'woocommerce_enable_coupons',
+    ];
+    if (in_array($key, $yesno, true)) {
+        return ['ok' => true, 'value' => wpultra_woo_coerce_bool($val) ? 'yes' : 'no'];
+    }
+
+    if ($key === 'woocommerce_price_num_decimals') {
+        if (!is_numeric($val) || (int) $val < 0) { return ['ok' => false, 'reason' => 'expected_non_negative_int']; }
+        return ['ok' => true, 'value' => (int) $val];
+    }
+
+    if ($key === 'woocommerce_currency') {
+        if (function_exists('get_woocommerce_currencies')) {
+            $codes = array_keys(get_woocommerce_currencies());
+            if (!in_array((string) $val, $codes, true)) { return ['ok' => false, 'reason' => 'invalid_currency']; }
+        }
+        return ['ok' => true, 'value' => (string) $val];
+    }
+
+    if ($key === 'woocommerce_allowed_countries' && (string) $val === 'specific') {
+        // 'specific' with no companion list bricks checkout — require the companion.
+        $companion = $all['woocommerce_specific_allowed_countries'] ?? null;
+        if (empty($companion) || (is_array($companion) && $companion === [])) {
+            return ['ok' => false, 'reason' => 'specific_requires_companion_list'];
+        }
+    }
+
+    return ['ok' => true, 'value' => $val];
 }
 
 function wpultra_woo_get_settings(): array {
@@ -62,10 +102,13 @@ function wpultra_woo_update_settings(array $input) {
     $whitelist = wpultra_woo_settings_whitelist();
 
     if (!empty($input['options']) && is_array($input['options'])) {
-        foreach ($input['options'] as $key => $val) {
+        $opts = $input['options'];
+        foreach ($opts as $key => $val) {
             if (!in_array($key, $whitelist, true)) { $rejected[] = ['key' => $key, 'reason' => 'not_whitelisted']; continue; }
-            update_option($key, $val);
-            $updated[$key] = $val;
+            $check = wpultra_woo_validate_setting((string) $key, $val, $opts);
+            if (!$check['ok']) { $rejected[] = ['key' => $key, 'reason' => $check['reason']]; continue; }
+            update_option($key, $check['value']);
+            $updated[$key] = $check['value'];
         }
     }
 

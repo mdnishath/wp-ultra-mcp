@@ -20,6 +20,20 @@ function wpultra_el_validate_tree(array $elements, ?callable $validator = null, 
             'normalized_tree' => $elements,
         ];
     }
+    // Only at the root: reject empty or duplicate ids up front. Duplicate ids break id-addressed
+    // edit/delete/move (the tree walk returns the first match), and missing ids can't be addressed
+    // at all. Fail closed with a clear list rather than silently persisting an unaddressable tree.
+    if ($depth === 0) {
+        $idError = wpultra_el_id_integrity_error($elements);
+        if ($idError !== null) {
+            return [
+                'ok'              => false,
+                'nodes'           => [['id' => '', 'elType' => '', 'widgetType' => null, 'valid' => false, 'errors' => [$idError]]],
+                'summary'         => ['total' => 1, 'invalid' => 1],
+                'normalized_tree' => $elements,
+            ];
+        }
+    }
     foreach ($elements as $n) {
         if (!is_array($n)) { $normalized[] = $n; continue; }
         $res = $validator($n);
@@ -62,11 +76,39 @@ function wpultra_el_collect_ids(array $elements, int $depth = 0): array {
     return $ids;
 }
 
+/**
+ * Return a human-readable error string if any node has an empty id or if any id is used more than
+ * once (depth-first across the whole tree), or null when every node has a unique non-empty id.
+ */
+function wpultra_el_id_integrity_error(array $elements): ?string {
+    $empty = 0;
+    $wpultra_el_count_ids = function (array $els, int $depth, array &$counts, int &$empty) use (&$wpultra_el_count_ids): void {
+        if ($depth > 100) { return; }
+        foreach ($els as $n) {
+            if (!is_array($n)) { continue; }
+            $id = isset($n['id']) ? (string) $n['id'] : '';
+            if ($id === '') { $empty++; }
+            else { $counts[$id] = ($counts[$id] ?? 0) + 1; }
+            if (!empty($n['elements']) && is_array($n['elements'])) {
+                $wpultra_el_count_ids($n['elements'], $depth + 1, $counts, $empty);
+            }
+        }
+    };
+    $counts = [];
+    $wpultra_el_count_ids($elements, 0, $counts, $empty);
+    $dupes = array_keys(array_filter($counts, fn($c) => $c > 1));
+    $problems = [];
+    if ($empty > 0) { $problems[] = "$empty node(s) with a missing/empty id"; }
+    if ($dupes !== []) { $problems[] = 'duplicate id(s): ' . implode(', ', $dupes); }
+    if ($problems === []) { return null; }
+    return 'Element ids must be present and unique — ' . implode('; ', $problems) . '.';
+}
+
 /** Scan rendered Elementor HTML for data-id / data-interaction-id markers; report which expected ids are present/dropped. */
 function wpultra_el_render_digest(string $html, array $expectedIds): array {
     $present = [];
     // Classic elements use data-id; atomic widgets use data-interaction-id.
-    foreach (['/data-id="([a-z0-9]+)"/i', '/data-interaction-id="([a-z0-9]+)"/i'] as $pattern) {
+    foreach (['/data-id="([\w-]+)"/i', '/data-interaction-id="([\w-]+)"/i'] as $pattern) {
         if (preg_match_all($pattern, $html, $m)) {
             $present = array_merge($present, $m[1]);
         }
@@ -130,7 +172,12 @@ function wpultra_el_validate_node(array $node): array {
             $errs = array_values(array_filter(array_map('trim', explode("\n", (string) $result->errors()->to_string()))));
             return ['valid' => false, 'errors' => $errs ?: ['settings failed Elementor validation'], 'settings' => $wrapped];
         }
-        return ['valid' => true, 'errors' => [], 'settings' => $result->unwrap()];
+        // Props_Parser::unwrap() returns only schema-declared keys, dropping the underscore/system
+        // keys (_element_id, __globals__, __dynamic__) that the comment above says to preserve.
+        // Merge those preserved keys back so a get→edit→set round-trip keeps dynamic bindings/ids.
+        $preserved = array_filter($settings, fn($k) => $k !== '' && $k[0] === '_', ARRAY_FILTER_USE_KEY);
+        $merged = array_merge($preserved, $result->unwrap());
+        return ['valid' => true, 'errors' => [], 'settings' => $merged];
     } catch (\Throwable $e) {
         return ['valid' => false, 'errors' => ['validation error: ' . $e->getMessage()], 'settings' => $settings];
     }

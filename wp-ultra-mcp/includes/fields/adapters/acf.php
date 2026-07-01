@@ -28,7 +28,7 @@ function wpultra_fields_acf_read(array $target, ?array $fields, bool $format): a
         return $out;
     }
     foreach ($fields as $name) {
-        $out[$name] = get_field($name, $acf_id, $format);
+        $out[$name] = function_exists('get_field') ? get_field($name, $acf_id, $format) : null;
     }
     return $out;
 }
@@ -41,13 +41,14 @@ function wpultra_fields_acf_read(array $target, ?array $fields, bool $format): a
 function wpultra_fields_acf_write(array $target, array $atomic, array $complex): array {
     $acf_id = wpultra_fields_acf_target($target);
     $res = [];
+    $have = function_exists('update_field');
     foreach ($atomic as $name => $value) {
-        update_field($name, $value, $acf_id);
+        if ($have) { update_field($name, $value, $acf_id); }
         // update_field returns false when the value is unchanged; not an error, so report ok.
         $res[$name] = ['status' => 'ok'];
     }
     foreach ($complex as $name => $wrap) {
-        update_field($name, $wrap['value'], $acf_id);
+        if ($have) { update_field($name, $wrap['value'], $acf_id); }
         $res[$name] = ['status' => 'ok'];
     }
     return $res;
@@ -84,6 +85,34 @@ function wpultra_fields_acf_get_group(string $key) {
 }
 
 /**
+ * Recursively scan a fields[] tree for a Pro-only field type, descending into a group's
+ * sub_fields and a flexible_content layout's sub_fields.
+ * @return string|null  the offending type, or null if none found
+ */
+function wpultra_fields_acf_find_pro_type(array $fields, array $pro_types): ?string {
+    foreach ($fields as $f) {
+        if (!is_array($f)) { continue; }
+        $type = (string) ($f['type'] ?? '');
+        if (in_array($type, $pro_types, true)) { return $type; }
+        // group / clone / repeater nest their children under sub_fields.
+        if (!empty($f['sub_fields']) && is_array($f['sub_fields'])) {
+            $nested = wpultra_fields_acf_find_pro_type($f['sub_fields'], $pro_types);
+            if ($nested !== null) { return $nested; }
+        }
+        // flexible_content nests sub_fields under each layout.
+        if (!empty($f['layouts']) && is_array($f['layouts'])) {
+            foreach ($f['layouts'] as $layout) {
+                if (is_array($layout) && !empty($layout['sub_fields']) && is_array($layout['sub_fields'])) {
+                    $nested = wpultra_fields_acf_find_pro_type($layout['sub_fields'], $pro_types);
+                    if ($nested !== null) { return $nested; }
+                }
+            }
+        }
+    }
+    return null;
+}
+
+/**
  * Create/update/delete an ACF field group from a native-export payload.
  * @return array|WP_Error
  */
@@ -94,18 +123,29 @@ function wpultra_fields_acf_define_group(array $payload, string $mode) {
         if ($key === '') { return new WP_Error('key_required', 'delete requires payload.key'); }
         $g = acf_get_field_group($key);
         if (!$g) { return new WP_Error('group_not_found', "ACF group not found: {$key}"); }
-        acf_delete_field_group($g['ID'] ?? $key);
-        return ['key' => $key, 'id' => (int) ($g['ID'] ?? 0), 'mode' => 'delete'];
+        // acf_delete_field_group() only removes DB-backed groups by numeric post ID; a
+        // local-JSON/PHP-registered group has ID=0 and passing that deletes nothing (or the
+        // wrong post) while still reporting success. Refuse it explicitly.
+        $gid = (int) ($g['ID'] ?? 0);
+        if ($gid <= 0) {
+            return new WP_Error('group_not_deletable', "ACF group '{$key}' is registered via local JSON/PHP (no DB row) and cannot be deleted from the database. Remove its acf-json file or PHP registration instead.");
+        }
+        $deleted = acf_delete_field_group($gid);
+        if ($deleted === false) {
+            return new WP_Error('acf_delete_failed', "Could not delete ACF field group '{$key}'.");
+        }
+        return ['key' => $key, 'id' => $gid, 'mode' => 'delete'];
     }
     if (empty($payload['title'])) { return new WP_Error('title_required', 'payload.title is required'); }
     // Reject ACF-Pro-only field types on the free edition (they silently drop otherwise).
     $edition = (class_exists('acf_pro') || defined('ACF_PRO')) ? 'pro' : 'free';
     if ($edition === 'free') {
-        $pro_types = ['repeater', 'flexible_content', 'gallery', 'clone', 'group'];
-        foreach ((array) ($payload['fields'] ?? []) as $f) {
-            if (in_array($f['type'] ?? '', $pro_types, true)) {
-                return new WP_Error('pro_field_type', "Field type '{$f['type']}' requires ACF Pro (this site runs ACF free).");
-            }
+        // NB: 'group' is FREE (since ACF 5.6) and must NOT be here. Pro types can also hide
+        // inside a free group's sub_fields or a flexible_content layout, so recurse.
+        $pro_types = ['repeater', 'flexible_content', 'gallery', 'clone'];
+        $bad = wpultra_fields_acf_find_pro_type((array) ($payload['fields'] ?? []), $pro_types);
+        if ($bad !== null) {
+            return new WP_Error('pro_field_type', "Field type '{$bad}' requires ACF Pro (this site runs ACF free).");
         }
     }
     if (empty($payload['key'])) { $payload['key'] = 'group_' . substr(md5($payload['title'] . wp_rand()), 0, 13); }

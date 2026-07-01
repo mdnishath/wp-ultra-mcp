@@ -5,12 +5,14 @@ if (!defined('ABSPATH') && !defined('WPULTRA_TEST')) { /* allow harness load */ 
 /** PURE. Wrap the first occurrence of $anchor NOT already inside an <a> in a link. */
 function wpultra_seo_wrap_anchor(string $content, string $anchor, string $url): array {
     if ($anchor === '' || stripos($content, $anchor) === false) { return ['content' => $content, 'inserted' => false]; }
-    // Split out existing <a>...</a> regions so we only consider text outside them.
-    $parts = preg_split('/(<a\b[^>]*>.*?<\/a>)/is', $content, -1, PREG_SPLIT_DELIM_CAPTURE);
+    // Split out existing <a>...</a> regions, HTML comments (Gutenberg block delimiters), and
+    // any markup tag so we only ever inject into visible text — never inside an attribute,
+    // a block-comment JSON payload, or an existing link.
+    $parts = preg_split('/(<a\b[^>]*>.*?<\/a>|<!--.*?-->|<[^>]+>)/is', $content, -1, PREG_SPLIT_DELIM_CAPTURE);
     $out = '';
     $done = false;
     foreach ($parts as $seg) {
-        if (!$done && stripos($seg, '<a') !== 0) {
+        if (!$done && $seg !== '' && $seg[0] !== '<') {
             $pos = stripos($seg, $anchor);
             if ($pos !== false) {
                 $orig = substr($seg, $pos, strlen($anchor));
@@ -74,12 +76,17 @@ function wpultra_seo_insert_link(int $post_id, string $anchor, string $url) {
     }
     $r = wpultra_seo_wrap_anchor((string) $post->post_content, $anchor, esc_url_raw($url));
     if (!$r['inserted']) { return ['post_id' => $post_id, 'inserted' => false, 'anchor' => $anchor]; }
-    wp_update_post(['ID' => $post_id, 'post_content' => $r['content']]);
+    // wp_update_post() unslashes; slash first so literal backslashes / block-JSON survive.
+    wp_update_post(['ID' => $post_id, 'post_content' => wp_slash($r['content'])]);
     return ['post_id' => $post_id, 'inserted' => true, 'anchor' => $anchor];
 }
 
+if (!defined('WPULTRA_SEO_SCAN_MAX')) { define('WPULTRA_SEO_SCAN_MAX', 500); }
+
 function wpultra_seo_link_audit(int $limit): array {
-    $ids = get_posts(['post_type' => ['post', 'page'], 'post_status' => 'publish', 'posts_per_page' => max(1, $limit), 'fields' => 'ids']);
+    $capped = min(max(1, $limit), WPULTRA_SEO_SCAN_MAX);
+    $truncated = $limit > WPULTRA_SEO_SCAN_MAX;
+    $ids = get_posts(['post_type' => ['post', 'page'], 'post_status' => 'publish', 'posts_per_page' => $capped, 'fields' => 'ids']);
     $home = wp_parse_url(home_url(), PHP_URL_HOST);
     $incoming = array_fill_keys(array_map('intval', $ids), 0);
     $broken = [];
@@ -89,13 +96,16 @@ function wpultra_seo_link_audit(int $limit): array {
             foreach ($m[1] as $href) {
                 $host = wp_parse_url($href, PHP_URL_HOST);
                 if ($host && $host !== $home) { continue; }
+                // Internal candidate = same host OR a host-less root-relative path ("/old-page/").
+                $is_internal = ($host === $home) || ($host === null && isset($href[0]) && $href[0] === '/');
+                if (!$is_internal) { continue; }
                 $target = url_to_postid($href);
                 if ($target && isset($incoming[$target])) { $incoming[$target]++; }
-                elseif ($target === 0 && strpos($href, $home ?: 'wp-connector') !== false) { $broken[] = ['post_id' => (int) $id, 'href' => $href]; }
+                elseif ($target === 0) { $broken[] = ['post_id' => (int) $id, 'href' => $href]; }
             }
         }
     }
     $orphans = [];
     foreach ($incoming as $pid => $count) { if ($count === 0) { $orphans[] = ['id' => $pid, 'title' => get_the_title($pid)]; } }
-    return ['orphans' => $orphans, 'broken' => $broken, 'counts' => ['scanned' => count($ids), 'orphans' => count($orphans), 'broken' => count($broken)]];
+    return ['orphans' => $orphans, 'broken' => $broken, 'truncated' => $truncated, 'counts' => ['scanned' => count($ids), 'orphans' => count($orphans), 'broken' => count($broken)]];
 }

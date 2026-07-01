@@ -16,7 +16,7 @@ wp_register_ability('wpultra/seo-bulk-set-meta', [
         ],
         'additionalProperties' => false,
     ],
-    'output_schema' => ['type' => 'object', 'properties' => ['success' => ['type' => 'boolean'], 'dry_run' => ['type' => 'boolean'], 'applied' => ['type' => 'array'], 'applied_count' => ['type' => 'integer'], 'skipped' => ['type' => 'integer']], 'required' => ['success']],
+    'output_schema' => ['type' => 'object', 'properties' => ['success' => ['type' => 'boolean'], 'dry_run' => ['type' => 'boolean'], 'truncated' => ['type' => 'boolean'], 'applied' => ['type' => 'array'], 'applied_count' => ['type' => 'integer'], 'skipped' => ['type' => 'integer']], 'required' => ['success']],
     'execute_callback'    => 'wpultra_seo_bulk_set_meta_cb',
     'permission_callback' => 'wpultra_permission_callback',
     'meta' => ['show_in_rest' => true, 'mcp' => ['public' => true, 'type' => 'tool'], 'annotations' => ['readonly' => false, 'destructive' => false, 'idempotent' => false]],

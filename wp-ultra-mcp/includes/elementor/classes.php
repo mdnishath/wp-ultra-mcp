@@ -102,6 +102,21 @@ function wpultra_el_apply_class(int $post_id, string $element_id, string $class_
     $data = wpultra_el_raw($post_id);
     $node = wpultra_el_find($data, $element_id);
     if ($node === null) { return wpultra_err('element_not_found', "No element '$element_id'."); }
+    // When adding, verify the class actually exists — writing a dangling reference silently no-ops
+    // at render. (Skip the check when removing so a stale id can always be cleaned up.)
+    $note = null;
+    if (!$remove) {
+        $list = wpultra_el_gc_list();
+        if (is_wp_error($list)) { return $list; }
+        $known = array_column($list, 'id');
+        if (!in_array($class_id, $known, true)) {
+            return wpultra_err('class_not_found', "No global class '$class_id'. Create it with elementor-upsert-global-class first.");
+        }
+    }
+    // Global classes are an atomic-only prop; applying to a classic widget writes a prop it ignores.
+    if (wpultra_el_atomic_type_object($node) === null) {
+        $note = 'Target element is not an atomic widget; the classes prop may not render for it.';
+    }
     $cur = [];
     if (isset($node['settings']['classes']['value']) && is_array($node['settings']['classes']['value'])) {
         $cur = $node['settings']['classes']['value'];
@@ -112,7 +127,9 @@ function wpultra_el_apply_class(int $post_id, string $element_id, string $class_
     if (is_wp_error($merged)) { return $merged; }
     $w = wpultra_el_write($post_id, $merged);
     if (is_wp_error($w)) { return $w; }
-    return wpultra_ok(['post_id' => $post_id, 'element_id' => $element_id, 'classes' => $cur]);
+    $out = ['post_id' => $post_id, 'element_id' => $element_id, 'classes' => $cur];
+    if ($note !== null) { $out['note'] = $note; }
+    return wpultra_ok($out);
 }
 
 function wpultra_el_set_interaction(int $post_id, string $element_id, array $interactions) {

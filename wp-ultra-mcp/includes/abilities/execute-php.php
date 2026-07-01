@@ -38,10 +38,12 @@ wp_register_ability('wpultra/execute-php', [
 function wpultra_execute_php(array $input) {
     $code = (string) ($input['code'] ?? '');
     if ($code === '') { return wpultra_err('empty_code', 'code is required.'); }
+    if (strlen($code) > wpultra_execute_php_max_bytes()) {
+        return wpultra_err('code_too_large', 'code exceeds the ' . wpultra_execute_php_max_bytes() . '-byte limit.');
+    }
 
     // Safe-mode guard: refuse execution if sandbox previously crashed.
-    // function_exists check ensures no-op when runtime.php is not loaded (e.g. unit tests).
-    if (function_exists('wpultra_sandbox_crashed') && wpultra_sandbox_crashed()) {
+    if (wpultra_safe_mode_active()) {
         return wpultra_err('safe_mode', 'Sandbox safe mode is active after a crash. Read the debug log, fix the offending sandbox file, then clear safe mode in wp-admin.');
     }
 

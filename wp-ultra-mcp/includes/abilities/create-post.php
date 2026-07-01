@@ -65,7 +65,9 @@ function wpultra_create_post(array $input) {
     if (!empty($input['author'])) { $postarr['post_author'] = (int) $input['author']; }
     if (!empty($input['date'])) { $postarr['post_date'] = (string) $input['date']; }
     if (!empty($input['meta']) && is_array($input['meta'])) { $postarr['meta_input'] = $input['meta']; }
-    $id = wp_insert_post($postarr, true);
+    // wp_insert_post() unslashes its input, so slash first or literal backslashes
+    // (Windows paths, JSON/regex in content, block markup) are silently stripped.
+    $id = wp_insert_post(wp_slash($postarr), true);
     if (is_wp_error($id)) { return $id; }
     if (!empty($input['terms']) && is_array($input['terms'])) {
         foreach ($input['terms'] as $tax => $terms) { wp_set_post_terms((int) $id, (array) $terms, (string) $tax); }

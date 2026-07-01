@@ -53,7 +53,8 @@ function wpultra_memory_save(array $input) {
         }
         $postarr['ID'] = (int) $input['id'];
     }
-    $id = wp_insert_post($postarr, true);
+    // Slash so memory content with backslashes/JSON survives wp_insert_post's internal unslash.
+    $id = wp_insert_post(wp_slash($postarr), true);
     if (is_wp_error($id)) { return $id; }
     update_post_meta((int) $id, '_wpultra_memory_type', $type);
     return wpultra_ok(['id' => (int) $id]);

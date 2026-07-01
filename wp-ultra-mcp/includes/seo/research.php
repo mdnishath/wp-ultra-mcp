@@ -36,9 +36,14 @@ function wpultra_seo_competitor_compare(array $ours, array $theirs): array {
     return ['missing_headings' => $missingHeadings, 'missing_keywords' => $missingKeywords, 'word_count_delta' => $delta, 'recommendations' => $recs];
 }
 
+if (!defined('WPULTRA_SEO_SCAN_MAX')) { define('WPULTRA_SEO_SCAN_MAX', 500); }
+
 /** WP helper: build the site keyword index for keyword-gap. */
 function wpultra_seo_site_index(int $limit = 200): array {
-    $ids = get_posts(['post_type' => ['post', 'page'], 'post_status' => 'publish', 'posts_per_page' => max(1, $limit), 'fields' => 'ids']);
+    $capped = min(max(1, $limit), WPULTRA_SEO_SCAN_MAX);
+    $ids = get_posts(['post_type' => ['post', 'page'], 'post_status' => 'publish', 'posts_per_page' => $capped, 'fields' => 'ids']);
+    // Prime meta cache; get_meta() below reads focus_keyword per post.
+    if ($ids && function_exists('update_meta_cache')) { update_meta_cache('post', array_map('intval', $ids)); }
     $idx = [];
     foreach ($ids as $id) {
         $fk = function_exists('wpultra_seo_get_meta') ? (string) (wpultra_seo_get_meta((int) $id)['focus_keyword'] ?? '') : '';

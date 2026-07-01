@@ -35,4 +35,19 @@ it('missing keyword + no meta scores low with fails', function () {
     assert_eq('fail', $byId['images_have_alt']);
 });
 
+it('word count is unicode-aware for Bengali content', function () {
+    // 5 Bengali "words". str_word_count() returns 0 here; the /u splitter must count 5.
+    $bn = 'আমার সোনার বাংলা আমি তোমায়';
+    assert_eq(5, wpultra_seo_word_count($bn));
+    $data = [
+        'title' => 'x', 'meta_description' => '', 'focus_keyword' => '',
+        'h1' => '', 'first_paragraph' => '', 'body_text' => $bn,
+        'slug' => 'x', 'internal_links' => 0, 'external_links' => 0, 'images_total' => 0, 'images_missing_alt' => 0,
+    ];
+    $r = wpultra_seo_score($data);
+    $byId = [];
+    foreach ($r['checks'] as $c) { $byId[$c['id']] = $c['message']; }
+    assert_contains('(5)', $byId['content_length']); // word count reflected, not (0)
+});
+
 run_tests();

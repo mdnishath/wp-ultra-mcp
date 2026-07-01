@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.11.0
+Stable tag: 0.12.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,10 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.12.0 =
+* Power features: `media-upload` (URL/base64 → media library), `manage-user` (create/update/role/delete), `manage-plugin-theme` (install/activate/update), `content-restore` (revision-based undo/rollback), `pods-define-fields`, and a self-improvement layer — `self-test` diagnostics + per-ability usage/failure stats. 96 → 104 abilities.
+* Hardening & bug-fix pass (~45 confirmed fixes across all subsystems): sandbox IIS web.config + NTFS-stream jail, SQL OUTFILE/comment-verb gating, recipe PHP-injection closed (inputs encoded as literals); `wp_slash` on every post/meta write path (Gutenberg, Elementor, SEO links, posts, skills, memory, recipes) so backslashes/JSON survive; Gutenberg innerContent placeholder integrity (insert/move/update no longer drop children); Elementor atomic cache-clear + JSON-encode guard + round-trip system-key preservation; WooCommerce refund-aware/​capped reports, money clamping, address tax recalc, settings validation; SEO `<title>` XSS, duplicate-canonical, multi-hop redirect-loop, and Bengali/CJK-aware length + word counts; Meta Box read/write revived. Full test suite (38 files) green.
 
 = 0.11.0 =
 * Wave 7 — SEO: 19 new abilities for full on-site SEO. Works with Yoast or Rank Math (auto-detected) or a built-in native mode. On-page meta (title/description/focus keyword/robots/OG), page scoring + content optimization, internal-link suggestions/insertion/audit, keyword research + content-gap + competitor analysis (on-site + AI, no external API), technical SEO (sitemap, robots, 301/302 redirects, JSON-LD schema), LocalBusiness structured data, a site-wide SEO audit, rule-based bulk meta, and a Google-recommended quick-setup. New seo-architect skill encodes the ranking loop.

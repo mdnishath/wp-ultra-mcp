@@ -56,5 +56,6 @@ function wpultra_write_file(array $input) {
     }
     if ($ok === false) { return wpultra_err('write_failed', "Could not write: $resolved"); }
     wpultra_audit_log($append ? 'write-file (append)' : 'write-file', $resolved, true);
-    return wpultra_ok(['path' => $resolved, 'bytes_written' => strlen($content)]);
+    // Report the ACTUAL bytes written so a partial (disk-full) append isn't reported as full success.
+    return wpultra_ok(['path' => $resolved, 'bytes_written' => (int) $ok]);
 }

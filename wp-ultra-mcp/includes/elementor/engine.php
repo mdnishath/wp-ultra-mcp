@@ -12,7 +12,7 @@ function wpultra_el_raw(int $post_id): array {
 function wpultra_el_read(int $post_id, array $opts = []) {
     if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
     $data = wpultra_el_raw($post_id);
-    if (!empty($opts['element_id'])) {
+    if (isset($opts['element_id']) && (string) $opts['element_id'] !== '') {
         $node = wpultra_el_find($data, (string) $opts['element_id']);
         if ($node === null) { return wpultra_err('element_not_found', "No element '{$opts['element_id']}'."); }
         return wpultra_ok(['post_id' => $post_id, 'element' => $node]);
@@ -24,7 +24,10 @@ function wpultra_el_read(int $post_id, array $opts = []) {
 function wpultra_el_write(int $post_id, array $elements) {
     if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
     // Atomic-safe: write meta directly (Document::save strips atomic widgets).
-    update_post_meta($post_id, '_elementor_data', wp_slash(wp_json_encode($elements)));
+    // Guard the encode: a false return (bad UTF-8 / INF-NAN) would wipe _elementor_data to ''.
+    $json = wp_json_encode($elements);
+    if (!is_string($json)) { return wpultra_err('encode_failed', 'Element tree could not be JSON-encoded; write aborted to avoid wiping the page.'); }
+    update_post_meta($post_id, '_elementor_data', wp_slash($json));
     update_post_meta($post_id, '_elementor_edit_mode', 'builder');
     // Stamp the real installed version only; writing a fabricated '4.0.0' can mislead
     // Elementor's data upgrader on the next load.
@@ -36,8 +39,12 @@ function wpultra_el_write(int $post_id, array $elements) {
             if (isset($p->files_manager)) { $p->files_manager->clear_cache(); }
         }
         delete_post_meta($post_id, '_elementor_css');
-        do_action('elementor/atomic-widgets/styles/clear');
         clean_post_cache($post_id);
+        // The atomic styles-manager listener is typed `array $path`; calling the action with
+        // no args throws a TypeError. Pass the [key, post_id] shape Elementor core uses, and
+        // isolate it so a failure here can't abort the rest of the cache clear.
+        try { do_action('elementor/atomic-widgets/styles/clear', ['local', $post_id]); }
+        catch (\Throwable $e) { /* atomic styles clear is best-effort */ }
     } catch (\Throwable $e) { /* cache clear is best-effort */ }
     return wpultra_ok(['post_id' => $post_id, 'top_level_count' => count($elements)]);
 }

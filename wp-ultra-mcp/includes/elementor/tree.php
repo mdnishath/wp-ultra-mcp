@@ -47,17 +47,31 @@ function wpultra_el_locate(array $elements, string $id, string $parentId = '', i
     return null;
 }
 
+/** elTypes that legitimately hold children. A `widget` elType is a leaf unless it is one of these. */
+function wpultra_el_is_container_type(string $elType): bool {
+    return in_array($elType, ['e-flexbox', 'e-div-block', 'container', 'section', 'column', 'inner-section'], true);
+}
+
 function wpultra_el_insert(array $elements, ?string $parentId, int $pos, array $node) {
     if ($parentId === null || $parentId === '') {
         $pos = max(0, min($pos, count($elements)));
         array_splice($elements, $pos, 0, [$node]);
         return $elements;
     }
-    $done = wpultra_el_walk($elements, $parentId, function (&$parent) use ($node, $pos) {
+    $rejected = null;
+    $done = wpultra_el_walk($elements, $parentId, function (&$parent) use ($node, $pos, &$rejected) {
+        $pElType = (string) ($parent['elType'] ?? '');
+        // A leaf widget cannot hold children: fabricating an `elements` array on it produces a
+        // subtree Elementor silently drops at render. Reject unless it's a known container type.
+        if ($pElType === 'widget' && !wpultra_el_is_container_type($pElType)) {
+            $rejected = true;
+            return;
+        }
         if (!isset($parent['elements']) || !is_array($parent['elements'])) { $parent['elements'] = []; }
         $p = max(0, min($pos, count($parent['elements'])));
         array_splice($parent['elements'], $p, 0, [$node]);
     });
+    if ($rejected) { return wpultra_err('parent_not_container', "Element '$parentId' is a leaf widget and cannot contain children."); }
     return $done ? $elements : wpultra_err('parent_not_found', "No element with id '$parentId'.");
 }
 

@@ -46,6 +46,16 @@ function wpultra_elementor_edit_element(array $input) {
     if (($node['elType'] ?? '') === 'widget' && !empty($node['widgetType'])) {
         $schema = wpultra_el_widget_schema((string) $node['widgetType']);
         $compact = (is_array($schema) && !empty($schema['props'])) ? $schema['props'] : [];
+        // Reject unknown/typo'd prop keys up front — Props_Parser silently ignores them, which would
+        // otherwise make a mistyped key a permanent no-op. Mirrors the container branch's behaviour.
+        // Underscore-prefixed keys are Elementor system/meta keys not declared in the schema.
+        if ($compact !== []) {
+            $allUnknown = array_diff(array_keys($settings), array_keys($compact));
+            $unknown = array_values(array_filter($allUnknown, fn($k) => $k !== '' && $k[0] !== '_'));
+            if ($unknown !== []) {
+                return wpultra_err('unknown_prop', 'Unknown setting key(s) for ' . (string) $node['widgetType'] . ': ' . implode(', ', $unknown));
+            }
+        }
         $settings = wpultra_el_wrap_settings($settings, $compact);
         $valid = wpultra_el_validate_settings((string) $node['widgetType'], array_merge((array) ($node['settings'] ?? []), $settings));
         if (is_wp_error($valid)) { return $valid; }

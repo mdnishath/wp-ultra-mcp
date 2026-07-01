@@ -48,10 +48,16 @@ function wpultra_reserved_post_types(): array {
  * unrecognised verb — requires `confirm: true`.
  */
 function wpultra_classify_query(string $sql): array {
-    $trimmed = trim($sql);
+    // Strip a leading block comment (/* ... */) or line comment so `/*x*/DELETE` can't hide the verb.
+    $trimmed = preg_replace('#^\s*(?:/\*.*?\*/|--[^\n]*\n|\#[^\n]*\n)\s*#s', '', trim($sql));
+    $trimmed = ltrim((string) $trimmed, "( \t\n\r");
     $verb = strtoupper(preg_split('/\s+/', $trimmed)[0] ?? '');
     $safe = ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'INSERT'];
     $destructive = !in_array($verb, $safe, true);
+    // A SELECT can still write to disk or lock rows — force confirmation for those.
+    if (!$destructive && preg_match('/\b(INTO\s+(OUTFILE|DUMPFILE)|LOAD_FILE)\b/i', $sql)) {
+        $destructive = true;
+    }
     return ['verb' => $verb, 'destructive' => $destructive];
 }
 
@@ -78,6 +84,13 @@ function wpultra_resolve_path(string $path, bool $must_exist = false) {
     // Reject null bytes / control chars: they bypass extension checks and break FS calls.
     if (strpbrk($path, "\0") !== false || preg_match('/[\x00-\x1f]/', $path)) {
         return wpultra_err('invalid_path', 'Path contains illegal control characters.');
+    }
+    // Reject NTFS alternate-data-stream syntax (`shell.php::$DATA`) and any stray colon that
+    // isn't the Windows drive-letter separator — otherwise the ADS suffix hides the .php
+    // extension from the sandbox check and writes an executable file to the web root.
+    $after_drive = preg_replace('#^[A-Za-z]:#', '', $path);
+    if (strpos((string) $after_drive, ':') !== false) {
+        return wpultra_err('invalid_path', 'Path contains an illegal colon (NTFS stream or drive syntax).');
     }
 
     $base = wpultra_filesystem_base_dir();
@@ -111,6 +124,39 @@ function wpultra_resolve_path(string $path, bool $must_exist = false) {
         }
     }
     return $resolved;
+}
+
+/** Centralized safe-mode check: true when the sandbox crashed and code-exec should be suspended. */
+function wpultra_safe_mode_active(): bool {
+    return function_exists('wpultra_sandbox_crashed') && wpultra_sandbox_crashed();
+}
+
+/**
+ * Pure: given a WP-CLI argv array, return the dangerous command it invokes ('' if none).
+ * "Dangerous" = arbitrary PHP / SQL / shell execution that bypasses this plugin's own guards
+ * (the execute-php sandbox, the SQL destructive-verb gate). Callers require explicit opt-in.
+ */
+function wpultra_wp_cli_unsafe_command(array $args): string {
+    $tokens = [];
+    foreach ($args as $a) {
+        $a = (string) $a;
+        if ($a === '' || $a[0] === '-') { continue; } // skip flags/options
+        $tokens[] = strtolower($a);
+        if (count($tokens) >= 2) { break; }
+    }
+    $cmd = $tokens[0] ?? '';
+    $sub = $tokens[1] ?? '';
+    // Single-word commands that run arbitrary code / open a shell.
+    if (in_array($cmd, ['eval', 'eval-file', 'shell', 'server'], true)) { return $cmd; }
+    // Two-word commands that run raw SQL or rewrite wp-config.
+    if (in_array("$cmd $sub", ['db query', 'db cli', 'db import', 'config set', 'config edit'], true)) { return "$cmd $sub"; }
+    return '';
+}
+
+/** Max byte length accepted by execute-php (filterable). Guards against pathological payloads. */
+function wpultra_execute_php_max_bytes(): int {
+    $n = (int) (function_exists('apply_filters') ? apply_filters('wpultra_execute_php_max_bytes', 200000) : 200000);
+    return $n > 0 ? $n : 200000;
 }
 
 function wpultra_is_enabled(): bool {
@@ -148,6 +194,8 @@ function wpultra_audit_log(string $action, string $summary, bool $ok = true): vo
     if ($max < 1) { $max = 200; }
     if (count($log) > $max) { $log = array_slice($log, -$max); }
     update_option('wpultra_audit', $log, false);
+    // Feed the self-improvement stats tally so the AI can see its own failure patterns.
+    if (function_exists('wpultra_stats_bump')) { wpultra_stats_bump($action, $ok, $ok ? '' : $summary); }
 }
 
 function wpultra_ok(array $fields): array { return array_merge(['success' => true], $fields); }

@@ -55,17 +55,28 @@ function wpultra_el_wrap_settings(array $settings, array $compactSchema): array 
  */
 function wpultra_el_inject_scalar_into_shape(array $shape, $scalar): array {
     $result = $shape;
-    foreach ($result as $k => $v) {
+    wpultra_el_inject_scalar_ref($result, $scalar);
+    return $result;
+}
+
+/**
+ * Recurse into $shape by reference, injecting $scalar into the first string leaf found.
+ * Returns true once a string slot has been filled. Unlike a naive first-child return, this
+ * CONTINUES scanning later siblings when an earlier plain-array child has no string leaf, so a
+ * complex union default whose string slot lives in a later branch still receives the scalar.
+ */
+function wpultra_el_inject_scalar_ref(array &$shape, $scalar): bool {
+    foreach ($shape as $k => &$v) {
         if (is_array($v) && isset($v['$$type']) && $v['$$type'] === 'string') {
-            $result[$k] = ['$$type' => 'string', 'value' => (string) $scalar];
-            return $result; // inject only into the first string slot
+            $v = ['$$type' => 'string', 'value' => (string) $scalar];
+            return true; // inject only into the first string slot
         }
         if (is_array($v) && !isset($v['$$type'])) {
-            $result[$k] = wpultra_el_inject_scalar_into_shape($v, $scalar);
-            return $result;
+            if (wpultra_el_inject_scalar_ref($v, $scalar)) { return true; }
+            // no string leaf in this branch — keep scanning siblings
         }
     }
-    return $result;
+    return false;
 }
 
 function wpultra_el_validate_settings(string $widgetType, array $settings) {

@@ -57,6 +57,8 @@ function wpultra_elementor_add_element(array $input) {
         if ($wt === '') { return wpultra_err('missing_widget_type', "element_type 'widget' requires widget_type."); }
         $node['widgetType'] = $wt;
         $schema = wpultra_el_widget_schema($wt);
+        // Reject an unknown/typo'd widget type instead of persisting a node that never renders.
+        if (is_wp_error($schema)) { return $schema; }
         $compact = (is_array($schema) && !empty($schema['props'])) ? $schema['props'] : [];
         $wrapped = wpultra_el_wrap_settings($settings, $compact);
         $valid = wpultra_el_validate_settings($wt, $wrapped);

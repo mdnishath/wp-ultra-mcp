@@ -13,6 +13,7 @@ wp_register_ability('wpultra/run-wp-cli', [
                 'type'  => 'array',
                 'items' => ['type' => 'string'],
             ],
+            'allow_unsafe' => ['type' => 'boolean'],
         ],
         'required'             => ['args'],
         'additionalProperties' => false,
@@ -48,6 +49,19 @@ function wpultra_run_wp_cli(array $input) {
     if (!function_exists('proc_open')) { return wpultra_err('proc_disabled', 'proc_open is disabled in PHP.'); }
     $args = array_values(array_filter((array) ($input['args'] ?? []), 'is_string'));
     if ($args === []) { return wpultra_err('no_args', 'args must be a non-empty array of strings.'); }
+    // Same self-healing gate execute-php uses — a crashed sandbox suspends code execution,
+    // and `wp eval`/`wp shell` would otherwise be an easy bypass.
+    if (wpultra_safe_mode_active()) {
+        return wpultra_err('safe_mode', 'Sandbox safe mode is active after a crash. Clear it in wp-admin before running WP-CLI.');
+    }
+    // Dangerous subcommands (eval/shell/db query/config set…) require explicit opt-in so a
+    // hallucinating client can't silently pivot to arbitrary PHP/SQL/config rewrite.
+    $unsafe = wpultra_wp_cli_unsafe_command($args);
+    $allow  = ($input['allow_unsafe'] ?? false) === true || (defined('WPULTRA_WP_CLI_ALLOW_UNSAFE') && WPULTRA_WP_CLI_ALLOW_UNSAFE);
+    if ($unsafe !== '' && !$allow) {
+        wpultra_audit_log('run-wp-cli', "blocked unsafe: $unsafe", false);
+        return wpultra_err('unsafe_command', "WP-CLI '$unsafe' runs arbitrary code/SQL. Re-run with allow_unsafe: true to proceed.");
+    }
     $cmd = array_merge([wpultra_find_wp_cli()], $args);
     $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
     $proc = proc_open($cmd, $descriptors, $pipes, ABSPATH);

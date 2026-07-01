@@ -16,6 +16,14 @@ it('substitutes scalar tokens', function () {
 it('substitutes array tokens', function () {
     assert_eq(['wc', '--user=42'], wpultra_recipe_subst_array(['wc', '--user={user_id}'], ['user_id' => 42]));
 });
+it('php substitution encodes inputs as safe literals, not raw code', function () {
+    // A malicious string is emitted as a quoted PHP literal — it can't break out of the expression.
+    assert_eq("return get_post(5);", wpultra_recipe_subst_php('return get_post({id});', ['id' => 5]));
+    assert_eq("return get_post('1); evil(); (');", wpultra_recipe_subst_php('return get_post({id});', ['id' => '1); evil(); (']));
+});
+it('scalar substitution json-encodes non-scalars instead of "Array"', function () {
+    assert_eq('x=[1,2]', wpultra_recipe_subst_scalar('x={v}', ['v' => [1, 2]]));
+});
 it('wp-cli recipe dispatches subst args to run_wp_cli', function () {
     $parsed = ['run' => 'wp-cli', 'input' => ['user_id' => ['type' => 'integer', 'required' => true]],
         'recipe' => ['command' => ['wc', 'cart', 'empty', '--user={user_id}']]];

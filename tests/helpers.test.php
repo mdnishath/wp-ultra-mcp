@@ -34,6 +34,11 @@ it('classify query verb and destructive flag', function () {
     assert_eq(true, wpultra_classify_query('TRUNCATE wp_x')['destructive']);
     assert_eq(true, wpultra_classify_query('GRANT ALL ON *.* TO x')['destructive']);
     assert_eq(true, wpultra_classify_query('WITH t AS (SELECT 1) DELETE FROM wp_x')['destructive']);
+    // A leading comment must not hide the verb, and file-writing SELECTs need confirmation.
+    assert_eq(true, wpultra_classify_query('/*x*/DELETE FROM wp_x')['destructive'], 'comment-hidden delete');
+    assert_eq(true, wpultra_classify_query("SELECT * INTO OUTFILE '/tmp/x.php' FROM wp_users")['destructive'], 'outfile');
+    assert_eq(true, wpultra_classify_query('SELECT LOAD_FILE("/etc/passwd")')['destructive'], 'load_file');
+    assert_eq(false, wpultra_classify_query('SELECT * FROM wp_posts')['destructive'], 'plain select safe');
 });
 
 it('sandbox detection', function () {
@@ -47,6 +52,19 @@ it('sandbox detection', function () {
     assert_true(wpultra_path_requires_sandbox('/a/shell.php.'), 'trailing dot');
     assert_true(wpultra_path_requires_sandbox('/a/shell.php '), 'trailing space');
     assert_true(wpultra_path_requires_sandbox('/a/.user.ini'), 'user.ini');
+});
+
+it('wp-cli unsafe command detection', function () {
+    assert_eq('eval', wpultra_wp_cli_unsafe_command(['eval', 'echo 1;']), 'eval');
+    assert_eq('shell', wpultra_wp_cli_unsafe_command(['shell']), 'shell');
+    assert_eq('db query', wpultra_wp_cli_unsafe_command(['db', 'query', 'DROP TABLE x']), 'db query');
+    assert_eq('config set', wpultra_wp_cli_unsafe_command(['config', 'set', 'DB_HOST', 'x']), 'config set');
+    // flags before the command must be skipped
+    assert_eq('eval', wpultra_wp_cli_unsafe_command(['--path=/x', 'eval', 'code']), 'flag then eval');
+    // safe commands return empty
+    assert_eq('', wpultra_wp_cli_unsafe_command(['plugin', 'list']), 'plugin list safe');
+    assert_eq('', wpultra_wp_cli_unsafe_command(['cache', 'flush']), 'cache flush safe');
+    assert_eq('', wpultra_wp_cli_unsafe_command(['db', 'size']), 'db size safe');
 });
 
 run_tests();

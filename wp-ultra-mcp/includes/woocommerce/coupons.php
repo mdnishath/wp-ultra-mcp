@@ -54,7 +54,14 @@ function wpultra_woo_manage_coupon(array $input) {
         $c->set_code($code);
     }
     if (isset($input['discount_type'])) { $c->set_discount_type((string) $input['discount_type']); }
-    if (isset($input['amount']))        { $c->set_amount((string) $input['amount']); }
+    if (isset($input['amount'])) {
+        $amount = (string) $input['amount'];
+        // Percent coupons are a 0..100 range; clamp so amount=500 can't mean 500% off.
+        if ($c->get_discount_type() === 'percent') {
+            $amount = (string) max(0, min(100, (float) $amount));
+        }
+        $c->set_amount($amount);
+    }
     if (isset($input['description']))   { $c->set_description((string) $input['description']); }
     if (isset($input['free_shipping'])) { $c->set_free_shipping((bool) $input['free_shipping']); }
     if (isset($input['date_expires']))  { $c->set_date_expires((string) $input['date_expires']); }

@@ -10,8 +10,8 @@ wp_register_ability('wpultra/gutenberg-insert-block', [
         'type'       => 'object',
         'properties' => [
             'post_id'     => ['type' => 'integer'],
-            'parent_path' => ['type' => 'string'],
-            'position'    => ['type' => 'integer'],
+            'parent_path' => ['type' => 'string', 'description' => 'Slash path of the container to insert into (e.g. "1/0"); empty for root. Use the RAW sibling index exactly as returned in the "path" field by gutenberg-get-content — indices count all siblings including hidden freeform/whitespace nodes, so always copy a returned path rather than computing one from the visible block order.'],
+            'position'    => ['type' => 'integer', 'description' => 'RAW sibling index within parent_path at which to insert, counting all siblings (including hidden freeform/whitespace nodes) as in the paths returned by gutenberg-get-content. Omit to append at the end.'],
             'block'       => ['type' => 'object'],
         ],
         'required'   => ['post_id', 'block'],
@@ -44,6 +44,7 @@ function wpultra_gb_insert_block_cb(array $input) {
         $warning = $warning !== '' ? $warning . ' ' . $container_warn : $container_warn;
     }
     $parentPath = wpultra_gb_str_to_path((string) ($input['parent_path'] ?? ''));
+    if ($parentPath === null) { return wpultra_err('invalid_path', 'parent_path must be slash-separated integers (e.g. "1/0") or empty for root: ' . (string) ($input['parent_path'] ?? '')); }
     $pos = isset($input['position']) ? (int) $input['position'] : PHP_INT_MAX;
     $updated = wpultra_gb_insert($loaded['blocks'], $parentPath, $pos, $block);
     if (is_wp_error($updated)) { return $updated; }

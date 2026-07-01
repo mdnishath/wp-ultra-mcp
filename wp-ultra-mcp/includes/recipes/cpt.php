@@ -4,12 +4,15 @@ if (!defined('ABSPATH')) { exit(); }
 require_once __DIR__ . '/parser.php';
 require_once __DIR__ . '/executor.php';
 
-add_action('init', function () {
+function wpultra_register_ability_cpt(): void {
     register_post_type('wpultra_ability', [
         'public' => false, 'show_ui' => false, 'show_in_rest' => false,
         'supports' => ['title', 'editor', 'excerpt', 'revisions'], 'rewrite' => false,
     ]);
-});
+}
+// Loaded on wp_abilities_api_init (after `init` on REST requests) — register now if init ran.
+if (function_exists('did_action') && did_action('init')) { wpultra_register_ability_cpt(); }
+else { add_action('init', 'wpultra_register_ability_cpt'); }
 
 function wpultra_recipe_all(): array {
     $posts = get_posts(['post_type' => 'wpultra_ability', 'post_status' => 'publish', 'numberposts' => 500]);

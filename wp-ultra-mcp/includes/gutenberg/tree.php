@@ -6,11 +6,17 @@ function wpultra_gb_path_to_str(array $path): string {
     return implode('/', array_map('strval', $path));
 }
 
-function wpultra_gb_str_to_path(string $s): array {
+/**
+ * Parse a slash path string to an int array. '' is the (valid) root path [].
+ * Returns null if any segment is non-integer, so a typo like "1/x/2" surfaces a
+ * clear error instead of silently targeting the wrong block ([1,2]).
+ */
+function wpultra_gb_str_to_path(string $s): ?array {
     if ($s === '') { return []; }
     $out = [];
     foreach (explode('/', $s) as $seg) {
-        if (is_numeric($seg)) { $out[] = (int) $seg; }
+        if ($seg === '' || !ctype_digit($seg)) { return null; }
+        $out[] = (int) $seg;
     }
     return $out;
 }
@@ -62,46 +68,96 @@ function &wpultra_gb_ref(array &$blocks, array $parentPath) {
     return $ref;
 }
 
-function wpultra_gb_insert(array $blocks, array $parentPath, int $pos, array $block) {
-    $ref = &wpultra_gb_ref($blocks, $parentPath);
-    if ($ref === null) { return new WP_Error('block_path_not_found', 'Parent path not found: ' . wpultra_gb_path_to_str($parentPath)); }
-    $count = count($ref);
-    $pos = max(0, min($pos, $count));
-    array_splice($ref, $pos, 0, [$block]);
+/** Reference to the block node at $path (not its innerBlocks). Null ref if any segment is invalid. */
+function &wpultra_gb_block_ref(array &$blocks, array $path) {
+    $null = null;
+    $ref = &$blocks;
+    $n = count($path);
+    for ($d = 0; $d < $n; $d++) {
+        $idx = $path[$d];
+        if (!isset($ref[$idx]) || !is_array($ref[$idx])) { return $null; }
+        if ($d === $n - 1) { return $ref[$idx]; }
+        if (!isset($ref[$idx]['innerBlocks']) || !is_array($ref[$idx]['innerBlocks'])) { $ref[$idx]['innerBlocks'] = []; }
+        $ref = &$ref[$idx]['innerBlocks'];
+    }
+    return $ref;
+}
+
+/**
+ * Position in an innerContent array of the $childIndex-th null placeholder (serialize_block emits
+ * one innerBlock per null chunk). Returns count($innerContent) to append past the last child.
+ */
+function wpultra_gb_innercontent_null_pos(array $innerContent, int $childIndex): int {
+    $seen = 0;
+    foreach ($innerContent as $ci => $chunk) {
+        if ($chunk === null) {
+            if ($seen === $childIndex) { return (int) $ci; }
+            $seen++;
+        }
+    }
+    return count($innerContent);
+}
+
+function wpultra_gb_insert(array $blocks, ?array $parentPath, int $pos, array $block) {
+    if ($parentPath === null) { return new WP_Error('invalid_path', 'parent_path is not a valid slash-separated integer path.'); }
+    if (!$parentPath) {
+        $pos = max(0, min($pos, count($blocks)));
+        array_splice($blocks, $pos, 0, [$block]);
+        return $blocks;
+    }
+    $parent = &wpultra_gb_block_ref($blocks, $parentPath);
+    if ($parent === null) { return new WP_Error('block_path_not_found', 'Parent path not found: ' . wpultra_gb_path_to_str($parentPath)); }
+    if (!isset($parent['innerBlocks']) || !is_array($parent['innerBlocks'])) { $parent['innerBlocks'] = []; }
+    if (!isset($parent['innerContent']) || !is_array($parent['innerContent'])) {
+        $parent['innerContent'] = array_fill(0, count($parent['innerBlocks']), null);
+    }
+    $pos = max(0, min($pos, count($parent['innerBlocks'])));
+    array_splice($parent['innerBlocks'], $pos, 0, [$block]);
+    // Keep innerContent in lock-step: add a null placeholder so serialize_block emits the new child.
+    $icPos = wpultra_gb_innercontent_null_pos($parent['innerContent'], $pos);
+    array_splice($parent['innerContent'], $icPos, 0, [null]);
     return $blocks;
 }
 
-function wpultra_gb_remove(array $blocks, array $path) {
+function wpultra_gb_remove(array $blocks, ?array $path) {
+    if ($path === null) { return new WP_Error('invalid_path', 'path is not a valid slash-separated integer path.'); }
     $loc = wpultra_gb_locate($blocks, $path);
     if (!$loc) { return new WP_Error('block_path_not_found', 'Path not found: ' . wpultra_gb_path_to_str($path)); }
-    $ref = &wpultra_gb_ref($blocks, $loc['parent_path']);
-    array_splice($ref, $loc['index'], 1);
+    $parentPath = $loc['parent_path'];
+    $idx = $loc['index'];
+    if (!$parentPath) { array_splice($blocks, $idx, 1); return $blocks; }
+    $parent = &wpultra_gb_block_ref($blocks, $parentPath);
+    if ($parent === null) { return new WP_Error('block_path_not_found', 'Parent path not found: ' . wpultra_gb_path_to_str($parentPath)); }
+    array_splice($parent['innerBlocks'], $idx, 1);
+    // Drop the matching null placeholder so no stray chunk is serialized as null.
+    if (isset($parent['innerContent']) && is_array($parent['innerContent'])) {
+        $icPos = wpultra_gb_innercontent_null_pos($parent['innerContent'], $idx);
+        if ($icPos < count($parent['innerContent'])) { array_splice($parent['innerContent'], $icPos, 1); }
+    }
     return $blocks;
 }
 
-function wpultra_gb_move(array $blocks, array $path, array $toParentPath, int $pos) {
+function wpultra_gb_move(array $blocks, ?array $path, ?array $toParentPath, int $pos) {
+    if ($path === null || $toParentPath === null) { return new WP_Error('invalid_path', 'path/to_parent_path is not a valid slash-separated integer path.'); }
     $loc = wpultra_gb_locate($blocks, $path);
     if (!$loc) { return new WP_Error('block_path_not_found', 'Source path not found: ' . wpultra_gb_path_to_str($path)); }
+    // Refuse to move a node into itself or one of its own descendants (would orphan the subtree).
+    if (array_slice($toParentPath, 0, count($path)) === $path) {
+        return new WP_Error('move_into_descendant', 'Cannot move a block into itself or its own descendant.');
+    }
     $node = $loc['node'];
     $removed = wpultra_gb_remove($blocks, $path);
     if ($removed instanceof WP_Error) { return $removed; }
-    // Adjust $toParentPath: removing $path may shift sibling indices at the divergence level.
-    // Find the common prefix length between $path and $toParentPath.
+    // Removing the source only shifts indices INSIDE the source's own parent container. The
+    // destination path is affected only when that container is a prefix of it and the branch
+    // taken there sits after the removed index.
     $srcParent = array_slice($path, 0, -1);
-    $adjusted = $toParentPath;
-    $commonLen = 0;
-    $minLen = min(count($srcParent), count($adjusted));
-    for ($i = 0; $i < $minLen; $i++) {
-        if ($srcParent[$i] !== $adjusted[$i]) { break; }
-        $commonLen = $i + 1;
-    }
-    // At the divergence index (commonLen), if the source index < target index in the same parent,
-    // the target index has been shifted down by one.
-    if (isset($srcParent[$commonLen]) && isset($adjusted[$commonLen]) && $srcParent[$commonLen] < $adjusted[$commonLen]) {
-        $adjusted[$commonLen]--;
-    } elseif (!isset($srcParent[$commonLen]) && isset($adjusted[$commonLen]) && $path[count($srcParent)] < $adjusted[$commonLen]) {
-        // src and toParentPath share the same parent; src index shifts toParentPath[commonLen].
-        $adjusted[$commonLen]--;
+    $srcIdx    = $path[count($path) - 1];
+    $adjusted  = $toParentPath;
+    if (count($adjusted) > count($srcParent)
+        && array_slice($adjusted, 0, count($srcParent)) === $srcParent
+        && $adjusted[count($srcParent)] > $srcIdx) {
+        $adjusted[count($srcParent)]--;
     }
     return wpultra_gb_insert($removed, $adjusted, $pos, $node);
 }

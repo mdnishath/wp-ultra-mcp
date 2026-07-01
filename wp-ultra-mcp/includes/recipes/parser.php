@@ -17,10 +17,11 @@ function wpultra_recipe_parse(string $raw) {
             elseif ($key === 'run') { $run = strtolower($val); }
         }
     }
-    // Extract the first ```json fenced block.
+    // Extract the LAST ```json fenced block — so an illustrative example earlier in the prose
+    // doesn't get executed instead of the real payload (which conventionally comes last).
     $structured = [];
-    if (preg_match('/```json\s*\n(.*?)\n```/s', $body, $jm)) {
-        $decoded = json_decode(trim($jm[1]), true);
+    if (preg_match_all('/```json\s*\n(.*?)\n```/s', $body, $jm) && !empty($jm[1])) {
+        $decoded = json_decode(trim((string) end($jm[1])), true);
         if (!is_array($decoded)) {
             return wpultra_err('recipe_bad_json', 'The ```json recipe block is not valid JSON.');
         }

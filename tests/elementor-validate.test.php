@@ -49,12 +49,50 @@ it('collect_ids gathers every id depth-first', function () {
     assert_eq(['row0001', 'head001', 'btn0001'], wpultra_el_collect_ids(ev_tree()));
 });
 
+it('id_integrity_error is null for a clean unique tree', function () {
+    assert_eq(null, wpultra_el_id_integrity_error(ev_tree()));
+});
+it('id_integrity_error flags a missing id', function () {
+    $t = [['id' => '', 'elType' => 'e-flexbox', 'settings' => [], 'elements' => []]];
+    $e = wpultra_el_id_integrity_error($t);
+    assert_true(is_string($e) && strpos($e, 'missing') !== false, 'reports missing id');
+});
+it('id_integrity_error flags a duplicate id (incl. nested)', function () {
+    $t = [['id' => 'dup', 'elType' => 'e-flexbox', 'settings' => [], 'elements' => [
+        ['id' => 'dup', 'elType' => 'widget', 'settings' => [], 'elements' => []],
+    ]]];
+    $e = wpultra_el_id_integrity_error($t);
+    assert_true(is_string($e) && strpos($e, 'dup') !== false, 'reports duplicate id');
+});
+it('validate_tree fails closed on duplicate ids before validating nodes', function () {
+    $t = [
+        ['id' => 'same', 'elType' => 'e-flexbox', 'settings' => [], 'elements' => []],
+        ['id' => 'same', 'elType' => 'e-flexbox', 'settings' => [], 'elements' => []],
+    ];
+    $r = wpultra_el_validate_tree($t, 'ev_stub_validator');
+    assert_eq(false, $r['ok']);
+    assert_eq(1, $r['summary']['invalid']);
+    assert_true(strpos($r['nodes'][0]['errors'][0], 'unique') !== false, 'error mentions uniqueness');
+});
+it('validate_tree fails closed on a missing id', function () {
+    $t = [['id' => '', 'elType' => 'e-flexbox', 'settings' => [], 'elements' => []]];
+    $r = wpultra_el_validate_tree($t, 'ev_stub_validator');
+    assert_eq(false, $r['ok']);
+});
+
 it('render_digest reports present and dropped ids from data-id markers', function () {
     $html = '<div class="elementor-element" data-id="row0001"><h2 data-id="head001">Hi</h2></div>';
     $d = wpultra_el_render_digest($html, ['row0001', 'head001', 'btn0001']);
     assert_eq(2, $d['rendered_count']);
     assert_eq(['btn0001'], $d['dropped_ids']);
     assert_eq(['row0001', 'head001'], $d['present_ids']);
+});
+
+it('render_digest matches ids containing hyphens and underscores', function () {
+    $html = '<div data-id="row-01"><span data-id="head_02"></span></div>';
+    $d = wpultra_el_render_digest($html, ['row-01', 'head_02', 'missing']);
+    assert_eq(['row-01', 'head_02'], $d['present_ids']);
+    assert_eq(['missing'], $d['dropped_ids']);
 });
 
 it('validate_tree depth guard fails closed on very deep trees without fatal', function () {

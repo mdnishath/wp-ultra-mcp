@@ -25,6 +25,17 @@ function wpultra_sandbox_harden(): void {
     if (!file_exists($dir . '/index.php')) {
         @file_put_contents($dir . '/index.php', "<?php // Silence is golden.\n");
     }
+    // IIS/Windows hosts ignore .htaccess entirely, so also drop a web.config deny rule —
+    // without it a sandbox .php would be directly web-executable on IIS. This box is Windows.
+    if (!file_exists($dir . '/web.config')) {
+        @file_put_contents(
+            $dir . '/web.config',
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            . "<configuration>\n  <system.webServer>\n"
+            . "    <authorization>\n      <deny users=\"*\" />\n    </authorization>\n"
+            . "  </system.webServer>\n</configuration>\n"
+        );
+    }
 }
 
 function wpultra_sandbox_mark_crashed(string $detail): void {

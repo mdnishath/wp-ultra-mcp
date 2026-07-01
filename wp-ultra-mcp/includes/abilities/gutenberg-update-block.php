@@ -10,7 +10,7 @@ wp_register_ability('wpultra/gutenberg-update-block', [
         'type'       => 'object',
         'properties' => [
             'post_id'    => ['type' => 'integer'],
-            'path'       => ['type' => 'string'],
+            'path'       => ['type' => 'string', 'description' => 'Slash path of the block to update (e.g. "1/0"). Use the RAW path exactly as returned in the "path" field by gutenberg-get-content — indices count all siblings including hidden freeform/whitespace nodes.'],
             'attributes' => ['type' => 'object'],
             'inner_html' => ['type' => 'string'],
             'deep'       => ['type' => 'boolean'],
@@ -37,6 +37,7 @@ function wpultra_gb_update_block_cb(array $input) {
     $loaded = wpultra_gb_load($post_id);
     if (is_wp_error($loaded)) { return $loaded; }
     $path = wpultra_gb_str_to_path((string) ($input['path'] ?? ''));
+    if ($path === null) { return wpultra_err('invalid_path', 'Path must be slash-separated integers (e.g. "1/0"): ' . (string) ($input['path'] ?? '')); }
     $blocks = $loaded['blocks'];
     if (isset($input['attributes']) && is_array($input['attributes'])) {
         $blocks = wpultra_gb_merge_attrs($blocks, $path, (array) $input['attributes'], !empty($input['deep']));
@@ -45,6 +46,11 @@ function wpultra_gb_update_block_cb(array $input) {
     if (isset($input['inner_html'])) {
         $loc = wpultra_gb_locate($blocks, $path);
         if (!$loc) { return wpultra_err('block_path_not_found', 'Path not found: ' . (string) ($input['path'] ?? '')); }
+        // Overwriting innerContent with a single string drops the null placeholders that
+        // serialize the children — refuse it for a block that still has innerBlocks.
+        if (!empty($loc['node']['innerBlocks']) && is_array($loc['node']['innerBlocks'])) {
+            return wpultra_err('has_inner_blocks', 'Cannot set inner_html on a block with child blocks; it would delete them. Edit the children directly.');
+        }
         $ref = &wpultra_gb_ref($blocks, $loc['parent_path']);
         $ref[$loc['index']]['innerHTML']    = (string) $input['inner_html'];
         $ref[$loc['index']]['innerContent'] = [(string) $input['inner_html']];

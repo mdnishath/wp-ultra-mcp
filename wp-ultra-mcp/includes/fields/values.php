@@ -46,9 +46,16 @@ function wpultra_fields_normalize_batch(array $values) {
             $complex[$name] = ['value' => $val['value'], 'mode' => 'replace'];
             continue;
         }
-        // A value carrying a 'mode' key without a matching 'value' is a malformed consent wrapper.
-        if (is_array($val) && (array_key_exists('mode', $val) || (array_key_exists('value', $val) && count($val) === 1 && !array_is_list($val)))) {
-            return new WP_Error('complex_consent', "field '{$name}': complex values need { value, mode:'replace' }", ['field' => $name]);
+        // A TRUNCATED consent wrapper — has exactly one of the two sentinel keys ('value' or
+        // 'mode') and nothing else — is malformed and rejected. A genuine atomic array that
+        // merely happens to contain a 'mode' key alongside real data (e.g. an ACF group value
+        // like ['mode' => 'dark', 'color' => '#000']) is NOT a wrapper and passes through.
+        if (is_array($val) && !array_is_list($val)) {
+            $only_value = array_key_exists('value', $val) && !array_key_exists('mode', $val) && count($val) === 1;
+            $only_mode  = array_key_exists('mode', $val) && !array_key_exists('value', $val) && count($val) === 1;
+            if ($only_value || $only_mode) {
+                return new WP_Error('complex_consent', "field '{$name}': complex values need { value, mode:'replace' }", ['field' => $name]);
+            }
         }
         $atomic[$name] = $val;
     }

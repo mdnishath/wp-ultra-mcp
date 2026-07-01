@@ -57,9 +57,11 @@ function wpultra_update_post(array $input) {
     foreach ($map as $in => $col) { if (array_key_exists($in, $input)) { $postarr[$col] = (string) $input[$in]; $updated[] = $in; } }
     if (array_key_exists('slug', $input)) { $postarr['post_name'] = sanitize_title((string) $input['slug']); $updated[] = 'slug'; }
     if (array_key_exists('menu_order', $input)) { $postarr['menu_order'] = (int) $input['menu_order']; $updated[] = 'menu_order'; }
-    if (count($postarr) > 1) { $res = wp_update_post($postarr, true); if (is_wp_error($res)) { return $res; } }
+    // Slash before wp_update_post()/update_post_meta() — both unslash internally, so raw
+    // backslashes (Windows paths, JSON/regex, block markup) would otherwise be stripped.
+    if (count($postarr) > 1) { $res = wp_update_post(wp_slash($postarr), true); if (is_wp_error($res)) { return $res; } }
     if (!empty($input['meta']) && is_array($input['meta'])) {
-        foreach ($input['meta'] as $k => $v) { update_post_meta($id, (string) $k, $v); }
+        foreach ($input['meta'] as $k => $v) { update_post_meta($id, (string) $k, wp_slash($v)); }
         $updated[] = 'meta';
     }
     if (!empty($input['terms']) && is_array($input['terms'])) {

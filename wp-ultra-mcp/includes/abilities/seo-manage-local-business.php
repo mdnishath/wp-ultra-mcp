@@ -12,7 +12,7 @@ wp_register_ability('wpultra/seo-manage-local-business', [
             'action' => ['type' => 'string', 'enum' => ['get', 'set']],
             'name' => ['type' => 'string'], 'type' => ['type' => 'string'], 'url' => ['type' => 'string'], 'phone' => ['type' => 'string'],
             'price_range' => ['type' => 'string'], 'logo' => ['type' => 'string'], 'street' => ['type' => 'string'], 'city' => ['type' => 'string'],
-            'region' => ['type' => 'string'], 'postal' => ['type' => 'string'], 'country' => ['type' => 'string'], 'lat' => ['type' => 'string'], 'lng' => ['type' => 'string'], 'hours' => ['type' => 'array'],
+            'region' => ['type' => 'string'], 'postal' => ['type' => 'string'], 'country' => ['type' => 'string'], 'lat' => ['type' => 'string'], 'lng' => ['type' => 'string'], 'hours' => ['type' => 'array', 'items' => ['type' => 'string']],
         ],
         'required' => ['action'],
         'additionalProperties' => false,

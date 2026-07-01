@@ -38,6 +38,11 @@ function wpultra_elementor_upsert_global_class(array $input) {
     if (($input['enable'] ?? false) === true && !wpultra_el_classes_active()) {
         $en = wpultra_el_classes_enable();
         if (is_wp_error($en)) { return $en; }
+        // Elementor resolves the experiment state once at boot, so the flip only takes effect on the
+        // NEXT request. Tell the caller to re-run rather than returning a misleading classes_inactive.
+        if (!wpultra_el_classes_active()) {
+            return wpultra_err('classes_enabling', 'The Elementor "e_classes" experiment has just been enabled for you — re-run this action (Elementor applies the experiment change on the next request).');
+        }
     }
     $label = (string) ($input['label'] ?? '');
     $props = (array) ($input['props'] ?? []);

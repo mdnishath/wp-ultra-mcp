@@ -2,6 +2,22 @@
 declare(strict_types=1);
 if (!defined('ABSPATH') && !defined('WPULTRA_TEST')) { /* allow harness load */ }
 
+if (!function_exists('wpultra_seo_strlen')) {
+    /** PURE. UTF-8-aware character count (mb_strlen when available, else code-point count). */
+    function wpultra_seo_strlen(string $s): int {
+        if (function_exists('mb_strlen')) { return (int) wpultra_seo_strlen($s); }
+        return (int) preg_match_all('/./us', $s, $__m);
+    }
+}
+
+if (!function_exists('wpultra_seo_word_count')) {
+    /** PURE. Unicode-aware word count. str_word_count() ignores non-Latin scripts (Bengali/CJK)
+     *  and would return 0, so count runs of non-whitespace with a /u regex instead. */
+    function wpultra_seo_word_count(string $text): int {
+        return (int) preg_match_all('/\S+/u', $text, $__m);
+    }
+}
+
 function wpultra_seo_score(array $d): array {
     $kw = strtolower(trim((string) ($d['focus_keyword'] ?? '')));
     $has = function ($hay) use ($kw) { return $kw !== '' && strpos(strtolower((string) $hay), $kw) !== false; };
@@ -14,13 +30,13 @@ function wpultra_seo_score(array $d): array {
     $add('keyword_in_first_paragraph', $has($d['first_paragraph'] ?? '') ? 'pass' : 'warn', 'Focus keyword in the opening paragraph.');
     $add('keyword_in_slug', $kw !== '' && strpos((string) ($d['slug'] ?? ''), str_replace(' ', '-', $kw)) !== false ? 'pass' : 'warn', 'Focus keyword in the URL slug.');
 
-    $titleLen = strlen((string) ($d['title'] ?? ''));
+    $titleLen = wpultra_seo_strlen((string) ($d['title'] ?? ''));
     $add('title_length', ($titleLen > 0 && $titleLen <= 60) ? 'pass' : ($titleLen === 0 ? 'fail' : 'warn'), "SEO title length ($titleLen) ≤ 60.");
-    $descLen = strlen((string) ($d['meta_description'] ?? ''));
+    $descLen = wpultra_seo_strlen((string) ($d['meta_description'] ?? ''));
     $add('has_meta_description', $descLen > 0 ? 'pass' : 'fail', 'Meta description is set.');
     $add('meta_description_length', ($descLen >= 120 && $descLen <= 160) ? 'pass' : ($descLen === 0 ? 'fail' : 'warn'), "Meta description length ($descLen) in 120–160.");
 
-    $words = str_word_count(strip_tags((string) ($d['body_text'] ?? '')));
+    $words = wpultra_seo_word_count(strip_tags((string) ($d['body_text'] ?? '')));
     $add('content_length', $words >= 300 ? 'pass' : 'warn', "Content word count ($words) ≥ 300.");
 
     // keyword density
@@ -62,8 +78,15 @@ function wpultra_seo_extract_post(int $post_id): array {
             if (!$host || $host === $home) { $internal++; } else { $external++; }
         }
     }
-    $imgTotal = preg_match_all('/<img\s/i', $content, $x);
-    $imgNoAlt = preg_match_all('/<img\s(?:(?!alt=)[^>])*?>/i', $content, $y);
+    // Match every <img> tag (incl. <img>/<img/> with no whitespace), then check each for a
+    // real alt attribute. A \balt= word boundary avoids matching data-alt=, aria-*alt, etc.
+    $imgTotal = 0; $imgNoAlt = 0;
+    if (preg_match_all('/<img\b[^>]*>/i', $content, $imgs)) {
+        foreach ($imgs[0] as $tag) {
+            $imgTotal++;
+            if (!preg_match('/\balt\s*=/i', $tag)) { $imgNoAlt++; }
+        }
+    }
     return [
         'title' => $meta['title'] ?? get_the_title($post_id),
         'meta_description' => $meta['description'] ?? '',

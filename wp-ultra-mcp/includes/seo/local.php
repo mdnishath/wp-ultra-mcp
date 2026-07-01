@@ -29,6 +29,14 @@ function wpultra_seo_local_set(array $data): array {
     $allowed = ['name', 'type', 'url', 'phone', 'price_range', 'logo', 'street', 'city', 'region', 'postal', 'country', 'lat', 'lng', 'hours'];
     $clean = [];
     foreach ($allowed as $k) { if (array_key_exists($k, $data)) { $clean[$k] = $data[$k]; } }
+    // hours must be a flat list of strings ("Mo-Fr 09:00-17:00"). Drop any nested arrays/objects
+    // so wp_head's array_map('strval', ...) can't trip an "Array to string conversion" warning.
+    if (isset($clean['hours'])) {
+        $hours = is_array($clean['hours']) ? $clean['hours'] : [$clean['hours']];
+        $clean['hours'] = array_values(array_filter(array_map(function ($h) {
+            return is_scalar($h) ? trim((string) $h) : '';
+        }, $hours), function ($h) { return $h !== ''; }));
+    }
     update_option('wpultra_seo_local', $clean);
     return $clean;
 }

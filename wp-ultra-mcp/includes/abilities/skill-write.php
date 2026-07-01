@@ -51,7 +51,8 @@ function wpultra_skill_write(array $input) {
         'post_excerpt' => (string) ($input['description'] ?? ''), 'post_content' => (string) ($input['body'] ?? ''),
     ];
     if ($existing) { $postarr['ID'] = $existing->ID; }
-    $id = wp_insert_post($postarr, true);
+    // Slash so the skill body (JSON examples, Windows paths, regexes) survives wp_insert_post's unslash.
+    $id = wp_insert_post(wp_slash($postarr), true);
     if (is_wp_error($id)) { return $id; }
     update_post_meta($id, '_enable_prompt', ($input['enable_prompt'] ?? true) ? '1' : '0');
     update_post_meta($id, '_enable_agentic', ($input['enable_agentic'] ?? true) ? '1' : '0');

@@ -15,7 +15,7 @@ function wpultra_ability_files(): array {
         // code & system
         'run-wp-cli', 'execute-php',
         // database + diagnostics
-        'execute-wp-query', 'read-debug-log',
+        'execute-wp-query', 'read-debug-log', 'self-test',
         // memory (Wave 1, Task 13)
         'memory-save', 'memory-get', 'memory-list', 'memory-delete',
         // wp content (Wave 1, Task 14)
@@ -68,7 +68,9 @@ function wpultra_ability_files(): array {
         // fields (Wave 5, Plan 1)
         'field-status', 'field-read-values', 'field-write-values',
         // fields (Wave 5, Plan 2)
-        'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group',
+        'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields',
+        // media, users, system, content undo (Wave 8: power features)
+        'media-upload', 'manage-user', 'manage-plugin-theme', 'content-restore',
     ];
     // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
@@ -79,9 +81,11 @@ function wpultra_ability_category_map(): array {
         'filesystem'     => ['read-file', 'write-file', 'edit-file', 'delete-file', 'list-directory'],
         'code-execution' => ['run-wp-cli', 'execute-php'],
         'database'       => ['execute-wp-query'],
-        'diagnostics'    => ['read-debug-log'],
+        'diagnostics'    => ['read-debug-log', 'self-test'],
         'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete'],
-        'content'        => ['create-post', 'update-post', 'delete-post'],
+        'content'        => ['create-post', 'update-post', 'delete-post', 'media-upload', 'content-restore'],
+        'users'          => ['manage-user'],
+        'system'         => ['manage-plugin-theme'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
@@ -99,7 +103,7 @@ function wpultra_ability_category_map(): array {
         ],
         'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block'],
         'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup'],
-        'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group'],
+        'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields'],
     ];
 }
 
@@ -135,7 +139,9 @@ function wpultra_register_categories(): void {
         'fields' => 'Custom fields & content model via ACF, Meta Box, or Pods.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
-        'content' => 'WordPress posts, pages, and CPTs.',
+        'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
+        'users'   => 'WordPress user accounts, roles, and meta.',
+        'system'  => 'Plugin and theme install/activate/update.',
         'custom'  => 'User-defined declarative abilities.',
     ];
     foreach ($cats as $slug => $desc) {
@@ -177,6 +183,16 @@ function wpultra_load_abilities(): void {
             $fp = WPULTRA_DIR . 'includes/fields/' . $ff . '.php';
             if (is_readable($fp)) { require_once $fp; }
         }
+    }
+    // Power-feature engines (media/users/system) — loaded when their category is enabled.
+    if (!in_array('content', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/media/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/media/engine.php';
+    }
+    if (!in_array('users', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/users/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/users/engine.php';
+    }
+    if (!in_array('system', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/system/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/system/engine.php';
     }
     foreach (wpultra_ability_files() as $file) {
         if (in_array(wpultra_file_category($file), $disabled, true)) { continue; }

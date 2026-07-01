@@ -24,6 +24,15 @@ it('validate warns on long title and short description', function () {
     assert_true(in_array('description', $warnFields, true));
 });
 
+it('length checks are UTF-8 char-aware (Bengali not counted as bytes)', function () {
+    // 30 Bengali code points. In UTF-8 that is ~90 bytes; strlen() would falsely warn.
+    $bn = str_repeat('অ', 30);
+    assert_eq(30, wpultra_seo_strlen($bn));
+    $r = wpultra_seo_validate_meta(['title' => $bn]);
+    $warnFields = array_map(function ($w) { return $w['field']; }, $r['warnings']);
+    assert_true(!in_array('title', $warnFields, true), '30-char Bengali title must not warn as too long');
+});
+
 it('keymap maps yoast title key', function () {
     $m = wpultra_seo_keymap('yoast');
     assert_eq('_yoast_wpseo_title', $m['title']);

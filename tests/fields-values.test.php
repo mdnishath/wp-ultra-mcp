@@ -35,5 +35,28 @@ $n = wpultra_fields_normalize_batch(['subtitle' => 'Hi', 'features' => ['value' 
 ok(is_array($n) && $n['atomic']['subtitle'] === 'Hi', 'normalize keeps atomic scalar');
 ok(isset($n['complex']['features']) && $n['complex']['features']['value'] === [1, 2], 'normalize routes consent-wrapped value to complex');
 
+// Regression: a genuine atomic array carrying a 'mode' key alongside real data (e.g. an ACF
+// group value) must NOT be mistaken for a malformed consent wrapper.
+$n2 = wpultra_fields_normalize_batch(['cfg' => ['mode' => 'dark', 'color' => '#000']]);
+ok(is_array($n2) && ($n2['atomic']['cfg'] ?? null) === ['mode' => 'dark', 'color' => '#000'], 'normalize treats {mode,color} array as atomic, not a consent wrapper');
+// Truncated wrappers (only one sentinel key) are still rejected.
+$n3 = wpultra_fields_normalize_batch(['x' => ['mode' => 'replace']]);
+ok(is_wp_error($n3) && $n3->get_error_code() === 'complex_consent', 'normalize rejects a lone {mode} truncated wrapper');
+$n4 = wpultra_fields_normalize_batch(['x' => ['value' => 1]]);
+ok(is_wp_error($n4) && $n4->get_error_code() === 'complex_consent', 'normalize rejects a lone {value} truncated wrapper');
+
+// --- C1 regression: router/adapter name matrix ---
+// wpultra_fields_route() dispatches to "wpultra_fields_{provider}_{op}"; a name drift silently
+// kills a whole provider (this was the Meta Box read/write bug). Loading the plain-function
+// adapter files must expose every provider×op the router expects.
+require __DIR__ . '/../wp-ultra-mcp/includes/fields/adapters/acf.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/fields/adapters/metabox.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/fields/adapters/pods.php';
+foreach (['acf', 'metabox', 'pods'] as $p) {
+    foreach (['read', 'write'] as $op) {
+        ok(function_exists("wpultra_fields_{$p}_{$op}"), "router target wpultra_fields_{$p}_{$op} exists");
+    }
+}
+
 echo "\n" . ($__fails === 0 ? "ALL PASS" : "$__fails FAILED") . "\n";
 exit($__fails === 0 ? 0 : 1);

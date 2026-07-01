@@ -22,8 +22,15 @@ add_action('admin_post_wpultra_enable', function () {
 add_action('admin_post_wpultra_gen_password', function () {
     if (!current_user_can('manage_options') || !check_admin_referer('wpultra_gen_password')) { wp_die('forbidden'); }
     $user_id = get_current_user_id();
-    $name = 'WP-Ultra-MCP (' . wp_date('M j, H:i') . ')';
-    [$password] = WP_Application_Passwords::create_new_application_password($user_id, ['name' => $name]);
+    // Include seconds so two clicks in the same minute don't collide on a duplicate name.
+    $name = 'WP-Ultra-MCP (' . wp_date('M j, H:i:s') . ')';
+    $result = WP_Application_Passwords::create_new_application_password($user_id, ['name' => $name]);
+    if (is_wp_error($result)) {
+        set_transient('wpultra_app_password_error_' . $user_id, $result->get_error_message(), 60);
+        wp_safe_redirect(admin_url('admin.php?page=wpultra&pw_error=1#credentials'));
+        exit;
+    }
+    $password = $result[0];
     // One-time, short-lived reveal only. Never persisted by us beyond this transient.
     set_transient('wpultra_app_password_' . $user_id, $password, 180);
     wp_safe_redirect(admin_url('admin.php?page=wpultra&pw=1#credentials'));
@@ -140,6 +147,8 @@ function wpultra_connect_render(): void {
     $endpoint = rest_url('mcp/wpultra');
     $user = wp_get_current_user();
     $pw = get_transient('wpultra_app_password_' . get_current_user_id());
+    $pw_error = get_transient('wpultra_app_password_error_' . get_current_user_id());
+    if ($pw_error) { delete_transient('wpultra_app_password_error_' . get_current_user_id()); }
     $app_pwds = class_exists('WP_Application_Passwords')
         ? (array) WP_Application_Passwords::get_user_application_passwords($user->ID) : [];
     $clients = wpultra_connect_clients($endpoint, $user->user_login);
@@ -176,6 +185,10 @@ function wpultra_connect_render(): void {
         <!-- Step 2 -->
         <div class="wpu-card wpu-pad" id="credentials">
             <div class="wpu-step"><span class="wpu-num">2</span> Application Password</div>
+
+            <?php if ($pw_error) : ?>
+                <div class="notice notice-error inline"><p><?php echo esc_html($pw_error); ?></p></div>
+            <?php endif; ?>
 
             <?php if ($pw) : ?>
                 <div class="wpu-reveal">

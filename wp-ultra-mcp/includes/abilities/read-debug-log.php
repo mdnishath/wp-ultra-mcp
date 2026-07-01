@@ -46,8 +46,31 @@ function wpultra_read_debug_log(array $input) {
             'note' => 'No debug.log found. Set WP_DEBUG and WP_DEBUG_LOG=true in wp-config.php to capture errors.']);
     }
     $n = max(1, min(5000, (int) ($input['lines'] ?? 100)));
-    $all = file($path, FILE_IGNORE_NEW_LINES);
-    if ($all === false) { return wpultra_err('read_failed', "Could not read: $path"); }
-    $tail = array_slice($all, -$n);
+    // Read the tail from the end instead of loading the whole file — a multi-GB debug.log
+    // would otherwise OOM the request.
+    $tail = wpultra_tail_lines($path, $n);
+    if ($tail === null) { return wpultra_err('read_failed', "Could not read: $path"); }
     return wpultra_ok(['path' => $path, 'exists' => true, 'content' => implode("\n", $tail)]);
+}
+
+/** Return the last $n lines of a file without loading it entirely. Null on open failure. */
+function wpultra_tail_lines(string $path, int $n): ?array {
+    $fh = @fopen($path, 'rb');
+    if (!$fh) { return null; }
+    $buffer = '';
+    $chunk = 8192;
+    $pos = fseek($fh, 0, SEEK_END);
+    $filesize = ftell($fh);
+    $read = 0;
+    $lines = 0;
+    while ($read < $filesize && $lines <= $n) {
+        $step = (int) min($chunk, $filesize - $read);
+        $read += $step;
+        fseek($fh, $filesize - $read, SEEK_SET);
+        $buffer = fread($fh, $step) . $buffer;
+        $lines = substr_count($buffer, "\n");
+    }
+    fclose($fh);
+    $all = explode("\n", rtrim($buffer, "\n"));
+    return array_slice($all, -$n);
 }

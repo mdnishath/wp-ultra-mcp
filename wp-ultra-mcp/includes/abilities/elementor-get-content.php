@@ -35,7 +35,7 @@ wp_register_ability('wpultra/elementor-get-content', [
 function wpultra_elementor_get_content(array $input) {
     $post_id = (int) ($input['post_id'] ?? 0);
     $opts = [];
-    if (!empty($input['element_id'])) { $opts['element_id'] = (string) $input['element_id']; }
+    if (isset($input['element_id']) && (string) $input['element_id'] !== '') { $opts['element_id'] = (string) $input['element_id']; }
     if (($input['full'] ?? false) === true) { $opts['full'] = true; }
     return wpultra_el_read($post_id, $opts);
 }

@@ -31,6 +31,17 @@ it('path<->str round-trips', function () {
     assert_eq([], wpultra_gb_str_to_path(''));
 });
 
+it('str_to_path rejects non-numeric segments instead of silently dropping them', function () {
+    // "1/x/2" must NOT become [1,2] (which would target the wrong block) — it returns null.
+    assert_eq(null, wpultra_gb_str_to_path('1/x/2'));
+    assert_eq(null, wpultra_gb_str_to_path('abc'));
+    assert_eq(null, wpultra_gb_str_to_path('1//2')); // empty segment
+    // A null path is surfaced as a WP_Error by the mutating helpers, not silently applied.
+    assert_wp_error(wpultra_gb_remove(gb_sample(), wpultra_gb_str_to_path('1/x')));
+    assert_wp_error(wpultra_gb_insert(gb_sample(), wpultra_gb_str_to_path('1/x'), 0, ['blockName' => 'core/spacer', 'attrs' => [], 'innerBlocks' => [], 'innerHTML' => '', 'innerContent' => ['']]));
+    assert_wp_error(wpultra_gb_move(gb_sample(), wpultra_gb_str_to_path('1/x'), [], 0));
+});
+
 it('compact tree attaches paths and skips null-name blocks', function () {
     $t = wpultra_gb_compact_tree(gb_sample());
     assert_eq('0', $t[0]['path']);
@@ -101,6 +112,30 @@ it('move child out to root pos 0: heading [1,0] to root pos 0', function () {
     assert_eq('core/group', $out[2]['blockName']);
     assert_eq(1, count($out[2]['innerBlocks'])); // group retains its null-name (whitespace) child; heading was removed
     assert_eq(null, $out[2]['innerBlocks'][0]['blockName']); // the remaining child is the whitespace freeform block
+});
+
+it('insert into a container adds a null placeholder to innerContent (no child dropped)', function () {
+    $blk = ['blockName' => 'core/spacer', 'attrs' => [], 'innerBlocks' => [], 'innerHTML' => '', 'innerContent' => ['']];
+    // group has 2 children (heading + whitespace) and innerContent [null, null].
+    $out = wpultra_gb_insert(gb_sample(), [1], 1, $blk);
+    $group = $out[1];
+    assert_eq(3, count($group['innerBlocks']), 'child count grew');
+    // one null per innerBlock so serialize_block emits all three children
+    $nulls = count(array_filter($group['innerContent'], fn($c) => $c === null));
+    assert_eq(3, $nulls, 'three null placeholders');
+});
+
+it('remove from a container drops the matching null placeholder', function () {
+    $out = wpultra_gb_remove(gb_sample(), [1, 0]); // remove heading from group
+    $group = $out[1];
+    assert_eq(1, count($group['innerBlocks']));
+    $nulls = count(array_filter($group['innerContent'], fn($c) => $c === null));
+    assert_eq(1, $nulls, 'one placeholder left');
+});
+
+it('move rejects relocation into own descendant', function () {
+    // Try to move the group [1] into its own child [1,0].
+    assert_wp_error(wpultra_gb_move(gb_sample(), [1], [1, 0], 0));
 });
 
 it('merge_attrs shallow', function () {

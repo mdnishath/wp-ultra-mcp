@@ -38,6 +38,9 @@ function wpultra_delete_post(array $input) {
     if ($id <= 0) { return wpultra_err('missing_id', 'post_id is required.'); }
     $p = get_post($id);
     if (!$p) { return wpultra_err('not_found', "No post $id."); }
+    if (in_array($p->post_type, wpultra_reserved_post_types(), true)) {
+        return wpultra_err('reserved_post_type', "Post $id is a plugin-internal '{$p->post_type}'; delete it via its dedicated ability.");
+    }
     $force = ($input['force'] ?? false) === true;
     if ($force || $p->post_status === 'trash') { wp_delete_post($id, true); $result = 'deleted'; }
     else { wp_trash_post($id); $result = 'trashed'; }

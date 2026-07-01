@@ -8,6 +8,18 @@ it('coerces money', function () {
     assert_eq(null, wpultra_woo_coerce_money(''));
 });
 
+it('clamps negative money to zero', function () {
+    assert_eq('0', wpultra_woo_coerce_money('-5'));
+    assert_eq('0', wpultra_woo_coerce_money(-0.01));
+    assert_eq(null, wpultra_woo_coerce_money(null));
+});
+
+it('validate clamps negative price', function () {
+    $r = wpultra_woo_validate_product(['regular_price' => '-9.99']);
+    assert_eq('0', $r['clean']['regular_price']);
+    assert_eq([], $r['rejected']);
+});
+
 it('coerces bool', function () {
     assert_true(wpultra_woo_coerce_bool('yes'));
     assert_true(wpultra_woo_coerce_bool(1));

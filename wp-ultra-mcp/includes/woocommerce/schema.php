@@ -38,7 +38,9 @@ function wpultra_woo_product_schema(): array {
 function wpultra_woo_coerce_money($v): ?string {
     if ($v === '' || $v === null) { return null; }
     if (!is_numeric($v)) { return null; }
-    return (string) (0 + $v);
+    $n = 0 + $v;
+    if ($n < 0) { $n = 0; } // clamp negatives to zero — prices are never negative
+    return (string) $n;
 }
 
 function wpultra_woo_coerce_bool($v): bool {

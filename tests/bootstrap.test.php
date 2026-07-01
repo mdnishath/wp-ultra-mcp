@@ -11,7 +11,7 @@ require __DIR__ . '/../wp-ultra-mcp/includes/bootstrap-mcp.php';
 
 it('ability file list is complete and unique', function () {
     $files = wpultra_ability_files();
-    assert_eq(103, count($files), 'count');
+    assert_eq(109, count($files), 'count');
     assert_eq(count($files), count(array_unique($files)), 'unique');
     assert_true(in_array('execute-wp-query', $files, true), 'has sql');
     assert_true(in_array('memory-save', $files, true), 'has memory');
@@ -26,6 +26,11 @@ it('ability file list is complete and unique', function () {
     assert_true(in_array('woo-store-status', $files, true), 'has woocommerce');
     assert_true(in_array('woo-insert-product-block', $files, true), 'has woo bridge');
     assert_true(in_array('seo-status', $files, true), 'has seo');
+    assert_true(in_array('self-test', $files, true), 'has self-test');
+    assert_true(in_array('media-upload', $files, true), 'has media');
+    assert_true(in_array('manage-user', $files, true), 'has users');
+    assert_true(in_array('manage-plugin-theme', $files, true), 'has system');
+    assert_true(in_array('content-restore', $files, true), 'has undo');
 });
 it('adapter-unavailable boot is a no-op (no throw)', function () {
     wpultra_boot();

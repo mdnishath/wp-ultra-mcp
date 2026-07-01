@@ -108,6 +108,15 @@ function wpultra_woo_upsert_product(array $input) {
         'image_id' => 'set_image_id', 'gallery_image_ids' => 'set_gallery_image_ids',
         'menu_order' => 'set_menu_order',
     ];
+    // Clamp negative stock to 0 — WooCommerce has no notion of negative on-hand stock.
+    if (array_key_exists('stock_quantity', $clean) && (int) $clean['stock_quantity'] < 0) {
+        $clean['stock_quantity'] = 0;
+    }
+    // Setting a stock quantity has no effect unless manage_stock is on; enable it
+    // implicitly when a quantity is supplied without an explicit manage_stock.
+    if (array_key_exists('stock_quantity', $clean) && !array_key_exists('manage_stock', $clean) && method_exists($p, 'set_manage_stock')) {
+        $p->set_manage_stock(true);
+    }
     foreach ($setters as $field => $method) {
         if (array_key_exists($field, $clean) && method_exists($p, $method)) {
             try { $p->{$method}($clean[$field]); } catch (\Throwable $e) {
@@ -162,13 +171,25 @@ function wpultra_woo_manage_variation(array $input) {
     $vid = (int) ($input['variation_id'] ?? 0);
     $v = ($action === 'update' && $vid) ? wc_get_product($vid) : new WC_Product_Variation();
     if (!$v) { return wpultra_err('variation_not_found', "No variation $vid."); }
+    // On update, ensure the id is actually a variation of THIS parent — otherwise set_parent_id
+    // would re-home another product's variation or corrupt a simple product.
+    if ($action === 'update' && $vid) {
+        if ($v->get_type() !== 'variation' || $v->get_parent_id() !== $parentId) {
+            return wpultra_err('variation_not_found', "No variation $vid on product $parentId.");
+        }
+    }
     $v->set_parent_id($parentId);
     if (isset($input['attributes']) && is_array($input['attributes'])) { $v->set_attributes($input['attributes']); }
     if (isset($input['regular_price'])) { $v->set_regular_price((string) $input['regular_price']); }
     if (isset($input['sale_price']))    { $v->set_sale_price((string) $input['sale_price']); }
     if (isset($input['sku']))           { $v->set_sku((string) $input['sku']); }
     if (isset($input['manage_stock']))  { $v->set_manage_stock(wpultra_woo_coerce_bool($input['manage_stock'])); }
-    if (isset($input['stock_quantity'])) { $v->set_stock_quantity((int) $input['stock_quantity']); }
+    if (isset($input['stock_quantity'])) {
+        // Enable manage_stock implicitly (otherwise set_stock_quantity is a no-op),
+        // and clamp negative quantities to zero.
+        if (!isset($input['manage_stock'])) { $v->set_manage_stock(true); }
+        $v->set_stock_quantity(max(0, (int) $input['stock_quantity']));
+    }
     if (isset($input['image_id']))      { $v->set_image_id((int) $input['image_id']); }
     $newId = $v->save();
     if (!$newId) { return wpultra_err('variation_save_failed', 'save() returned 0.'); }
