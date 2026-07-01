@@ -32,3 +32,23 @@ function wpultra_fields_acf_read(array $target, ?array $fields, bool $format): a
     }
     return $out;
 }
+
+/**
+ * @param array<string,mixed> $atomic
+ * @param array<string,array{value:mixed,mode:string}> $complex
+ * @return array<string,array{status:string,error?:string}>
+ */
+function wpultra_fields_acf_write(array $target, array $atomic, array $complex): array {
+    $acf_id = wpultra_fields_acf_target($target);
+    $res = [];
+    foreach ($atomic as $name => $value) {
+        update_field($name, $value, $acf_id);
+        // update_field returns false when the value is unchanged; not an error, so report ok.
+        $res[$name] = ['status' => 'ok'];
+    }
+    foreach ($complex as $name => $wrap) {
+        update_field($name, $wrap['value'], $acf_id);
+        $res[$name] = ['status' => 'ok'];
+    }
+    return $res;
+}

@@ -34,3 +34,25 @@ function wpultra_fields_mb_read(array $target, ?array $fields, bool $format): ar
     }
     return $out;
 }
+
+/** @return array<string,array{status:string,error?:string}> */
+function wpultra_fields_mb_write(array $target, array $atomic, array $complex): array {
+    $ot  = wpultra_fields_mb_object_type($target['type']);
+    $oid = $target['type'] === 'options' ? (string) $target['id'] : (int) $target['id'];
+    $res = [];
+    $all = $atomic;
+    foreach ($complex as $name => $wrap) { $all[$name] = $wrap['value']; }
+    foreach ($all as $fid => $value) {
+        if ($ot === 'post' && function_exists('rwmb_set_meta')) {
+            rwmb_set_meta((int) $oid, $fid, $value);
+            $res[$fid] = ['status' => 'ok'];
+        } else {
+            // user/term/setting or MB not offering a setter: write metadata directly.
+            $meta_type = $ot === 'setting' ? null : $ot;
+            if ($meta_type) { update_metadata($meta_type, (int) $oid, $fid, $value); }
+            else { update_option($fid, $value); }
+            $res[$fid] = ['status' => 'ok'];
+        }
+    }
+    return $res;
+}

@@ -39,3 +39,28 @@ function wpultra_fields_pods_read(array $target, ?array $fields, bool $format): 
     }
     return $out;
 }
+
+/** @return array<string,array{status:string,error?:string}> */
+function wpultra_fields_pods_write(array $target, array $atomic, array $complex): array {
+    $pod_name = wpultra_fields_pods_name($target);
+    $id  = $target['type'] === 'options' ? null : (int) $target['id'];
+    $pod = ($pod_name !== '') ? pods($pod_name, $id) : false;
+    $res = [];
+    $all = $atomic;
+    foreach ($complex as $name => $wrap) { $all[$name] = $wrap['value']; }
+    foreach ($all as $name => $value) {
+        // is_defined() (not exists()): exists() is true for any real post row even when
+        // the Pod itself is only an ad-hoc WP-object wrapper (no Pods definition to save
+        // against), which makes $pod->save() fatal via Pods' internal load_pod() lookup.
+        if ($pod && $pod->exists() && $pod->is_defined()) {
+            $pod->save($name, $value);
+            $res[$name] = ['status' => 'ok'];
+        } elseif ($target['type'] === 'post') {
+            update_post_meta((int) $target['id'], $name, $value); // fallback until a Pod is registered (Plan 3)
+            $res[$name] = ['status' => 'ok'];
+        } else {
+            $res[$name] = ['status' => 'error', 'error' => 'no Pod registered for target'];
+        }
+    }
+    return $res;
+}
