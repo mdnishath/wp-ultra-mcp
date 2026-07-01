@@ -159,7 +159,7 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('seo', $disabled, true)) {
-        foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local'] as $sf) {
+        foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit'] as $sf) {
             $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
             if (is_readable($sp)) { require_once $sp; }
         }
@@ -205,7 +205,7 @@ function wpultra_apply_ability_policy(): void {
 function wpultra_load_seo_frontend(): void {
     if (!wpultra_is_enabled()) { return; }
     if (in_array('seo', wpultra_disabled_categories(), true)) { return; }
-    foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local'] as $sf) {
+    foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit'] as $sf) {
         $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
         if (is_readable($sp)) { require_once $sp; }
     }
