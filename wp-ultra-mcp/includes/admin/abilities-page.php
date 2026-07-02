@@ -70,6 +70,7 @@ function wpultra_category_ui_labels(): array {
         'jobs'           => ['label' => 'Background Jobs', 'desc' => 'Long operations run via WP-Cron (bulk meta, audits, search-replace).', 'icon' => 'clock'],
         'undo'           => ['label' => 'Universal Undo', 'desc' => 'Auto-snapshot before option/CSS/theme.json/term changes; roll back on demand.', 'icon' => 'undo'],
         'playbooks'      => ['label' => 'Playbooks', 'desc' => 'Chain many abilities into one declarative multi-step run.', 'icon' => 'list-view'],
+        'triggers'       => ['label' => 'Event Triggers', 'desc' => 'Fire a webhook / playbook / log on post/order/comment/form events.', 'icon' => 'megaphone'],
     ];
     // Derive rows from the ability map so every category — including ones added
     // by future waves — stays toggleable without touching this curated list.

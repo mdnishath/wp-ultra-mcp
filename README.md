@@ -257,6 +257,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`playbook-run` / `playbook-save` / `playbook-list` / `playbook-delete`** — chain many abilities into one declarative multi-step run ("set up a whole blog" as a single command). A step's result feeds the next via `{steps.<save_as>.<path>}` tokens (a lone token keeps its type, so a post id stays an integer), and `{input.*}` fills playbook inputs. Supports dry-run, per-step continue-on-error, and saved reusable playbooks.
 
+### Wave 16 — Event triggers / webhooks (shipped)
+
+- **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
+
 ### Planned
 Deeper **Bricks** authoring (schema-driven like the Elementor arc), **JetEngine**, form entries export, IndexNow. The goal: literally do everything in WordPress through AI.
 

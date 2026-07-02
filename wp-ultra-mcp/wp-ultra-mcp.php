@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP-Ultra-MCP
  * Description: Turn this WordPress site into an MCP server for AI CLIs — Elementor, SQL, WP-CLI, files, and more.
- * Version: 0.17.0
+ * Version: 0.18.0
  * Requires PHP: 8.0
  * Requires at least: 6.6
  * License: GPL-2.0-or-later
@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit(); }
 
-define('WPULTRA_VERSION', '0.17.0');
+define('WPULTRA_VERSION', '0.18.0');
 define('WPULTRA_FILE', __FILE__);
 define('WPULTRA_DIR', plugin_dir_path(__FILE__));
 define('WPULTRA_URL', plugin_dir_url(__FILE__));
@@ -85,6 +85,10 @@ add_action('init', 'wpultra_load_updater_admin', 1);
 // Register the async job runner + its cron tick on every request (WP-Cron fires
 // outside the REST/abilities loop, so the tick handler must always be present).
 add_action('plugins_loaded', 'wpultra_load_jobs_runtime', 21);
+
+// Register event-trigger hooks on every request (post/order/comment/form events
+// and the async webhook/playbook dispatch fire outside the REST/abilities loop).
+add_action('plugins_loaded', 'wpultra_load_triggers_runtime', 22);
 
 // Register persisted AI-defined CPTs/taxonomies on every request; the ability
 // engine-loop only runs on REST calls, so definitions saved by register-cpt /

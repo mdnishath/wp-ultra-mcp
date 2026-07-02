@@ -15,7 +15,7 @@ This is the complete candidate list for what comes next. Items are numbered for 
 - [x] ~~**1 · `self-update`**~~ — ✅ SHIPPED v0.14.0. GitHub release check + confirm-gated in-place update (API-403 redirect fallback) + native wp-admin Plugins-page update UI. Both live sites self-updated to 0.14.0 via the new ability.
 - [x] ~~**2 · Async job runner (`job-start` / `job-status` / `job-list` / `job-cancel`)**~~ — ✅ SHIPPED v0.15.0. WP-Cron slice-per-tick (loopback-kicked); built-in types search-replace / bulk-post-meta / site-audit; confirm-gated, cancellable, filterable registry. Verified end-to-end on a live site (real cron processed a site-audit to done).
 - [x] ~~**3 · Universal undo / rollback**~~ — ✅ SHIPPED v0.16.0. Auto-snapshot ring buffer before option-set / custom-css / theme.json / term-update; `undo-list` / `undo-restore` / `undo-last`. Absent-sentinel undoes a newly-created option by deleting it. Live round-trip verified in production.
-- [ ] **4 · Recipe playbooks (multi-step)** — Chain many steps in one declarative recipe — "set up a whole blog" as a single command. Today's recipe engine is single-action.
+- [x] ~~**4 · Recipe playbooks (multi-step)**~~ — ✅ SHIPPED v0.17.0. `playbook-run` / `playbook-save` / `playbook-list` / `playbook-delete` chain many abilities; `{input.*}` + `{steps.<save_as>.<path>}` token passing (lone token keeps type); dry-run, continue-on-error, saved playbooks, no-nesting guard. Verified live in production (create → publish via captured id).
 - [ ] **5 · Webhook / event triggers** — On order placed / form submitted / post published → notify the AI or auto-run a recipe.
 - [ ] **6 · Rate-limits + per-ability roles** — Grant non-admin roles a limited ability set; throttle abuse.
 

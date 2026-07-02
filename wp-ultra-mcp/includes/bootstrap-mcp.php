@@ -96,6 +96,8 @@ function wpultra_ability_files(): array {
         'undo-list', 'undo-restore', 'undo-last',
         // playbooks — multi-step ability chaining (Wave 15)
         'playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete',
+        // event triggers / webhooks (Wave 16)
+        'trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log',
     ];
 }
 
@@ -126,6 +128,7 @@ function wpultra_ability_category_map(): array {
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
         'playbooks'      => ['playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete'],
+        'triggers'       => ['trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
@@ -184,6 +187,7 @@ function wpultra_register_categories(): void {
         'jobs' => 'Background job runner for long operations (bulk, audits, search-replace).',
         'undo' => 'Universal undo — snapshots before option/CSS/theme.json/term changes.',
         'playbooks' => 'Multi-step playbooks that chain many abilities into one run.',
+        'triggers' => 'Event triggers — webhook / auto-playbook / log on WordPress events.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -290,6 +294,9 @@ function wpultra_load_abilities(): void {
         if (function_exists('did_action') && did_action('init')) { wpultra_playbook_register_cpt(); }
         else { add_action('init', 'wpultra_playbook_register_cpt'); }
     }
+    if (!in_array('triggers', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/triggers/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/triggers/engine.php';
+    }
     foreach (wpultra_ability_files() as $file) {
         if (in_array(wpultra_file_category($file), $disabled, true)) { continue; }
         $path = WPULTRA_DIR . 'includes/abilities/' . $file . '.php';
@@ -352,6 +359,22 @@ function wpultra_load_fields_frontend(): void {
     if (function_exists('wpultra_fields_mb_register_groups')) {
         add_filter('rwmb_meta_boxes', 'wpultra_fields_mb_register_groups');
     }
+}
+
+/**
+ * Register event-trigger hooks + the async dispatcher on EVERY request. The WP
+ * events (publish, order, comment, form) and the dispatch cron both fire outside
+ * the REST/abilities loop, so the hooks must always be present. Loads the
+ * playbook engine too, since a trigger's playbook action runs on dispatch.
+ */
+function wpultra_load_triggers_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('triggers', wpultra_disabled_categories(), true)) { return; }
+    foreach (['triggers/engine', 'playbooks/engine'] as $tf) {
+        $tp = WPULTRA_DIR . 'includes/' . $tf . '.php';
+        if (is_readable($tp)) { require_once $tp; }
+    }
+    if (function_exists('wpultra_triggers_boot_runtime')) { wpultra_triggers_boot_runtime(); }
 }
 
 /**
