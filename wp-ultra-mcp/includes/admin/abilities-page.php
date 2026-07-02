@@ -68,6 +68,7 @@ function wpultra_category_ui_labels(): array {
         'bricks'         => ['label' => 'Bricks', 'desc' => 'Bricks builder page content.', 'icon' => 'hammer'],
         'multilingual'   => ['label' => 'Multilingual', 'desc' => 'WPML / Polylang translations.', 'icon' => 'translation'],
         'jobs'           => ['label' => 'Background Jobs', 'desc' => 'Long operations run via WP-Cron (bulk meta, audits, search-replace).', 'icon' => 'clock'],
+        'undo'           => ['label' => 'Universal Undo', 'desc' => 'Auto-snapshot before option/CSS/theme.json/term changes; roll back on demand.', 'icon' => 'undo'],
     ];
     // Derive rows from the ability map so every category — including ones added
     // by future waves — stays toggleable without touching this curated list.

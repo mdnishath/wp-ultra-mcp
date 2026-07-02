@@ -73,6 +73,17 @@ function wpultra_structure_term_update(string $taxonomy, int $term_id, array $ar
     if (isset($args['parent'])) { $termargs['parent'] = (int) $args['parent']; }
     if (isset($args['description'])) { $termargs['description'] = (string) $args['description']; }
     if ($termargs) {
+        // Snapshot the term's current fields for undo before mutating them.
+        if (function_exists('wpultra_undo_capture')) {
+            wpultra_undo_capture('term', "$taxonomy:$term_id", [
+                'term_id'     => $term_id,
+                'taxonomy'    => $taxonomy,
+                'name'        => (string) $existing->name,
+                'slug'        => (string) $existing->slug,
+                'parent'      => (int) $existing->parent,
+                'description' => (string) $existing->description,
+            ], "Update term {$existing->name}");
+        }
         $result = wp_update_term($term_id, $taxonomy, $termargs);
         if (is_wp_error($result)) { return $result; }
     }

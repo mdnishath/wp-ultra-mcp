@@ -92,6 +92,8 @@ function wpultra_ability_files(): array {
         'self-update',
         // async jobs (Wave 13)
         'job-start', 'job-status', 'job-list', 'job-cancel',
+        // universal undo (Wave 14)
+        'undo-list', 'undo-restore', 'undo-last',
     ];
 }
 
@@ -120,6 +122,7 @@ function wpultra_ability_category_map(): array {
         'bricks'         => ['bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content'],
         'multilingual'   => ['translation-status', 'duplicate-to-language'],
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
+        'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
@@ -176,6 +179,7 @@ function wpultra_register_categories(): void {
         'bricks' => 'Bricks builder page content.',
         'multilingual' => 'Translations via WPML or Polylang.',
         'jobs' => 'Background job runner for long operations (bulk, audits, search-replace).',
+        'undo' => 'Universal undo — snapshots before option/CSS/theme.json/term changes.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -191,6 +195,12 @@ function wpultra_register_categories(): void {
 function wpultra_load_abilities(): void {
     if (!wpultra_is_enabled()) { return; }
     $disabled = wpultra_disabled_categories();
+    // Load the undo engine before any mutation engine so wpultra_undo_capture()
+    // exists when option-set / custom-css / theme.json / term-update run. Capture
+    // is a no-op when the 'undo' category is disabled (checked inside the helper).
+    if (is_readable(WPULTRA_DIR . 'includes/undo/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/undo/engine.php';
+    }
     // Load the Elementor engine (only if the elementor category is enabled) so ability
     // callbacks can reference its functions.
     if (!in_array('elementor', $disabled, true)) {

@@ -13,7 +13,7 @@ This is the complete candidate list for what comes next. Items are numbered for 
 ## 🏗️ Platform Power (makes the plugin itself stronger)
 
 - [x] ~~**1 · `self-update`**~~ — ✅ SHIPPED v0.14.0. GitHub release check + confirm-gated in-place update (API-403 redirect fallback) + native wp-admin Plugins-page update UI. Both live sites self-updated to 0.14.0 via the new ability.
-- [ ] **2 · Async job runner (`job-start` / `job-status` / `job-cancel`)** — Long tasks (bulk meta, imports, site-wide audits, big search-replace) run in the background via cron/loopback instead of dying on MCP request timeouts.
+- [x] ~~**2 · Async job runner (`job-start` / `job-status` / `job-list` / `job-cancel`)**~~ — ✅ SHIPPED v0.15.0. WP-Cron slice-per-tick (loopback-kicked); built-in types search-replace / bulk-post-meta / site-audit; confirm-gated, cancellable, filterable registry. Verified end-to-end on a live site (real cron processed a site-audit to done).
 - [ ] **3 · Universal undo / rollback** — Auto-snapshot before option/term/menu/template/widget mutations + an `undo-last` ability. Extends the existing post-revision `content-restore` to everything.
 - [ ] **4 · Recipe playbooks (multi-step)** — Chain many steps in one declarative recipe — "set up a whole blog" as a single command. Today's recipe engine is single-action.
 - [ ] **5 · Webhook / event triggers** — On order placed / form submitted / post published → notify the AI or auto-run a recipe.

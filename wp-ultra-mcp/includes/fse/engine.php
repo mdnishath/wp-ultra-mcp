@@ -120,6 +120,10 @@ function wpultra_fse_theme_json_set(array $settings, array $styles, bool $merge 
         }
         $existing = [];
         $raw = (string) $post->post_content;
+        // Snapshot the raw user global-styles JSON for undo before merging/writing.
+        if (function_exists('wpultra_undo_capture')) {
+            wpultra_undo_capture('theme_json', (string) $post_id, $raw, 'Global styles (theme.json) change');
+        }
         if ($raw !== '') {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) { $existing = $decoded; }
@@ -301,9 +305,12 @@ function wpultra_fse_custom_css_set(string $css, bool $append = false) {
         return wpultra_err('fse_unavailable', 'wp_update_custom_css_post() unavailable.');
     }
     try {
+        $current = function_exists('wp_get_custom_css') ? (string) wp_get_custom_css() : '';
+        if (function_exists('wpultra_undo_capture')) {
+            wpultra_undo_capture('custom_css', 'custom_css', $current, 'Custom CSS ' . ($append ? 'append' : 'replace'));
+        }
         $final = $css;
         if ($append) {
-            $current = function_exists('wp_get_custom_css') ? (string) wp_get_custom_css() : '';
             $final = rtrim($current) !== '' ? rtrim($current) . "\n" . $css : $css;
         }
         $res = wp_update_custom_css_post($final);

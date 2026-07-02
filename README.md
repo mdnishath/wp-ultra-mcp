@@ -249,6 +249,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`job-start` / `job-status` / `job-list` / `job-cancel`** — long operations (whole-DB `search-replace`, site-wide `bulk-post-meta`, `site-audit`) run in the background via WP-Cron, one slice per tick, so they finish instead of dying on a request timeout. Progress is reported as processed/total/percent; jobs are cancellable; the handler registry is filterable for future job types.
 
+### Wave 14 — Universal undo (shipped)
+
+- **`undo-list` / `undo-restore` / `undo-last`** — reversible mutations auto-snapshot their before-state into a capped ring buffer (option-set, custom CSS, theme.json global styles, term updates), so the AI can roll any of them back on demand. Extends the post-revision `content-restore` to targets WordPress keeps no revisions for.
+
 ### Planned
 Deeper **Bricks** authoring (schema-driven like the Elementor arc), **JetEngine**, form entries export, IndexNow. The goal: literally do everything in WordPress through AI.
 

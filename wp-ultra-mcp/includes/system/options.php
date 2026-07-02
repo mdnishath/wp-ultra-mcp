@@ -58,6 +58,10 @@ function wpultra_option_set(string $name, $value, bool $confirm) {
     if ($existed && !$confirm) {
         return wpultra_err('confirm_required', "Option '$name' already exists. Re-run with confirm: true to overwrite.");
     }
+    // Snapshot before-state for undo (absent-sentinel when the option is new).
+    if (function_exists('wpultra_undo_capture')) {
+        wpultra_undo_capture('option', $name, $existed ? $old : WPULTRA_UNDO_ABSENT, ($existed ? 'Overwrite' : 'Create') . " option $name");
+    }
     $ok = update_option($name, $value);
     $summary = $existed
         ? "set $name (was " . wp_json_encode($old) . ' -> ' . wp_json_encode($value) . ')'

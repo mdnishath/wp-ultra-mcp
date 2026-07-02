@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.15.0
+Stable tag: 0.16.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.16.0 =
+* Universal undo (Wave 14): `undo-list` / `undo-restore` / `undo-last`. Reversible mutations now auto-snapshot their before-state into a capped ring buffer — option-set (value or absence), custom-CSS, theme.json global styles, and term updates — so the AI can roll any of them back on demand. Extends the post-revision `content-restore` to targets WordPress keeps no revisions for. 156 → 159 abilities.
 
 = 0.15.0 =
 * Async job runner (Wave 13): `job-start` / `job-status` / `job-list` / `job-cancel` — long operations run in the background via WP-Cron (one slice per tick, kicked immediately via loopback) instead of dying on request timeouts. Built-in job types: `search-replace` (serialized-safe, whole DB), `bulk-post-meta` (set a meta value across every matching post), `site-audit` (walk all posts, collect SEO issues). Confirm-gated where destructive; cancellable; progress reported as processed/total/percent. Handler registry is filterable for future job types. 152 → 156 abilities.
