@@ -253,6 +253,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`undo-list` / `undo-restore` / `undo-last`** — reversible mutations auto-snapshot their before-state into a capped ring buffer (option-set, custom CSS, theme.json global styles, term updates), so the AI can roll any of them back on demand. Extends the post-revision `content-restore` to targets WordPress keeps no revisions for.
 
+### Wave 15 — Playbooks (shipped)
+
+- **`playbook-run` / `playbook-save` / `playbook-list` / `playbook-delete`** — chain many abilities into one declarative multi-step run ("set up a whole blog" as a single command). A step's result feeds the next via `{steps.<save_as>.<path>}` tokens (a lone token keeps its type, so a post id stays an integer), and `{input.*}` fills playbook inputs. Supports dry-run, per-step continue-on-error, and saved reusable playbooks.
+
 ### Planned
 Deeper **Bricks** authoring (schema-driven like the Elementor arc), **JetEngine**, form entries export, IndexNow. The goal: literally do everything in WordPress through AI.
 

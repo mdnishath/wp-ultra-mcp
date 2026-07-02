@@ -94,6 +94,8 @@ function wpultra_ability_files(): array {
         'job-start', 'job-status', 'job-list', 'job-cancel',
         // universal undo (Wave 14)
         'undo-list', 'undo-restore', 'undo-last',
+        // playbooks — multi-step ability chaining (Wave 15)
+        'playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete',
     ];
 }
 
@@ -123,6 +125,7 @@ function wpultra_ability_category_map(): array {
         'multilingual'   => ['translation-status', 'duplicate-to-language'],
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
+        'playbooks'      => ['playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
@@ -180,6 +183,7 @@ function wpultra_register_categories(): void {
         'multilingual' => 'Translations via WPML or Polylang.',
         'jobs' => 'Background job runner for long operations (bulk, audits, search-replace).',
         'undo' => 'Universal undo — snapshots before option/CSS/theme.json/term changes.',
+        'playbooks' => 'Multi-step playbooks that chain many abilities into one run.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -279,6 +283,12 @@ function wpultra_load_abilities(): void {
             $jp = WPULTRA_DIR . 'includes/' . $jf . '.php';
             if (is_readable($jp)) { require_once $jp; }
         }
+    }
+    if (!in_array('playbooks', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/playbooks/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/playbooks/engine.php';
+        // Register the saved-playbook CPT so playbook-save/list/load can query it.
+        if (function_exists('did_action') && did_action('init')) { wpultra_playbook_register_cpt(); }
+        else { add_action('init', 'wpultra_playbook_register_cpt'); }
     }
     foreach (wpultra_ability_files() as $file) {
         if (in_array(wpultra_file_category($file), $disabled, true)) { continue; }

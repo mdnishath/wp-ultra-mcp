@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.16.0
+Stable tag: 0.17.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.17.0 =
+* Playbooks (Wave 15): `playbook-run` / `playbook-save` / `playbook-list` / `playbook-delete`. Chain many existing abilities into one declarative multi-step run — "set up a whole blog" as a single command. Each step calls an ability with params that can reference the playbook's `inputs` ({input.key}) and any earlier step's result ({steps.<save_as>.<path>}); a lone {token} keeps its type so a post id stays an integer across steps. Supports dry-run (resolve + validate without executing), per-step continue-on-error, and saved reusable playbooks. Nesting playbook-run is blocked. 159 → 163 abilities.
 
 = 0.16.0 =
 * Universal undo (Wave 14): `undo-list` / `undo-restore` / `undo-last`. Reversible mutations now auto-snapshot their before-state into a capped ring buffer — option-set (value or absence), custom-CSS, theme.json global styles, and term updates — so the AI can roll any of them back on demand. Extends the post-revision `content-restore` to targets WordPress keeps no revisions for. 156 → 159 abilities.
