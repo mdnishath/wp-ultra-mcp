@@ -245,6 +245,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`self-update`** — the AI checks GitHub for a newer release and applies it in place (confirm-gated); new releases also appear natively in the wp-admin Plugins page like any other plugin update
 
+### Wave 13 — Async jobs (shipped)
+
+- **`job-start` / `job-status` / `job-list` / `job-cancel`** — long operations (whole-DB `search-replace`, site-wide `bulk-post-meta`, `site-audit`) run in the background via WP-Cron, one slice per tick, so they finish instead of dying on a request timeout. Progress is reported as processed/total/percent; jobs are cancellable; the handler registry is filterable for future job types.
+
 ### Planned
 Deeper **Bricks** authoring (schema-driven like the Elementor arc), **JetEngine**, form entries export, IndexNow. The goal: literally do everything in WordPress through AI.
 

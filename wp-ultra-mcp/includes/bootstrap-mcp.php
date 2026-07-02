@@ -90,6 +90,8 @@ function wpultra_ability_files(): array {
         'send-email', 'render-page', 'list-registry', 'purge-cache',
         // platform (Wave 12)
         'self-update',
+        // async jobs (Wave 13)
+        'job-start', 'job-status', 'job-list', 'job-cancel',
     ];
 }
 
@@ -117,6 +119,7 @@ function wpultra_ability_category_map(): array {
         'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
         'bricks'         => ['bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content'],
         'multilingual'   => ['translation-status', 'duplicate-to-language'],
+        'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
@@ -172,6 +175,7 @@ function wpultra_register_categories(): void {
         'forms' => 'Forms via CF7, WPForms, Gravity Forms, or Fluent Forms.',
         'bricks' => 'Bricks builder page content.',
         'multilingual' => 'Translations via WPML or Polylang.',
+        'jobs' => 'Background job runner for long operations (bulk, audits, search-replace).',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -259,6 +263,13 @@ function wpultra_load_abilities(): void {
     if (!in_array('multilingual', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/i18n/engine.php')) {
         require_once WPULTRA_DIR . 'includes/i18n/engine.php';
     }
+    if (!in_array('jobs', $disabled, true)) {
+        // Jobs handlers reuse the siteops (search-replace) + seo (audit) engines.
+        foreach (['jobs/engine', 'jobs/handlers', 'system/siteops', 'seo/setup', 'seo/meta', 'seo/analyze', 'seo/links', 'seo/audit'] as $jf) {
+            $jp = WPULTRA_DIR . 'includes/' . $jf . '.php';
+            if (is_readable($jp)) { require_once $jp; }
+        }
+    }
     foreach (wpultra_ability_files() as $file) {
         if (in_array(wpultra_file_category($file), $disabled, true)) { continue; }
         $path = WPULTRA_DIR . 'includes/abilities/' . $file . '.php';
@@ -321,6 +332,21 @@ function wpultra_load_fields_frontend(): void {
     if (function_exists('wpultra_fields_mb_register_groups')) {
         add_filter('rwmb_meta_boxes', 'wpultra_fields_mb_register_groups');
     }
+}
+
+/**
+ * Register the background-job runtime on EVERY request. WP-Cron fires the
+ * tick on a plain wp-cron.php request (no REST / abilities loop), so the
+ * `wpultra_jobs_tick` action + the job CPT must exist unconditionally.
+ */
+function wpultra_load_jobs_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('jobs', wpultra_disabled_categories(), true)) { return; }
+    foreach (['jobs/engine', 'jobs/handlers', 'system/siteops', 'seo/setup', 'seo/meta', 'seo/analyze', 'seo/links', 'seo/audit'] as $jf) {
+        $jp = WPULTRA_DIR . 'includes/' . $jf . '.php';
+        if (is_readable($jp)) { require_once $jp; }
+    }
+    if (function_exists('wpultra_jobs_boot_runtime')) { wpultra_jobs_boot_runtime(); }
 }
 
 /**

@@ -67,6 +67,7 @@ function wpultra_category_ui_labels(): array {
         'forms'          => ['label' => 'Forms', 'desc' => 'CF7 / WPForms / Gravity / Fluent forms and entries.', 'icon' => 'feedback'],
         'bricks'         => ['label' => 'Bricks', 'desc' => 'Bricks builder page content.', 'icon' => 'hammer'],
         'multilingual'   => ['label' => 'Multilingual', 'desc' => 'WPML / Polylang translations.', 'icon' => 'translation'],
+        'jobs'           => ['label' => 'Background Jobs', 'desc' => 'Long operations run via WP-Cron (bulk meta, audits, search-replace).', 'icon' => 'clock'],
     ];
     // Derive rows from the ability map so every category — including ones added
     // by future waves — stays toggleable without touching this curated list.
