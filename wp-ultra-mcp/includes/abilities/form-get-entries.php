@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) { exit(); }
 
 wp_register_ability('wpultra/form-get-entries', [
     'label'       => __('Get Form Entries', 'wp-ultra-mcp'),
-    'description' => __('Reads submitted entries for a form, with each entry\'s fields flattened to a label=>value map. `plugin` selects the source (auto-detected otherwise). Supports `per_page`/`page` and `search`. Returns an error when the plugin stores no entries (CF7 without Flamingo, WPForms Lite).', 'wp-ultra-mcp'),
+    'description' => __('Reads submitted entries for a form, with each entry\'s fields flattened to a label=>value map. `plugin` selects the source (auto-detected otherwise). Supports `per_page`/`page` and `search`. Returns an error when the plugin stores no entries (CF7 without Flamingo, WPForms Lite). For CF7 the results are scoped to the requested form via Flamingo\'s "contact-form-<id>" channel term when present; if that channel term is missing, all Flamingo inbound entries are returned as a fallback.', 'wp-ultra-mcp'),
     'category'    => 'forms',
     'input_schema'  => [
         'type'       => 'object',

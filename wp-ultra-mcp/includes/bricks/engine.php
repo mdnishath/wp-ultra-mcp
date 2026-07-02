@@ -180,12 +180,22 @@ function wpultra_bricks_validate_tree(array $elements): array {
     return ['ok' => empty($errors), 'errors' => $errors, 'count' => count($elements)];
 }
 
-/** Raw flat elements array from postmeta, or [] when absent/malformed. Thin WP wrapper. */
-function wpultra_bricks_raw(int $post_id): array {
-    $raw = get_post_meta($post_id, '_bricks_page_content_2', true);
+/**
+ * Pure: tolerant decode of a stored _bricks_page_content_2 value into a flat elements array.
+ * Bricks core (and now our writer) store a PHP array; older/foreign writers may have left a JSON
+ * string. Accept both — array passes through, string is json_decoded — and normalize anything
+ * else to []. Pure, testable without WordPress.
+ * @param mixed $raw
+ */
+function wpultra_bricks_decode_stored($raw): array {
     if (empty($raw)) { return []; }
     $data = is_string($raw) ? json_decode($raw, true) : $raw;
     return is_array($data) ? $data : [];
+}
+
+/** Raw flat elements array from postmeta, or [] when absent/malformed. Thin WP wrapper. */
+function wpultra_bricks_raw(int $post_id): array {
+    return wpultra_bricks_decode_stored(get_post_meta($post_id, '_bricks_page_content_2', true));
 }
 
 /**
@@ -209,9 +219,14 @@ function wpultra_bricks_read(int $post_id, array $opts = []) {
  */
 function wpultra_bricks_write(int $post_id, array $elements) {
     if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
-    $json = wp_json_encode($elements);
-    if (!is_string($json)) { return wpultra_err('encode_failed', 'Element array could not be JSON-encoded; write aborted to avoid wiping the page.'); }
-    update_post_meta($post_id, '_bricks_page_content_2', wp_slash($json));
+    // Bricks core stores _bricks_page_content_2 as a PHP array (serialized postmeta), and its
+    // renderer does NOT json_decode a string value — storing a JSON string here silently breaks
+    // rendering. Store the array directly; wp_slash so any backslashes in settings survive the
+    // meta unslash round-trip. wpultra_bricks_raw() already reads both array and legacy-string.
+    if (wp_json_encode($elements) === false) {
+        return wpultra_err('encode_failed', 'Element array is not serializable (invalid UTF-8?); write aborted to avoid wiping the page.');
+    }
+    update_post_meta($post_id, '_bricks_page_content_2', wp_slash($elements));
     update_post_meta($post_id, '_bricks_editor_mode', 'bricks');
     try {
         if (class_exists('\\Bricks\\Assets') && method_exists('\\Bricks\\Assets', 'clear_cache')) {

@@ -3,10 +3,10 @@ declare(strict_types=1);
 if (!defined('ABSPATH') && !defined('WPULTRA_TEST')) { /* allow harness load */ }
 
 if (!function_exists('wpultra_seo_strlen')) {
-    /** PURE. UTF-8-aware character count (mb_strlen when available, else code-point count). */
+    /** PURE. UTF-8-aware character count: mb_strlen when available, else a code-point count
+     *  (so non-Latin — Bengali/CJK — titles aren't over-counted as raw bytes). */
     function wpultra_seo_strlen(string $s): int {
-        if (function_exists('mb_strlen')) { return (int) wpultra_seo_strlen($s); }
-        return (int) preg_match_all('/./us', $s, $__m);
+        return function_exists('mb_strlen') ? (int) mb_strlen($s) : (int) preg_match_all('/./us', $s, $__m);
     }
 }
 

@@ -235,4 +235,19 @@ it('performance context defaults cover every key the evaluator can branch on', f
     }
 });
 
+// ---------------------------------------------------------------------------
+// Autoload value vocabulary — WP 6.6+ replaced the sole 'yes' with several values;
+// the collector's autoload-size query must match all of them, not just 'yes'.
+// ---------------------------------------------------------------------------
+
+it('autoload_yes_values includes the modern WP 6.6+ vocabulary, not just "yes"', function () {
+    $vals = wpultra_audits_autoload_yes_values();
+    foreach (['yes', 'on', 'auto', 'auto-on'] as $v) {
+        assert_true(in_array($v, $vals, true), "autoload value set missing '$v'");
+    }
+    // No accidental inclusion of the "not-autoloaded" values WP uses for the negative side.
+    assert_true(!in_array('no', $vals, true));
+    assert_true(!in_array('off', $vals, true));
+});
+
 run_tests();

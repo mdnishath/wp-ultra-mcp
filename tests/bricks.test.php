@@ -134,6 +134,22 @@ it('shape_elements maps a registry of class-name-less config arrays to name/labe
     assert_eq('Heading', $shaped[1]['label']);
 });
 
+it('decode_stored is tolerant of both an array (Bricks/our writer) and a legacy JSON string', function () {
+    // Our writer now stores a PHP array (Bricks core's native shape); the reader must accept it
+    // unchanged, and still tolerate a legacy JSON-string value some other writer may have left.
+    $arr = bricks_fix();
+    assert_eq($arr, wpultra_bricks_decode_stored($arr));                 // array passes through
+    assert_eq($arr, wpultra_bricks_decode_stored(json_encode($arr)));    // legacy JSON string decodes
+    assert_eq([], wpultra_bricks_decode_stored(''));                     // empty -> []
+    assert_eq([], wpultra_bricks_decode_stored(null));                   // absent -> []
+    assert_eq([], wpultra_bricks_decode_stored('not json'));             // garbage -> []
+    // A tree built from the array form matches one built from the decoded-string form.
+    assert_eq(
+        wpultra_bricks_build_tree(wpultra_bricks_decode_stored($arr)),
+        wpultra_bricks_build_tree(wpultra_bricks_decode_stored(json_encode($arr)))
+    );
+});
+
 it('active/version/list-elements/status degrade gracefully without the Bricks classes', function () {
     assert_eq(false, wpultra_bricks_active());
     assert_eq(null, wpultra_bricks_version());

@@ -172,12 +172,28 @@ function wpultra_forms_cf7_get_entries(int $form_id, int $per_page, int $page, s
     // post_content — so WP_Query's 's' cannot see field values. To keep pagination
     // consistent with the filtered set we fetch all inbound records, flatten them,
     // filter by the shared matcher, THEN slice the requested page from the result.
-    $posts = get_posts([
+    //
+    // Best-effort per-form scoping: Flamingo files each submission under a channel term
+    // whose slug is 'contact-form-<id>' (the CF7 form's wpcf7 unit tag) in the
+    // 'flamingo_inbound_channel' taxonomy. When that term exists, restrict the query to it;
+    // otherwise fall back to returning all inbound entries (previous behavior).
+    $query_args = [
         'post_type'      => 'flamingo_inbound',
         'posts_per_page' => -1,
         'orderby'        => 'date',
         'order'          => 'DESC',
-    ]);
+    ];
+    if (function_exists('get_term_by') && function_exists('taxonomy_exists') && taxonomy_exists('flamingo_inbound_channel')) {
+        $channel = get_term_by('slug', 'contact-form-' . $form_id, 'flamingo_inbound_channel');
+        if ($channel && !is_wp_error($channel)) {
+            $query_args['tax_query'] = [[
+                'taxonomy' => 'flamingo_inbound_channel',
+                'field'    => 'term_id',
+                'terms'    => (int) $channel->term_id,
+            ]];
+        }
+    }
+    $posts = get_posts($query_args);
     $all = [];
     foreach ((array) $posts as $p) {
         $meta   = function_exists('get_post_meta') ? (array) get_post_meta((int) $p->ID, '_meta', true) : [];

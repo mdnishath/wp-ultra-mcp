@@ -38,13 +38,23 @@ function wpultra_siteops_export_content(array $input) {
         return wpultra_err('exporter_unavailable', 'WordPress export_wp() is unavailable on this install.');
     }
 
-    // export_wp() with a single post_type; loop and concatenate for multiple.
-    $xml = '';
-    foreach ($post_types as $pt) {
-        ob_start();
-        export_wp(['content' => $pt]);
-        $xml .= (string) ob_get_clean();
+    // export_wp() emits a complete WXR document per call. Concatenating several documents into one
+    // file yields invalid XML, so: for exactly one post_type call export_wp(['content'=>$pt]) (and
+    // pass status through — export_wp only honors status in the single-content-type case); for
+    // multiple/all requested post_types call export_wp(['content'=>'all']) ONCE.
+    $args = [];
+    if (count($post_types) === 1) {
+        $args['content'] = $post_types[0];
+        if ($status !== []) { $args['status'] = $status[0]; }
+    } else {
+        if ($status !== []) {
+            return wpultra_err('status_needs_single_post_type', 'The status filter is only supported when exactly one post_type is given (export_wp applies status per content type). Narrow post_types to one, or drop status.');
+        }
+        $args['content'] = 'all';
     }
+    ob_start();
+    export_wp($args);
+    $xml = (string) ob_get_clean();
     if ($xml === '') { return wpultra_err('export_empty', 'Export produced no output.'); }
 
     $written = file_put_contents($path, $xml);

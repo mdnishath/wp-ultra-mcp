@@ -80,19 +80,41 @@ function wpultra_woo_normalize_tax_rate(array $input): array {
     $postcodes = $postcode !== '' ? array_values(array_filter(array_map('trim', explode(';', $postcode)), 'strlen')) : [];
     $cities    = $city !== '' ? array_values(array_filter(array_map('trim', explode(';', $city)), 'strlen')) : [];
 
+    $rate_row = [
+        'tax_rate_country'  => $country,
+        'tax_rate_state'    => $state,
+        'tax_rate'          => (string) (0 + (float) $rate),
+        'tax_rate_name'     => $name !== '' ? $name : 'Tax',
+        'tax_rate_priority' => $priority,
+        'tax_rate_compound' => $compound ? 1 : 0,
+        'tax_rate_shipping' => $shipping ? 1 : 0,
+        'tax_rate_order'    => 0,
+        'tax_rate_class'    => $class,
+    ];
+
+    // Which of the DB columns the caller actually supplied (input name => column). Used by the
+    // update path to write ONLY provided keys — a naive full-row write on a partial update
+    // ({id, rate}) would wipe country/state, rename to 'Tax', and reset class/priority/compound.
+    // 'rate' is always present (required + validated above).
+    $input_to_column = [
+        'country'  => 'tax_rate_country',
+        'state'    => 'tax_rate_state',
+        'rate'     => 'tax_rate',
+        'name'     => 'tax_rate_name',
+        'priority' => 'tax_rate_priority',
+        'compound' => 'tax_rate_compound',
+        'shipping' => 'tax_rate_shipping',
+        'class'    => 'tax_rate_class',
+    ];
+    $provided = [];
+    foreach ($input_to_column as $in => $col) {
+        if (array_key_exists($in, $input)) { $provided[$col] = $rate_row[$col]; }
+    }
+
     return [
         'ok' => true,
-        'rate' => [
-            'tax_rate_country'  => $country,
-            'tax_rate_state'    => $state,
-            'tax_rate'          => (string) (0 + (float) $rate),
-            'tax_rate_name'     => $name !== '' ? $name : 'Tax',
-            'tax_rate_priority' => $priority,
-            'tax_rate_compound' => $compound ? 1 : 0,
-            'tax_rate_shipping' => $shipping ? 1 : 0,
-            'tax_rate_order'    => 0,
-            'tax_rate_class'    => $class,
-        ],
+        'rate' => $rate_row,
+        'provided' => $provided,
         'postcodes' => $postcodes,
         'cities'    => $cities,
     ];
@@ -272,14 +294,30 @@ function wpultra_woo_tax_rate_manage(array $input) {
                 : "SELECT * FROM {$wpdb->prefix}woocommerce_tax_rates ORDER BY tax_rate_order ASC",
             ARRAY_A
         );
+        // postcode/city are NOT columns of woocommerce_tax_rates — WC stores them in the
+        // woocommerce_tax_rate_locations table (one row per value, location_type postcode|city).
+        // Fetch them in a single grouped query and index by rate id so the list shows what
+        // create/update wrote.
+        $locations = [];
+        $loc_rows = $wpdb->get_results(
+            "SELECT tax_rate_id, location_type, location_code FROM {$wpdb->prefix}woocommerce_tax_rate_locations",
+            ARRAY_A
+        );
+        foreach ((array) $loc_rows as $lr) {
+            $rid  = (int) ($lr['tax_rate_id'] ?? 0);
+            $ltyp = (string) ($lr['location_type'] ?? '');
+            $code = (string) ($lr['location_code'] ?? '');
+            if ($ltyp === 'postcode' || $ltyp === 'city') { $locations[$rid][$ltyp][] = $code; }
+        }
         $rates = [];
         foreach ((array) $rows as $r) {
+            $rid = (int) ($r['tax_rate_id'] ?? 0);
             $rates[] = [
-                'id'       => (int) ($r['tax_rate_id'] ?? 0),
+                'id'       => $rid,
                 'country'  => (string) ($r['tax_rate_country'] ?? ''),
                 'state'    => (string) ($r['tax_rate_state'] ?? ''),
-                'postcode' => (string) ($r['postcode'] ?? ''),
-                'city'     => (string) ($r['city'] ?? ''),
+                'postcode' => implode('; ', $locations[$rid]['postcode'] ?? []),
+                'city'     => implode('; ', $locations[$rid]['city'] ?? []),
                 'rate'     => (string) ($r['tax_rate'] ?? ''),
                 'name'     => (string) ($r['tax_rate_name'] ?? ''),
                 'priority' => (int) ($r['tax_rate_priority'] ?? 0),
@@ -308,7 +346,9 @@ function wpultra_woo_tax_rate_manage(array $input) {
         if (!$id) { return wpultra_err('id_required', 'update requires an id.'); }
         $norm = wpultra_woo_normalize_tax_rate($input);
         if (!$norm['ok']) { return wpultra_err('invalid_tax_rate', (string) $norm['reason']); }
-        foreach ($norm['rate'] as $key => $val) {
+        // Only write columns the caller actually supplied — a full-row write would wipe
+        // unspecified fields (country/state/name/class/priority/compound) on a partial update.
+        foreach ($norm['provided'] as $key => $val) {
             WC_Tax::_update_tax_rate($id, [$key => $val]);
         }
         // postcode/city live in separate WC tables — apply only when supplied (empty would wipe existing).

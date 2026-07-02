@@ -14,6 +14,7 @@ wp_register_ability('wpultra/manage-template', [
             'slug'    => ['type' => 'string'],
             'content' => ['type' => 'string'],
             'title'   => ['type' => 'string'],
+            'area'    => ['type' => 'string', 'description' => 'wp_template_part area term (e.g. header, footer, uncategorized). Only used when type=wp_template_part on upsert.'],
             'confirm' => ['type' => 'boolean', 'default' => false],
         ],
         'required'             => ['action'],
@@ -72,7 +73,8 @@ function wpultra_manage_template(array $input) {
     if ($action === 'upsert') {
         $content = (string) ($input['content'] ?? '');
         $title = (string) ($input['title'] ?? '');
-        $res = wpultra_fse_template_upsert($slug, $type, $content, $title);
+        $area = (string) ($input['area'] ?? '');
+        $res = wpultra_fse_template_upsert($slug, $type, $content, $title, $area);
         if (is_wp_error($res)) {
             wpultra_audit_log('manage-template', "upsert $type/$slug failed: " . $res->get_error_message(), false);
             return $res;

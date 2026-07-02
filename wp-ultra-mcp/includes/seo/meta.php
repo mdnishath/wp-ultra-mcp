@@ -6,8 +6,7 @@ if (!function_exists('wpultra_seo_strlen')) {
     /** PURE. UTF-8-aware character count. Uses mb_strlen when available, else counts code
      *  points so non-Latin (Bengali/CJK) titles aren't over-counted as raw bytes. */
     function wpultra_seo_strlen(string $s): int {
-        if (function_exists('mb_strlen')) { return (int) wpultra_seo_strlen($s); }
-        return (int) preg_match_all('/./us', $s, $__m);
+        return function_exists('mb_strlen') ? (int) mb_strlen($s) : (int) preg_match_all('/./us', $s, $__m);
     }
 }
 

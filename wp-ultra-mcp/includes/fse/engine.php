@@ -213,7 +213,7 @@ function wpultra_fse_template_get(string $slug, string $type = 'wp_template') {
 }
 
 /** Create or update a custom template/template-part CPT with the given content/title. */
-function wpultra_fse_template_upsert(string $slug, string $type, string $content, string $title) {
+function wpultra_fse_template_upsert(string $slug, string $type, string $content, string $title, string $area = '') {
     if (!wpultra_fse_block_theme_available()) {
         return wpultra_err('fse_unavailable', 'Active theme is not a block theme.');
     }
@@ -234,7 +234,20 @@ function wpultra_fse_template_upsert(string $slug, string $type, string $content
         }
         $id = wp_insert_post($postarr, true);
         if (is_wp_error($id)) { return $id; }
-        return ['post_id' => (int) $id, 'slug' => $slug, 'type' => $type, 'created' => !$existing];
+        $id = (int) $id;
+
+        // WP resolves a custom template/part only when it carries the wp_theme term naming the
+        // active stylesheet (and, for parts, a wp_template_part_area term). Without these the CPT
+        // is a silent no-op: it never renders, never appears in list, and get returns not_found.
+        if (function_exists('wp_set_post_terms') && function_exists('taxonomy_exists') && function_exists('get_stylesheet') && taxonomy_exists('wp_theme')) {
+            wp_set_post_terms($id, [get_stylesheet()], 'wp_theme');
+        }
+        if ($type === 'wp_template_part' && function_exists('wp_set_post_terms') && function_exists('taxonomy_exists') && taxonomy_exists('wp_template_part_area')) {
+            $area = $area !== '' ? $area : 'uncategorized';
+            wp_set_post_terms($id, [$area], 'wp_template_part_area');
+        }
+
+        return ['post_id' => $id, 'slug' => $slug, 'type' => $type, 'created' => !$existing];
     } catch (\Throwable $e) {
         return wpultra_err('fse_unavailable', 'Failed to upsert template: ' . $e->getMessage());
     }

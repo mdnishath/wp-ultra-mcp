@@ -307,12 +307,27 @@ function wpultra_audits_performance_score(array $findings): int {
     return max(0, min(100, $score));
 }
 
+/**
+ * PURE. The set of `autoload` column values WordPress treats as "autoloaded".
+ * WP 6.6+ replaced the sole 'yes' with a richer vocabulary ('on'/'auto'/'auto-on'),
+ * so a `WHERE autoload = 'yes'` query silently misses autoloaded options on modern WP.
+ * @return array<int,string>
+ */
+function wpultra_audits_autoload_yes_values(): array {
+    return ['yes', 'on', 'auto', 'auto-on'];
+}
+
 /** WP-touching: build the performance-audit context array from the live environment. */
 function wpultra_audits_performance_collect(): array {
     global $wpdb;
     $ctx = wpultra_audits_performance_context_defaults();
 
-    $rows = $wpdb->get_results("SELECT option_name AS name, LENGTH(option_value) AS bytes FROM {$wpdb->options} WHERE autoload = 'yes'", ARRAY_A);
+    $autoload_vals = wpultra_audits_autoload_yes_values();
+    $placeholders  = implode(',', array_fill(0, count($autoload_vals), '%s'));
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT option_name AS name, LENGTH(option_value) AS bytes FROM {$wpdb->options} WHERE autoload IN ($placeholders)",
+        ...$autoload_vals
+    ), ARRAY_A);
     $rows = is_array($rows) ? $rows : [];
     $total = 0;
     foreach ($rows as &$r) { $r['bytes'] = (int) ($r['bytes'] ?? 0); $total += $r['bytes']; }

@@ -301,6 +301,10 @@ function wpultra_i18n_copy_meta(int $post_id, int $new_id): void {
         foreach ((array) $values as $v) { $flat[] = [$key, $v]; }
     }
     $keep_keys = array_keys(wpultra_i18n_filter_translation_meta(array_fill_keys(array_column($flat, 0), null)));
+    // Clear any existing copies of the keys we're about to re-copy so an in-place overwrite
+    // (updating an existing translation) doesn't accumulate duplicate meta rows. add_post_meta
+    // below then writes a fresh copy — matching the fresh-post case.
+    foreach ($keep_keys as $key) { delete_post_meta($new_id, $key); }
     foreach ($flat as [$key, $value]) {
         if (!in_array($key, $keep_keys, true)) { continue; }
         $value = maybe_unserialize($value);
@@ -349,7 +353,15 @@ function wpultra_i18n_duplicate_to_language(int $post_id, string $target_lang, b
             'ping_status'    => $post['ping_status'],
         ]);
 
-        $new_id = wp_insert_post(wp_slash($postarr), true);
+        // Overwrite: update the EXISTING translation in place instead of creating a fresh post and
+        // re-pointing the map (which orphans the previous translation as a stray draft).
+        $existing_id = ($overwrite && isset($existing_translations[$target_lang])) ? (int) $existing_translations[$target_lang] : 0;
+        if ($existing_id > 0 && get_post($existing_id)) {
+            $postarr['ID'] = $existing_id;
+            $new_id = wp_update_post(wp_slash($postarr), true);
+        } else {
+            $new_id = wp_insert_post(wp_slash($postarr), true);
+        }
         if (is_wp_error($new_id)) { return $new_id; }
         $new_id = (int) $new_id;
 
@@ -414,7 +426,16 @@ function wpultra_i18n_duplicate_to_language(int $post_id, string $target_lang, b
         'ping_status'    => $post['ping_status'],
     ]);
 
-    $new_id = wp_insert_post(wp_slash($postarr), true);
+    // Overwrite: update the EXISTING translation in place instead of creating a fresh post and
+    // re-registering the language details (which would orphan the previous translation).
+    $existing_id = ($overwrite && isset($existing[$target_lang]) && !empty($existing[$target_lang]->element_id))
+        ? (int) $existing[$target_lang]->element_id : 0;
+    if ($existing_id > 0 && get_post($existing_id)) {
+        $postarr['ID'] = $existing_id;
+        $new_id = wp_update_post(wp_slash($postarr), true);
+    } else {
+        $new_id = wp_insert_post(wp_slash($postarr), true);
+    }
     if (is_wp_error($new_id)) { return $new_id; }
     $new_id = (int) $new_id;
 

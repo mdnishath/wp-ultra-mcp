@@ -126,6 +126,48 @@ it('tax rate normalizer yields empty postcode/city arrays when none supplied', f
     assert_eq([], $r['cities']);
 });
 
+// ---- provided-keys tracking (partial-update safety) ----
+
+it('tax rate normalizer "provided" tracks ONLY supplied input keys (partial update)', function () {
+    // A partial update {id, rate} must only write tax_rate — never wipe country/state/name/etc.
+    $r = wpultra_woo_normalize_tax_rate(['rate' => '9']);
+    assert_true($r['ok']);
+    assert_eq(['tax_rate' => '9'], $r['provided']);
+    // Full rate row still carries defaults (used by create), independent of 'provided'.
+    assert_eq('Tax', $r['rate']['tax_rate_name']);
+    assert_eq('', $r['rate']['tax_rate_country']);
+});
+
+it('tax rate normalizer "provided" maps each input name to its DB column', function () {
+    $r = wpultra_woo_normalize_tax_rate([
+        'rate' => '7.5', 'country' => 'us', 'state' => 'ca', 'name' => 'VAT',
+        'class' => 'reduced-rate', 'priority' => 2, 'compound' => true, 'shipping' => false,
+    ]);
+    assert_true($r['ok']);
+    assert_eq('US', $r['provided']['tax_rate_country']);
+    assert_eq('CA', $r['provided']['tax_rate_state']);
+    assert_eq('7.5', $r['provided']['tax_rate']);
+    assert_eq('VAT', $r['provided']['tax_rate_name']);
+    assert_eq('reduced-rate', $r['provided']['tax_rate_class']);
+    assert_eq(2, $r['provided']['tax_rate_priority']);
+    assert_eq(1, $r['provided']['tax_rate_compound']);
+    assert_eq(0, $r['provided']['tax_rate_shipping']);
+    // tax_rate_order is never a caller-supplied input, so it stays out of the provided set.
+    assert_true(!array_key_exists('tax_rate_order', $r['provided']));
+});
+
+it('tax rate normalizer "provided" omits unsupplied optional keys', function () {
+    $r = wpultra_woo_normalize_tax_rate(['rate' => '5', 'country' => 'FR']);
+    assert_true($r['ok']);
+    // Only the two supplied inputs are tracked (assert on keys/values, not their order).
+    assert_eq(2, count($r['provided']));
+    assert_eq('5', $r['provided']['tax_rate']);
+    assert_eq('FR', $r['provided']['tax_rate_country']);
+    assert_true(!array_key_exists('tax_rate_state', $r['provided']));
+    assert_true(!array_key_exists('tax_rate_name', $r['provided']));
+    assert_true(!array_key_exists('tax_rate_compound', $r['provided']));
+});
+
 // ---- wpultra_woo_shipping_method_types() ----
 
 it('shipping method types is a fixed, testable enum', function () {
