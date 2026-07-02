@@ -159,9 +159,10 @@ function wpultra_media_shape_detailed(int $id): array {
     $shape['height']     = isset($meta['height']) ? (int) $meta['height'] : null;
     $file = get_attached_file($id);
     $shape['filesize']   = ($file && file_exists($file)) ? (int) filesize($file) : null;
-    $shape['caption']    = (string) get_the_excerpt($id);
-    $shape['description'] = (string) get_post_field('post_content', $id);
     $post = get_post($id);
+    // Raw excerpt, not get_the_excerpt() — that applies filters, and media-update writes post_excerpt raw.
+    $shape['caption']    = (string) ($post->post_excerpt ?? '');
+    $shape['description'] = (string) get_post_field('post_content', $id);
     $shape['attached_to'] = $post && (int) $post->post_parent > 0 ? (int) $post->post_parent : null;
     return $shape;
 }

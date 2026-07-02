@@ -53,7 +53,10 @@ function wpultra_woo_shipping_method_types(): array {
 
 /**
  * Pure: normalize/validate raw tax-rate input into WC_Tax::_insert_tax_rate-ready shape.
- * Returns ['ok'=>true,'rate'=>array] or ['ok'=>false,'reason'=>string].
+ * Returns ['ok'=>true,'rate'=>array,'postcodes'=>array,'cities'=>array] or ['ok'=>false,'reason'=>string].
+ * 'rate' holds ONLY real woocommerce_tax_rates columns — postcode/city are NOT columns of that
+ * table (WC applies them via _update_tax_rate_postcodes/_update_tax_rate_cities against separate
+ * tables), so they are returned as their own outputs and never embedded in the DB-bound rate array.
  * Coerces country/state to uppercase 2-letter-ish strings (left as-is if longer — WC allows
  * multi-value comma lists), rate to a numeric string, priority/compound/shipping to expected types.
  */
@@ -73,6 +76,10 @@ function wpultra_woo_normalize_tax_rate(array $input): array {
     $compound = !empty($input['compound']);
     $shipping = array_key_exists('shipping', $input) ? !empty($input['shipping']) : true;
 
+    // postcode/city may be a semicolon-separated list; split into arrays for the WC helpers.
+    $postcodes = $postcode !== '' ? array_values(array_filter(array_map('trim', explode(';', $postcode)), 'strlen')) : [];
+    $cities    = $city !== '' ? array_values(array_filter(array_map('trim', explode(';', $city)), 'strlen')) : [];
+
     return [
         'ok' => true,
         'rate' => [
@@ -85,9 +92,9 @@ function wpultra_woo_normalize_tax_rate(array $input): array {
             'tax_rate_shipping' => $shipping ? 1 : 0,
             'tax_rate_order'    => 0,
             'tax_rate_class'    => $class,
-            'postcode'          => $postcode,
-            'city'              => $city,
         ],
+        'postcodes' => $postcodes,
+        'cities'    => $cities,
     ];
 }
 
@@ -290,6 +297,9 @@ function wpultra_woo_tax_rate_manage(array $input) {
         $id = null;
         WC_Tax::_insert_tax_rate($norm['rate'], $id);
         if (!$id) { return wpultra_err('tax_rate_create_failed', '_insert_tax_rate did not return an id.'); }
+        // postcode/city live in separate WC tables — apply only when supplied (empty would wipe existing).
+        if (!empty($norm['postcodes'])) { WC_Tax::_update_tax_rate_postcodes((int) $id, $norm['postcodes']); }
+        if (!empty($norm['cities']))    { WC_Tax::_update_tax_rate_cities((int) $id, $norm['cities']); }
         return ['id' => (int) $id];
     }
 
@@ -301,6 +311,9 @@ function wpultra_woo_tax_rate_manage(array $input) {
         foreach ($norm['rate'] as $key => $val) {
             WC_Tax::_update_tax_rate($id, [$key => $val]);
         }
+        // postcode/city live in separate WC tables — apply only when supplied (empty would wipe existing).
+        if (!empty($norm['postcodes'])) { WC_Tax::_update_tax_rate_postcodes($id, $norm['postcodes']); }
+        if (!empty($norm['cities']))    { WC_Tax::_update_tax_rate_cities($id, $norm['cities']); }
         return ['id' => $id, 'updated' => true];
     }
 

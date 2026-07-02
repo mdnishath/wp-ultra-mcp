@@ -123,6 +123,16 @@ it('wpforms form_data wraps fields with settings + field_id', function () {
     assert_true(isset($data['fields']['1']));
 });
 
+it('wpforms entries SQL adds a fields LIKE only when search is set (search filters before LIMIT)', function () {
+    $with = wpultra_forms_wpforms_entries_sql('wp_wpforms_entries', true);
+    assert_contains('fields LIKE %s', $with);
+    assert_contains('LIMIT %d OFFSET %d', $with);
+    // placeholder order: form_id, search, per_page, offset
+    assert_true(strpos($with, '%s') < strpos($with, 'LIMIT'));
+    $without = wpultra_forms_wpforms_entries_sql('wp_wpforms_entries', false);
+    assert_true(!str_contains($without, 'LIKE'));
+});
+
 it('wpforms entry flattener decodes the JSON fields column to name=>value', function () {
     $row = [
         'entry_id' => '7', 'date' => '2026-07-01',
@@ -209,6 +219,16 @@ it('fluent select field carries advanced_options', function () {
     $opts = $data['fields'][3]['settings']['advanced_options'];
     assert_eq('Sales', $opts[0]['label']);
     assert_eq('Other', $opts[2]['value']);
+});
+
+it('fluent entries SQL adds a response LIKE only when search is set (search filters before LIMIT)', function () {
+    $with = wpultra_forms_fluent_entries_sql('wp_fluentform_submissions', true);
+    assert_contains('response LIKE %s', $with);
+    assert_contains('LIMIT %d OFFSET %d', $with);
+    // placeholder order: form_id, search, per_page, offset
+    assert_true(strpos($with, '%s') < strpos($with, 'LIMIT'));
+    $without = wpultra_forms_fluent_entries_sql('wp_fluentform_submissions', false);
+    assert_true(!str_contains($without, 'LIKE'));
 });
 
 it('fluent entry flattener decodes response JSON and flattens nested groups', function () {

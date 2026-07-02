@@ -103,6 +103,29 @@ it('tax rate normalizer clamps negative priority to zero', function () {
     assert_eq(0, $r['rate']['tax_rate_priority']);
 });
 
+it('tax rate normalizer keeps postcode/city OUT of the DB-bound rate array', function () {
+    // postcode/city are NOT columns of woocommerce_tax_rates; embedding them causes an
+    // "Unknown column" SQL error when WC hands the rate array straight to $wpdb->insert/update.
+    $r = wpultra_woo_normalize_tax_rate(['rate' => '5', 'postcode' => '90210', 'city' => 'Beverly Hills']);
+    assert_true($r['ok']);
+    assert_true(!array_key_exists('postcode', $r['rate']), 'postcode leaked into DB-bound rate array');
+    assert_true(!array_key_exists('city', $r['rate']), 'city leaked into DB-bound rate array');
+});
+
+it('tax rate normalizer returns postcode/city as separate array outputs', function () {
+    $r = wpultra_woo_normalize_tax_rate(['rate' => '5', 'postcode' => '90210; 90211', 'city' => 'Beverly Hills;Malibu']);
+    assert_true($r['ok']);
+    assert_eq(['90210', '90211'], $r['postcodes']);
+    assert_eq(['Beverly Hills', 'Malibu'], $r['cities']);
+});
+
+it('tax rate normalizer yields empty postcode/city arrays when none supplied', function () {
+    $r = wpultra_woo_normalize_tax_rate(['rate' => '5']);
+    assert_true($r['ok']);
+    assert_eq([], $r['postcodes']);
+    assert_eq([], $r['cities']);
+});
+
 // ---- wpultra_woo_shipping_method_types() ----
 
 it('shipping method types is a fixed, testable enum', function () {

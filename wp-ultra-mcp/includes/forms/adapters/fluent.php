@@ -127,6 +127,23 @@ function wpultra_forms_fluent_flatten_entry(array $row): array {
 }
 
 /* ------------------------------------------------------------------ *
+ * PURE: entry-listing SQL builder (testable in isolation)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Build the SELECT for a page of submissions. Pushes a non-empty search into SQL as a
+ * LIKE on the `response` JSON column so pagination stays correct (search is applied
+ * BEFORE the LIMIT/OFFSET, not after). Pure string builder — the caller binds params
+ * via $wpdb->prepare, so the placeholders (%d/%s) are emitted in argument order:
+ * form_id, [search], per_page, offset.
+ */
+function wpultra_forms_fluent_entries_sql(string $subs_t, bool $has_search): string {
+    $where = 'WHERE form_id = %d';
+    if ($has_search) { $where .= ' AND response LIKE %s'; }
+    return "SELECT id, response, created_at FROM {$subs_t} {$where} ORDER BY id DESC LIMIT %d OFFSET %d";
+}
+
+/* ------------------------------------------------------------------ *
  * THIN WP-calling functions
  * ------------------------------------------------------------------ */
 
@@ -179,15 +196,17 @@ function wpultra_forms_fluent_get_entries(int $form_id, int $per_page, int $page
     }
     $subs_t = $wpdb->prefix . 'fluentform_submissions';
     $offset = max(0, ($page - 1)) * $per_page;
-    $rows = $wpdb->get_results(
-        $wpdb->prepare("SELECT id, response, created_at FROM {$subs_t} WHERE form_id = %d ORDER BY id DESC LIMIT %d OFFSET %d", $form_id, $per_page, $offset),
-        ARRAY_A
-    );
+    $sql    = wpultra_forms_fluent_entries_sql($subs_t, $search !== '');
+    if ($search !== '') {
+        $like = '%' . $wpdb->esc_like($search) . '%';
+        $prepared = $wpdb->prepare($sql, $form_id, $like, $per_page, $offset);
+    } else {
+        $prepared = $wpdb->prepare($sql, $form_id, $per_page, $offset);
+    }
+    $rows = $wpdb->get_results($prepared, ARRAY_A);
     $out = [];
     foreach ((array) $rows as $row) {
-        $flat = wpultra_forms_fluent_flatten_entry((array) $row);
-        if ($search !== '' && !wpultra_forms_entry_matches($flat, $search)) { continue; }
-        $out[] = $flat;
+        $out[] = wpultra_forms_fluent_flatten_entry((array) $row);
     }
     return $out;
 }

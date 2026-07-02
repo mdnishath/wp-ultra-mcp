@@ -47,6 +47,11 @@ function wpultra_get_post(array $input) {
     $fields = is_array($input['fields'] ?? null) ? $input['fields'] : [];
     if (!empty($input['include_private_meta'])) { $fields['include_private_meta'] = true; }
 
+    $post_type = (string) get_post_type($id);
+    if ($post_type !== '' && in_array($post_type, wpultra_reserved_post_types(), true)) {
+        return wpultra_err('reserved_post_type', "Post $id is a plugin-internal '$post_type'; use its dedicated ability instead.");
+    }
+
     $result = wpultra_content_get_post($id, $fields);
     if (is_wp_error($result)) { return $result; }
     return wpultra_ok($result);

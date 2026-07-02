@@ -379,7 +379,6 @@ function wpultra_devtools_list_registry(array $input) {
 
         case 'image-sizes':
             if (!function_exists('wp_get_additional_image_sizes')) { return wpultra_err('wp_unavailable', 'wp_get_additional_image_sizes() is unavailable.'); }
-            global $_wp_additional_image_sizes;
             $sizes = [];
             foreach (['thumbnail', 'medium', 'medium_large', 'large'] as $core) {
                 $sizes[$core] = [
@@ -388,7 +387,7 @@ function wpultra_devtools_list_registry(array $input) {
                     'crop'   => (bool) get_option("{$core}_crop"),
                 ];
             }
-            foreach ((array) $_wp_additional_image_sizes as $name => $dim) { $sizes[$name] = $dim; }
+            foreach ((array) wp_get_additional_image_sizes() as $name => $dim) { $sizes[$name] = $dim; }
             return wpultra_ok(['what' => $what, 'items' => wpultra_devtools_shape_image_sizes($sizes)]);
 
         case 'rest-routes':

@@ -50,6 +50,11 @@ wp_register_ability('wpultra/list-posts', [
 ]);
 
 function wpultra_list_posts(array $input) {
+    $post_type = (string) ($input['post_type'] ?? '');
+    if ($post_type !== '' && $post_type !== 'any' && in_array($post_type, wpultra_reserved_post_types(), true)) {
+        return wpultra_err('reserved_post_type', "'$post_type' is managed by a dedicated ability; use that instead.");
+    }
+
     $result = wpultra_content_list_posts($input);
     if (is_wp_error($result)) { return $result; }
     return wpultra_ok($result);

@@ -209,11 +209,37 @@ function wpultra_siteops_manage_cron(array $input) {
  * @param int    $count   by-ref running total of replacements
  * @return mixed same shape as $value with replacements applied
  */
+/**
+ * Serialized-detection shim: prefer WP's is_serialized(); fall back to a minimal
+ * local check under the test harness where WP is not loaded.
+ */
+function wpultra_sr_is_serialized(string $value): bool {
+    if (function_exists('is_serialized')) { return (bool) is_serialized($value); }
+    $value = trim($value);
+    if ('N;' === $value) { return true; }
+    if (strlen($value) < 4 || ':' !== ($value[1] ?? '')) { return false; }
+    return (bool) preg_match('/^[aOsbid]:/', $value);
+}
+
 function wpultra_sr_replace_value($value, string $search, string $replace, int &$count) {
     if ($search === '') { return $value; }
 
     if (is_string($value)) {
         if (strpos($value, $search) === false) { return $value; }
+        // A string leaf can ITSELF be serialized data (e.g. a serialized payload
+        // stored inside an option array). A length-changing str_replace would
+        // corrupt the inner s:N:"..." length prefixes, so unserialize, recurse,
+        // and re-serialize instead. WP-CLI does the same.
+        if (wpultra_sr_is_serialized($value)) {
+            $inner = @unserialize($value, ['allowed_classes' => false]);
+            // Guard against unserialize failure: leave a corrupted/unserializable
+            // serialized-looking leaf untouched rather than mangle it.
+            if ($inner !== false || $value === 'b:0;') {
+                $sub = wpultra_sr_replace_value($inner, $search, $replace, $count);
+                return serialize($sub);
+            }
+            return $value;
+        }
         $count += substr_count($value, $search);
         return str_replace($search, $replace, $value);
     }
@@ -347,7 +373,7 @@ function wpultra_siteops_sr_run_table(string $logical, array $spec, string $sear
             }
             if (!$dry_run && $updates !== []) {
                 $ok = $wpdb->update($table, $updates, [$pk => $row[$pk]]);
-                if ($ok !== false) { $replaced += array_sum(array_map('intval', array_fill(0, count($updates), 1))); }
+                if ($ok !== false) { $replaced += count($updates); }
             }
         }
 

@@ -10,6 +10,7 @@ wp_register_ability('wpultra/manage-menu', [
         'type'       => 'object',
         'properties' => [
             'action'  => ['type' => 'string', 'enum' => ['list-menus', 'get', 'create-menu', 'delete-menu', 'add-item', 'update-item', 'remove-item', 'assign-location']],
+            'name'    => ['type' => 'string', 'description' => 'Menu name for create-menu.'],
             'menu'    => ['type' => ['string', 'integer']],
             'item_id' => ['type' => 'integer'],
             'item'    => [

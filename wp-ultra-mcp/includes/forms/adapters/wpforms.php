@@ -122,6 +122,23 @@ function wpultra_forms_wpforms_flatten_entry(array $row): array {
 }
 
 /* ------------------------------------------------------------------ *
+ * PURE: entry-listing SQL builder (testable in isolation)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Build the SELECT for a page of entries. Pushes a non-empty search into SQL as a LIKE
+ * on the `fields` JSON column so pagination stays correct (search filters BEFORE the
+ * LIMIT/OFFSET, not after). Pure string builder — the caller binds params via
+ * $wpdb->prepare, so placeholders (%d/%s) are emitted in argument order:
+ * form_id, [search], per_page, offset.
+ */
+function wpultra_forms_wpforms_entries_sql(string $table, bool $has_search): string {
+    $where = 'WHERE form_id = %d';
+    if ($has_search) { $where .= ' AND fields LIKE %s'; }
+    return "SELECT entry_id, fields, date FROM {$table} {$where} ORDER BY entry_id DESC LIMIT %d OFFSET %d";
+}
+
+/* ------------------------------------------------------------------ *
  * THIN WP-calling functions
  * ------------------------------------------------------------------ */
 
@@ -181,15 +198,17 @@ function wpultra_forms_wpforms_get_entries(int $form_id, int $per_page, int $pag
     }
     $table  = $wpdb->prefix . 'wpforms_entries';
     $offset = max(0, ($page - 1)) * $per_page;
-    $rows = $wpdb->get_results(
-        $wpdb->prepare("SELECT entry_id, fields, date FROM {$table} WHERE form_id = %d ORDER BY entry_id DESC LIMIT %d OFFSET %d", $form_id, $per_page, $offset),
-        ARRAY_A
-    );
+    $sql    = wpultra_forms_wpforms_entries_sql($table, $search !== '');
+    if ($search !== '') {
+        $like = '%' . $wpdb->esc_like($search) . '%';
+        $prepared = $wpdb->prepare($sql, $form_id, $like, $per_page, $offset);
+    } else {
+        $prepared = $wpdb->prepare($sql, $form_id, $per_page, $offset);
+    }
+    $rows = $wpdb->get_results($prepared, ARRAY_A);
     $out = [];
     foreach ((array) $rows as $row) {
-        $flat = wpultra_forms_wpforms_flatten_entry((array) $row);
-        if ($search !== '' && !wpultra_forms_entry_matches($flat, $search)) { continue; }
-        $out[] = $flat;
+        $out[] = wpultra_forms_wpforms_flatten_entry((array) $row);
     }
     return $out;
 }

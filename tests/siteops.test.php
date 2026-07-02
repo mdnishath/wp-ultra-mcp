@@ -91,6 +91,38 @@ it('sr_replace_value recurses into stdClass objects', function () {
     assert_eq(2, $c);
 });
 
+it('sr_replace_value re-serializes a serialized-string leaf (length-changing) without corruption', function () {
+    $c = 0;
+    // A nested array whose leaf is ITSELF serialized data — a serialized payload
+    // stored inside an option array. The replacement changes length, so a naive
+    // str_replace on the leaf would corrupt the inner s:N:"..." prefixes.
+    $inner = serialize(['host' => 'a.io', 'note' => 'visit a.io soon']);
+    $in    = ['config' => ['payload' => $inner, 'plain' => 'a.io here']];
+    $out   = wpultra_sr_replace_value($in, 'a.io', 'longer-domain.example', $c);
+
+    // The plain sibling leaf is replaced normally.
+    assert_eq('longer-domain.example here', $out['config']['plain']);
+    // The serialized leaf stays valid serialized data with the replacement applied.
+    $leaf = $out['config']['payload'];
+    assert_true(is_serialized($leaf), 'leaf is still valid serialized data');
+    $decoded = unserialize($leaf);
+    assert_eq('longer-domain.example', $decoded['host']);
+    assert_eq('visit longer-domain.example soon', $decoded['note']);
+    // 2 hits inside the serialized leaf + 1 in the plain sibling.
+    assert_eq(3, $c);
+});
+
+it('sr_replace_value leaves a corrupted/unserializable serialized-looking string untouched', function () {
+    $c = 0;
+    // Looks serialized (passes is_serialized) but the length prefix is wrong, so
+    // unserialize() fails — must be left as-is rather than mangled.
+    $broken = 'a:1:{s:3:"key";s:99:"old";}';
+    assert_true(is_serialized($broken), 'precondition: looks serialized');
+    $out = wpultra_sr_replace_value(['x' => $broken], 'old', 'new', $c);
+    assert_eq($broken, $out['x']);
+    assert_eq(0, $c);
+});
+
 /* ============================================================
  * wpultra_sr_replace_column  (maybe_serialize round-trip write path)
  * ============================================================ */

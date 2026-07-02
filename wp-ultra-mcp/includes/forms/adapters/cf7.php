@@ -168,16 +168,17 @@ function wpultra_forms_cf7_get_entries(int $form_id, int $per_page, int $page, s
         return wpultra_forms_err('forms_entries_unavailable', 'Contact Form 7 stores no entries without the Flamingo plugin. Install Flamingo to capture submissions.');
     }
     if (!function_exists('get_posts')) { return []; }
-    $args = [
+    // Flamingo stores each submitted field in post meta ('_field'/'_meta'), NOT in
+    // post_content — so WP_Query's 's' cannot see field values. To keep pagination
+    // consistent with the filtered set we fetch all inbound records, flatten them,
+    // filter by the shared matcher, THEN slice the requested page from the result.
+    $posts = get_posts([
         'post_type'      => 'flamingo_inbound',
-        'posts_per_page' => $per_page,
-        'paged'          => max(1, $page),
+        'posts_per_page' => -1,
         'orderby'        => 'date',
         'order'          => 'DESC',
-    ];
-    if ($search !== '') { $args['s'] = $search; }
-    $posts = get_posts($args);
-    $out = [];
+    ]);
+    $all = [];
     foreach ((array) $posts as $p) {
         $meta   = function_exists('get_post_meta') ? (array) get_post_meta((int) $p->ID, '_meta', true) : [];
         $fields = function_exists('get_post_meta') ? (array) get_post_meta((int) $p->ID, '_field', true) : [];
@@ -187,9 +188,12 @@ function wpultra_forms_cf7_get_entries(int $form_id, int $per_page, int $page, s
             'date'   => (string) $p->post_date,
             'fields' => $fields ?: $meta,
         ];
-        $out[] = wpultra_forms_cf7_flatten_entry($record);
+        $flat = wpultra_forms_cf7_flatten_entry($record);
+        if ($search !== '' && !wpultra_forms_entry_matches($flat, $search)) { continue; }
+        $all[] = $flat;
     }
-    return $out;
+    $offset = max(0, ($page - 1)) * $per_page;
+    return array_slice($all, $offset, $per_page);
 }
 
 /**

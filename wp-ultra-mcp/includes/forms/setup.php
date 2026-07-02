@@ -36,7 +36,7 @@ function wpultra_forms_detect(): array {
     }
     // Gravity Forms
     if (class_exists('GFForms') && defined('GF_MIN_WP_VERSION')) {
-        $out['gravity'] = defined('GFForms::VERSION') ? (string) GFForms::$version : '';
+        $out['gravity'] = property_exists('GFForms', 'version') ? (string) GFForms::$version : '';
     } elseif (class_exists('GFForms')) {
         $out['gravity'] = property_exists('GFForms', 'version') ? (string) GFForms::$version : '';
     }
