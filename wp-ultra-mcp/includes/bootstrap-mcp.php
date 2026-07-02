@@ -71,8 +71,24 @@ function wpultra_ability_files(): array {
         'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields',
         // media, users, system, content undo (Wave 8: power features)
         'media-upload', 'manage-user', 'manage-plugin-theme', 'content-restore',
+        // content core (Wave 8, Tier 1)
+        'list-posts', 'get-post', 'search-content', 'duplicate-post',
+        'manage-term', 'register-cpt', 'register-taxonomy', 'manage-menu',
+        'media-list', 'media-get', 'media-update', 'media-delete',
+        'manage-comment', 'option-get', 'option-set', 'list-users', 'site-snapshot',
+        // site ops + FSE (Wave 9)
+        'export-content', 'import-content', 'manage-cron', 'search-replace',
+        'maintenance-mode', 'site-health', 'db-snapshot',
+        'theme-json-get', 'theme-json-set', 'manage-template', 'custom-css',
+        // forms + audits (Wave 10)
+        'form-status', 'form-list', 'form-get-entries', 'form-create',
+        'security-audit', 'performance-audit',
+        // ecosystem (Wave 11)
+        'bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content',
+        'translation-status', 'duplicate-to-language',
+        'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway',
+        'send-email', 'render-page', 'list-registry', 'purge-cache',
     ];
-    // NOTE: bricks-*, and field-plugin abilities are added by later waves.
 }
 
 /** Map of category slug => the ability file slugs it owns. Mirrors each file's declared category. */
@@ -80,12 +96,25 @@ function wpultra_ability_category_map(): array {
     return [
         'filesystem'     => ['read-file', 'write-file', 'edit-file', 'delete-file', 'list-directory'],
         'code-execution' => ['run-wp-cli', 'execute-php'],
-        'database'       => ['execute-wp-query'],
-        'diagnostics'    => ['read-debug-log', 'self-test'],
+        'database'       => ['execute-wp-query', 'search-replace', 'db-snapshot'],
+        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry'],
         'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete'],
-        'content'        => ['create-post', 'update-post', 'delete-post', 'media-upload', 'content-restore'],
-        'users'          => ['manage-user'],
-        'system'         => ['manage-plugin-theme'],
+        'content'        => [
+            'create-post', 'update-post', 'delete-post', 'media-upload', 'content-restore',
+            'list-posts', 'get-post', 'search-content', 'duplicate-post',
+            'manage-term', 'register-cpt', 'register-taxonomy', 'manage-menu',
+            'media-list', 'media-get', 'media-update', 'media-delete', 'manage-comment',
+        ],
+        'users'          => ['manage-user', 'list-users'],
+        'system'         => [
+            'manage-plugin-theme', 'option-get', 'option-set', 'site-snapshot',
+            'export-content', 'import-content', 'manage-cron', 'maintenance-mode',
+            'send-email', 'purge-cache',
+        ],
+        'fse'            => ['theme-json-get', 'theme-json-set', 'manage-template', 'custom-css'],
+        'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
+        'bricks'         => ['bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content'],
+        'multilingual'   => ['translation-status', 'duplicate-to-language'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
@@ -101,7 +130,7 @@ function wpultra_ability_category_map(): array {
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
-        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block'],
+        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway'],
         'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup'],
         'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields'],
     ];
@@ -137,6 +166,10 @@ function wpultra_register_categories(): void {
         'woocommerce' => 'WooCommerce store: products, orders, customers, settings.',
         'seo' => 'SEO: on-page meta, internal links, technical + local SEO (Yoast/Rank Math/native).',
         'fields' => 'Custom fields & content model via ACF, Meta Box, or Pods.',
+        'fse' => 'Block-theme design: theme.json global styles, templates, custom CSS.',
+        'forms' => 'Forms via CF7, WPForms, Gravity Forms, or Fluent Forms.',
+        'bricks' => 'Bricks builder page content.',
+        'multilingual' => 'Translations via WPML or Polylang.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -167,7 +200,7 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('woocommerce', $disabled, true)) {
-        foreach (['setup', 'schema', 'products', 'orders', 'customers', 'coupons', 'settings', 'reports', 'bridge'] as $wcf) {
+        foreach (['setup', 'schema', 'products', 'orders', 'customers', 'coupons', 'settings', 'reports', 'bridge', 'shipping'] as $wcf) {
             $wcp = WPULTRA_DIR . 'includes/woocommerce/' . $wcf . '.php';
             if (is_readable($wcp)) { require_once $wcp; }
         }
@@ -185,14 +218,44 @@ function wpultra_load_abilities(): void {
         }
     }
     // Power-feature engines (media/users/system) — loaded when their category is enabled.
-    if (!in_array('content', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/media/engine.php')) {
-        require_once WPULTRA_DIR . 'includes/media/engine.php';
+    if (!in_array('content', $disabled, true)) {
+        foreach (['media/engine', 'content/engine', 'content/structure', 'content/comments'] as $cf) {
+            $cp = WPULTRA_DIR . 'includes/' . $cf . '.php';
+            if (is_readable($cp)) { require_once $cp; }
+        }
     }
     if (!in_array('users', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/users/engine.php')) {
         require_once WPULTRA_DIR . 'includes/users/engine.php';
     }
-    if (!in_array('system', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/system/engine.php')) {
-        require_once WPULTRA_DIR . 'includes/system/engine.php';
+    if (!in_array('system', $disabled, true)) {
+        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools'] as $sf2) {
+            $sp2 = WPULTRA_DIR . 'includes/' . $sf2 . '.php';
+            if (is_readable($sp2)) { require_once $sp2; }
+        }
+    }
+    if (!in_array('database', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/system/siteops.php')) {
+        require_once WPULTRA_DIR . 'includes/system/siteops.php'; // search-replace + db-snapshot engine
+    }
+    if (!in_array('diagnostics', $disabled, true)) {
+        foreach (['system/audits', 'system/devtools', 'system/siteops'] as $df) {
+            $dp = WPULTRA_DIR . 'includes/' . $df . '.php';
+            if (is_readable($dp)) { require_once $dp; }
+        }
+    }
+    if (!in_array('fse', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/fse/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/fse/engine.php';
+    }
+    if (!in_array('forms', $disabled, true)) {
+        foreach (['setup', 'adapters/cf7', 'adapters/wpforms', 'adapters/gravity', 'adapters/fluent'] as $fmf) {
+            $fmp = WPULTRA_DIR . 'includes/forms/' . $fmf . '.php';
+            if (is_readable($fmp)) { require_once $fmp; }
+        }
+    }
+    if (!in_array('bricks', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/bricks/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/bricks/engine.php';
+    }
+    if (!in_array('multilingual', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/i18n/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/i18n/engine.php';
     }
     foreach (wpultra_ability_files() as $file) {
         if (in_array(wpultra_file_category($file), $disabled, true)) { continue; }
@@ -255,6 +318,20 @@ function wpultra_load_fields_frontend(): void {
     }
     if (function_exists('wpultra_fields_mb_register_groups')) {
         add_filter('rwmb_meta_boxes', 'wpultra_fields_mb_register_groups');
+    }
+}
+
+/**
+ * Register persisted AI-defined CPTs/taxonomies (options wpultra_registered_cpts /
+ * wpultra_registered_taxonomies) on every request, mirroring the SEO/fields frontend loaders.
+ */
+function wpultra_load_structure_frontend(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('content', wpultra_disabled_categories(), true)) { return; }
+    $sp = WPULTRA_DIR . 'includes/content/structure.php';
+    if (is_readable($sp)) { require_once $sp; }
+    if (function_exists('wpultra_structure_register_persisted')) {
+        wpultra_structure_register_persisted();
     }
 }
 

@@ -100,6 +100,15 @@ function wpultra_media_get(int $id) {
 function wpultra_media_update(int $id, array $meta) {
     if (get_post_type($id) !== 'attachment') { return wpultra_err('not_found', "No attachment with id $id."); }
     wpultra_media_apply_meta($id, $meta);
+    // Reattach to a different (or no) parent post — separate from the meta fields above
+    // since 0 is a valid "detach" value and must be distinguishable from "not provided".
+    if (array_key_exists('attach_to_post', $meta)) {
+        $new_parent = (int) $meta['attach_to_post'];
+        if ($new_parent > 0 && get_post($new_parent) === null) {
+            return wpultra_err('parent_not_found', "No post with id $new_parent to attach to.");
+        }
+        wp_update_post(wp_slash(['ID' => $id, 'post_parent' => $new_parent]));
+    }
     return wpultra_media_shape($id);
 }
 
@@ -109,4 +118,50 @@ function wpultra_media_delete(int $id, bool $force) {
     $res = wp_delete_attachment($id, $force);
     if (!$res) { return wpultra_err('delete_failed', "Could not delete attachment $id."); }
     return ['id' => $id, 'deleted' => true];
+}
+
+/**
+ * List attachments with basic filters. Pure query-arg building is inline (simple enough not to
+ * warrant a separate pure fn); output reuses wpultra_media_shape() for each row.
+ *
+ * @return array
+ */
+function wpultra_media_list(array $q): array {
+    $per_page = max(1, min(100, (int) ($q['per_page'] ?? 20)));
+    $page     = max(1, (int) ($q['page'] ?? 1));
+    $args = [
+        'post_type'      => 'attachment',
+        'post_status'    => 'inherit',
+        'posts_per_page' => $per_page,
+        'paged'          => $page,
+        'fields'         => 'ids',
+        'no_found_rows'  => false,
+    ];
+    if (!empty($q['search']))     { $args['s'] = (string) $q['search']; }
+    if (!empty($q['mime']))       { $args['post_mime_type'] = (string) $q['mime']; }
+    if (!empty($q['unattached'])) { $args['post_parent'] = 0; }
+
+    $query = new WP_Query($args);
+    $items = array_map(static fn($id) => wpultra_media_shape((int) $id), $query->posts);
+
+    return [
+        'items' => $items,
+        'total' => (int) $query->found_posts,
+        'pages' => (int) $query->max_num_pages,
+    ];
+}
+
+/** Shape an attachment with extra detail (dimensions, filesize, attached_to) beyond the base shape. */
+function wpultra_media_shape_detailed(int $id): array {
+    $shape = wpultra_media_shape($id);
+    $meta = wp_get_attachment_metadata($id);
+    $shape['width']      = isset($meta['width']) ? (int) $meta['width'] : null;
+    $shape['height']     = isset($meta['height']) ? (int) $meta['height'] : null;
+    $file = get_attached_file($id);
+    $shape['filesize']   = ($file && file_exists($file)) ? (int) filesize($file) : null;
+    $shape['caption']    = (string) get_the_excerpt($id);
+    $shape['description'] = (string) get_post_field('post_content', $id);
+    $post = get_post($id);
+    $shape['attached_to'] = $post && (int) $post->post_parent > 0 ? (int) $post->post_parent : null;
+    return $shape;
 }

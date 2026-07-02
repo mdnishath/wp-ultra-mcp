@@ -86,6 +86,33 @@ function wpultra_user_update(array $in, bool $allow_admin) {
     return wpultra_user_shape($id);
 }
 
+/** Shape a user for the list-users ability: adds post_count on top of the base shape. Pure given a userdata-like object is not possible (needs WP lookups), so this is a thin WP-calling wrapper. */
+function wpultra_users_list_shape(int $id): array {
+    $base = wpultra_user_shape($id);
+    if (!isset($base['login'])) { return $base; }
+    $base['post_count'] = function_exists('count_user_posts') ? (int) count_user_posts($id) : 0;
+    return $base;
+}
+
+/** @return array|WP_Error */
+function wpultra_users_list(array $q) {
+    $per_page = max(1, min(200, (int) ($q['per_page'] ?? 20)));
+    $page     = max(1, (int) ($q['page'] ?? 1));
+    $args = ['number' => $per_page, 'paged' => $page, 'fields' => 'ID'];
+    if (!empty($q['role']))   { $args['role'] = (string) $q['role']; }
+    if (!empty($q['search'])) { $args['search'] = '*' . (string) $q['search'] . '*'; }
+
+    $query = new WP_User_Query($args);
+    $ids = (array) $query->get_results();
+    $rows = array_map(static fn($id) => wpultra_users_list_shape((int) $id), $ids);
+
+    return [
+        'users' => $rows,
+        'total' => (int) $query->get_total(),
+        'pages' => (int) ceil(max(1, (int) $query->get_total()) / $per_page),
+    ];
+}
+
 /** @return array|WP_Error */
 function wpultra_user_delete(int $id, int $reassign_to) {
     if (!get_userdata($id)) { return wpultra_err('not_found', "No user with id $id."); }

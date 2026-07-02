@@ -77,3 +77,8 @@ add_action('init', 'wpultra_load_seo_frontend', 1);
 // rwmb_meta_boxes filter registers persisted groups; the ability engine-loop only
 // runs on REST calls, so persisted MB groups need this separate always-on hook.
 add_action('init', 'wpultra_load_fields_frontend', 1);
+
+// Register persisted AI-defined CPTs/taxonomies on every request; the ability
+// engine-loop only runs on REST calls, so definitions saved by register-cpt /
+// register-taxonomy need this separate always-on hook to exist on the front-end.
+add_action('init', 'wpultra_load_structure_frontend', 1);
