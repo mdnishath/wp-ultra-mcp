@@ -47,17 +47,34 @@ add_action('wp_ajax_wpultra_toggle_category', function () {
 
 /** Friendly label + blurb + dashicon for each capability category. */
 function wpultra_category_ui_labels(): array {
-    return [
+    $known = [
         'filesystem'     => ['label' => 'Filesystem', 'desc' => 'Read/write/delete files in the WP root.', 'icon' => 'portfolio'],
         'code-execution' => ['label' => 'Code Execution', 'desc' => 'Run PHP and WP-CLI. The most powerful group.', 'icon' => 'editor-code'],
-        'database'       => ['label' => 'Database', 'desc' => 'Direct parameterized SQL.', 'icon' => 'database'],
-        'diagnostics'    => ['label' => 'Diagnostics', 'desc' => 'Read the debug log.', 'icon' => 'visibility'],
-        'content'        => ['label' => 'WordPress Content', 'desc' => 'Create/update/delete posts, pages, CPTs.', 'icon' => 'admin-post'],
+        'database'       => ['label' => 'Database', 'desc' => 'Direct parameterized SQL, search-replace, DB snapshots.', 'icon' => 'database'],
+        'diagnostics'    => ['label' => 'Diagnostics', 'desc' => 'Debug log, site health, security & performance audits.', 'icon' => 'visibility'],
+        'content'        => ['label' => 'WordPress Content', 'desc' => 'Posts, pages, CPTs, terms, menus, media, comments.', 'icon' => 'admin-post'],
+        'users'          => ['label' => 'Users', 'desc' => 'User accounts, roles, and meta.', 'icon' => 'admin-users'],
+        'system'         => ['label' => 'System', 'desc' => 'Plugins/themes, options, cron, cache, email, import/export.', 'icon' => 'admin-tools'],
         'memory'         => ['label' => 'Memory', 'desc' => 'Persistent cross-session memory.', 'icon' => 'lightbulb'],
         'skills'         => ['label' => 'Skills', 'desc' => 'Reusable AI skill documents.', 'icon' => 'welcome-learn-more'],
         'custom'         => ['label' => 'Custom Abilities', 'desc' => 'Declarative recipe engine (ability-write).', 'icon' => 'admin-plugins'],
         'elementor'      => ['label' => 'Elementor', 'desc' => 'Elementor v4 layout & design engine.', 'icon' => 'layout'],
+        'gutenberg'      => ['label' => 'Gutenberg', 'desc' => 'Block content, patterns, reusable blocks.', 'icon' => 'block-default'],
+        'woocommerce'    => ['label' => 'WooCommerce', 'desc' => 'Products, orders, customers, shipping, tax, gateways.', 'icon' => 'cart'],
+        'seo'            => ['label' => 'SEO', 'desc' => 'Meta, internal links, technical + local SEO.', 'icon' => 'search'],
+        'fields'         => ['label' => 'Custom Fields', 'desc' => 'ACF / Meta Box / Pods field groups and values.', 'icon' => 'index-card'],
+        'fse'            => ['label' => 'Block-Theme Design', 'desc' => 'theme.json global styles, FSE templates, custom CSS.', 'icon' => 'admin-appearance'],
+        'forms'          => ['label' => 'Forms', 'desc' => 'CF7 / WPForms / Gravity / Fluent forms and entries.', 'icon' => 'feedback'],
+        'bricks'         => ['label' => 'Bricks', 'desc' => 'Bricks builder page content.', 'icon' => 'hammer'],
+        'multilingual'   => ['label' => 'Multilingual', 'desc' => 'WPML / Polylang translations.', 'icon' => 'translation'],
     ];
+    // Derive rows from the ability map so every category — including ones added
+    // by future waves — stays toggleable without touching this curated list.
+    $out = [];
+    foreach (array_keys(wpultra_ability_category_map()) as $cat) {
+        $out[$cat] = $known[$cat] ?? ['label' => ucwords(str_replace('-', ' ', $cat)), 'desc' => '', 'icon' => 'admin-generic'];
+    }
+    return $out;
 }
 
 /**
