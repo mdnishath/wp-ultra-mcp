@@ -88,6 +88,8 @@ function wpultra_ability_files(): array {
         'translation-status', 'duplicate-to-language',
         'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway',
         'send-email', 'render-page', 'list-registry', 'purge-cache',
+        // platform (Wave 12)
+        'self-update',
     ];
 }
 
@@ -109,7 +111,7 @@ function wpultra_ability_category_map(): array {
         'system'         => [
             'manage-plugin-theme', 'option-get', 'option-set', 'site-snapshot',
             'export-content', 'import-content', 'manage-cron', 'maintenance-mode',
-            'send-email', 'purge-cache',
+            'send-email', 'purge-cache', 'self-update',
         ],
         'fse'            => ['theme-json-get', 'theme-json-set', 'manage-template', 'custom-css'],
         'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
@@ -228,7 +230,7 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/users/engine.php';
     }
     if (!in_array('system', $disabled, true)) {
-        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools'] as $sf2) {
+        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools', 'system/updater'] as $sf2) {
             $sp2 = WPULTRA_DIR . 'includes/' . $sf2 . '.php';
             if (is_readable($sp2)) { require_once $sp2; }
         }
@@ -318,6 +320,20 @@ function wpultra_load_fields_frontend(): void {
     }
     if (function_exists('wpultra_fields_mb_register_groups')) {
         add_filter('rwmb_meta_boxes', 'wpultra_fields_mb_register_groups');
+    }
+}
+
+/**
+ * Load the self-updater on admin requests so WP core's Plugins page shows
+ * GitHub releases as native plugin updates (update_plugins transient filter).
+ */
+function wpultra_load_updater_admin(): void {
+    if (!is_admin()) { return; }
+    $up = WPULTRA_DIR . 'includes/system/updater.php';
+    if (is_readable($up)) { require_once $up; }
+    if (function_exists('wpultra_updater_inject_transient')) {
+        add_filter('pre_set_site_transient_update_plugins', 'wpultra_updater_inject_transient');
+        add_filter('site_transient_update_plugins', 'wpultra_updater_inject_transient');
     }
 }
 

@@ -2,18 +2,19 @@
 /**
  * Plugin Name: WP-Ultra-MCP
  * Description: Turn this WordPress site into an MCP server for AI CLIs — Elementor, SQL, WP-CLI, files, and more.
- * Version: 0.13.0
+ * Version: 0.14.0
  * Requires PHP: 8.0
  * Requires at least: 6.6
  * License: GPL-2.0-or-later
  * Text Domain: wp-ultra-mcp
+ * Update URI: https://github.com/mdnishath/wp-ultra-mcp
  */
 
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit(); }
 
-define('WPULTRA_VERSION', '0.13.0');
+define('WPULTRA_VERSION', '0.14.0');
 define('WPULTRA_FILE', __FILE__);
 define('WPULTRA_DIR', plugin_dir_path(__FILE__));
 define('WPULTRA_URL', plugin_dir_url(__FILE__));
@@ -77,6 +78,9 @@ add_action('init', 'wpultra_load_seo_frontend', 1);
 // rwmb_meta_boxes filter registers persisted groups; the ability engine-loop only
 // runs on REST calls, so persisted MB groups need this separate always-on hook.
 add_action('init', 'wpultra_load_fields_frontend', 1);
+
+// Surface GitHub releases in WP core's native plugin-update UI (admin only).
+add_action('init', 'wpultra_load_updater_admin', 1);
 
 // Register persisted AI-defined CPTs/taxonomies on every request; the ability
 // engine-loop only runs on REST calls, so definitions saved by register-cpt /

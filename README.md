@@ -241,6 +241,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 - **WooCommerce extras:** `woo-manage-shipping-zone` · `woo-manage-tax-rate` · `woo-manage-payment-gateway` (secrets always masked)
 - **Devtools:** `send-email` · `render-page` (fatal-marker + title/h1 probe of any URL) · `list-registry` (post types, taxonomies, shortcodes, roles, hooks, image sizes, REST routes) · `purge-cache` (WP Rocket / LiteSpeed / W3TC / Super Cache / Autoptimize / Elementor unified)
 
+### Wave 12 — Platform (shipped)
+
+- **`self-update`** — the AI checks GitHub for a newer release and applies it in place (confirm-gated); new releases also appear natively in the wp-admin Plugins page like any other plugin update
+
 ### Planned
 Deeper **Bricks** authoring (schema-driven like the Elementor arc), **JetEngine**, form entries export, IndexNow. The goal: literally do everything in WordPress through AI.
 
