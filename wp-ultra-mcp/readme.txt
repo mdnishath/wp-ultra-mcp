@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.12.0
+Stable tag: 0.13.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,12 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.13.0 =
+* Content Core (Wave 8): `list-posts`, `get-post`, `search-content`, `duplicate-post`, `manage-term`, `register-cpt`, `register-taxonomy`, `manage-menu`, `media-list/get/update/delete`, `manage-comment`, `option-get/set` (sensitive-name + self-lockout guards), `list-users`, and `site-snapshot` — one-call site orientation for AI clients.
+* Site Ops + FSE (Wave 9): `export-content`/`import-content` (WXR), `manage-cron`, serialized-data-safe `search-replace` (dry-run default), `maintenance-mode`, `site-health`, `db-snapshot` (create/list/restore/delete, gzip, protected dir), `theme-json-get/set`, `manage-template` (FSE templates/parts), `custom-css`.
+* Forms + Audits (Wave 10): unified `form-status/list/get-entries/create` across Contact Form 7, WPForms, Gravity Forms, Fluent Forms; `security-audit` and `performance-audit` with scored findings.
+* Ecosystem (Wave 11): Bricks builder foundation (`bricks-status/list-elements/get-content/set-content`), WPML/Polylang `translation-status` + `duplicate-to-language`, Woo `manage-shipping-zone`/`manage-tax-rate`/`manage-payment-gateway` (secret masking), `send-email`, `render-page`, `list-registry`, `purge-cache`. 104 → 151 abilities.
 
 = 0.12.0 =
 * Power features: `media-upload` (URL/base64 → media library), `manage-user` (create/update/role/delete), `manage-plugin-theme` (install/activate/update), `content-restore` (revision-based undo/rollback), `pods-define-fields`, and a self-improvement layer — `self-test` diagnostics + per-ability usage/failure stats. 96 → 104 abilities.

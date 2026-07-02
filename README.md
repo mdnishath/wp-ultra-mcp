@@ -215,8 +215,34 @@ Full on-site SEO control — 19 abilities. Works with **Yoast SEO** or **Rank Ma
 
 Built-in skill **`seo-architect`** encodes the ranking loop: audit → keyword-research → on-page meta → internal linking → schema → technical SEO → verify.
 
-### Wave 4c+ — Planned
-**FSE (Full Site Editing)** template control, **Bricks Builder** support, **ACF / JetEngine / Meta Box / Pods** field-plugin integration. The goal: literally do everything in WordPress through AI.
+### Wave 8 — Content Core (shipped)
+
+The everyday-WordPress layer — 17 abilities so the AI never falls back to raw SQL for basic work.
+
+- **Posts:** `list-posts` (filter by type/status/meta/taxonomy/search, paginated) · `get-post` (full read incl. meta + terms) · `search-content` (full-text with highlight snippets) · `duplicate-post` (Elementor-safe clone)
+- **Structure:** `manage-term` (taxonomy terms CRUD) · `register-cpt` / `register-taxonomy` (persisted declarative registration) · `manage-menu` (menus, nested items, theme locations)
+- **Media:** `media-list` · `media-get` · `media-update` (alt text!) · `media-delete`
+- **Site:** `manage-comment` (moderate/reply) · `option-get` / `option-set` (secret-name deny + self-lockout guard) · `list-users` · **`site-snapshot`** — one call returns the whole site orientation (theme, plugins, content counts, users, menus, detected builders) so an AI session starts informed
+
+### Wave 9 — Site Ops + FSE (shipped)
+
+- **Ops:** `export-content` / `import-content` (WXR) · `manage-cron` · `search-replace` (serialized-data-safe, dry-run default) · `maintenance-mode` · `site-health` (core Site Health tests) · **`db-snapshot`** — create/list/restore/delete gzip DB snapshots before risky changes
+- **Block-theme design (FSE):** `theme-json-get` / `theme-json-set` (global styles user layer) · `manage-template` (FSE templates + parts) · `custom-css`
+
+### Wave 10 — Forms + Audits (shipped)
+
+- **Forms (unified adapter):** `form-status` · `form-list` · `form-get-entries` · `form-create` — one API across **Contact Form 7, WPForms, Gravity Forms, Fluent Forms**, unified field types mapped to each plugin's native format
+- **Audits:** `security-audit` (core/users/salts/updates checks) · `performance-audit` (autoload bloat, transients, revisions, cache detection — scored 0-100)
+
+### Wave 11 — Ecosystem (shipped)
+
+- **Bricks Builder (foundation):** `bricks-status` · `bricks-list-elements` · `bricks-get-content` (compact tree) · `bricks-set-content` (validated write)
+- **Multilingual:** `translation-status` · `duplicate-to-language` — WPML / Polylang auto-detected
+- **WooCommerce extras:** `woo-manage-shipping-zone` · `woo-manage-tax-rate` · `woo-manage-payment-gateway` (secrets always masked)
+- **Devtools:** `send-email` · `render-page` (fatal-marker + title/h1 probe of any URL) · `list-registry` (post types, taxonomies, shortcodes, roles, hooks, image sizes, REST routes) · `purge-cache` (WP Rocket / LiteSpeed / W3TC / Super Cache / Autoptimize / Elementor unified)
+
+### Planned
+Deeper **Bricks** authoring (schema-driven like the Elementor arc), **JetEngine**, form entries export, IndexNow. The goal: literally do everything in WordPress through AI.
 
 ---
 
