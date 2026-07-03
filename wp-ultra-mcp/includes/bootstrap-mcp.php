@@ -116,6 +116,16 @@ function wpultra_ability_files(): array {
         // Content & Fields completion (Wave 24: roadmap #13-#17)
         'field-manage-rows', 'media-generate', 'media-edit-image', 'media-bulk-alt',
         'translation-set-content', 'content-calendar',
+        // Woo tier (Wave 25: roadmap #18-#21)
+        'woo-export-products', 'woo-import-products', 'woo-manage-subscription',
+        'woo-manage-booking', 'woo-insights', 'woo-manage-email',
+        // Site Ops+ (Wave 26: roadmap #22-#26)
+        'site-backup', 'staging-clone', 'multisite-manage', 'manage-server-rules', 'activity-log',
+        // Marketing (Wave 27: roadmap #27-#31)
+        'form-forward', 'social-autopost', 'newsletter-status', 'newsletter-subscribe',
+        'analytics-report', 'seo-indexnow', 'seo-404-log',
+        // AI-Native (Wave 28: roadmap #32-#35)
+        'skill-sync', 'site-brain', 'error-reports', 'usage-stats',
     ];
 }
 
@@ -125,8 +135,8 @@ function wpultra_ability_category_map(): array {
         'filesystem'     => ['read-file', 'write-file', 'edit-file', 'delete-file', 'list-directory'],
         'code-execution' => ['run-wp-cli', 'execute-php'],
         'database'       => ['execute-wp-query', 'search-replace', 'db-snapshot'],
-        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry'],
-        'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete'],
+        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry', 'activity-log', 'analytics-report', 'error-reports', 'usage-stats'],
+        'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete', 'site-brain'],
         'content'        => [
             'create-post', 'update-post', 'delete-post', 'media-upload', 'content-restore',
             'list-posts', 'get-post', 'search-content', 'duplicate-post',
@@ -139,6 +149,7 @@ function wpultra_ability_category_map(): array {
             'manage-plugin-theme', 'option-get', 'option-set', 'site-snapshot',
             'export-content', 'import-content', 'manage-cron', 'maintenance-mode',
             'send-email', 'purge-cache', 'self-update',
+            'site-backup', 'staging-clone', 'multisite-manage', 'manage-server-rules',
         ],
         'fse'            => ['theme-json-get', 'theme-json-set', 'manage-template', 'custom-css'],
         'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
@@ -153,9 +164,10 @@ function wpultra_ability_category_map(): array {
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
         'playbooks'      => ['playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete'],
-        'triggers'       => ['trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log'],
+        'triggers'       => ['trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log', 'form-forward', 'social-autopost'],
+        'newsletter'     => ['newsletter-status', 'newsletter-subscribe'],
         'access'         => ['manage-access'],
-        'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
+        'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete', 'skill-sync'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
             'elementor-list-widgets', 'elementor-get-widget-schema', 'elementor-get-style-schema', 'elementor-get-content', 'elementor-validate', 'elementor-render-check',
@@ -173,8 +185,8 @@ function wpultra_ability_category_map(): array {
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
-        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway'],
-        'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup'],
+        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway', 'woo-export-products', 'woo-import-products', 'woo-manage-subscription', 'woo-manage-booking', 'woo-insights', 'woo-manage-email'],
+        'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup', 'seo-indexnow', 'seo-404-log'],
         'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields', 'field-manage-rows'],
     ];
 }
@@ -220,6 +232,7 @@ function wpultra_register_categories(): void {
         'playbooks' => 'Multi-step playbooks that chain many abilities into one run.',
         'triggers' => 'Event triggers — webhook / auto-playbook / log on WordPress events.',
         'access' => 'Access control — per-role ability grants and per-minute rate limits.',
+        'newsletter' => 'Newsletter subscribers via MailPoet or Mailchimp for WP.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -263,13 +276,13 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('woocommerce', $disabled, true)) {
-        foreach (['setup', 'schema', 'products', 'orders', 'customers', 'coupons', 'settings', 'reports', 'bridge', 'shipping'] as $wcf) {
+        foreach (['setup', 'schema', 'products', 'orders', 'customers', 'coupons', 'settings', 'reports', 'bridge', 'shipping', 'csv', 'extensions', 'insights', 'emails'] as $wcf) {
             $wcp = WPULTRA_DIR . 'includes/woocommerce/' . $wcf . '.php';
             if (is_readable($wcp)) { require_once $wcp; }
         }
     }
     if (!in_array('seo', $disabled, true)) {
-        foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit'] as $sf) {
+        foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit', 'monitor'] as $sf) {
             $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
             if (is_readable($sp)) { require_once $sp; }
         }
@@ -291,7 +304,7 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/users/engine.php';
     }
     if (!in_array('system', $disabled, true)) {
-        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools', 'system/updater'] as $sf2) {
+        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools', 'system/updater', 'system/backup', 'system/staging', 'system/network', 'system/rules'] as $sf2) {
             $sp2 = WPULTRA_DIR . 'includes/' . $sf2 . '.php';
             if (is_readable($sp2)) { require_once $sp2; }
         }
@@ -300,7 +313,7 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/system/siteops.php'; // search-replace + db-snapshot engine
     }
     if (!in_array('diagnostics', $disabled, true)) {
-        foreach (['system/audits', 'system/devtools', 'system/siteops'] as $df) {
+        foreach (['system/audits', 'system/devtools', 'system/siteops', 'system/activity', 'system/analytics', 'system/errors', 'system/usage'] as $df) {
             $dp = WPULTRA_DIR . 'includes/' . $df . '.php';
             if (is_readable($dp)) { require_once $dp; }
         }
@@ -329,6 +342,9 @@ function wpultra_load_abilities(): void {
     if (!in_array('jetengine', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/jetengine/engine.php')) {
         require_once WPULTRA_DIR . 'includes/jetengine/engine.php';
     }
+    if (!in_array('newsletter', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/newsletter/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/newsletter/engine.php';
+    }
     if (!in_array('multilingual', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/i18n/engine.php')) {
         require_once WPULTRA_DIR . 'includes/i18n/engine.php';
     }
@@ -355,6 +371,10 @@ function wpultra_load_abilities(): void {
     }
     if (!in_array('memory', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/memory/cpt.php')) {
         require_once WPULTRA_DIR . 'includes/memory/cpt.php';
+        foreach (['system/brain', 'system/snapshot'] as $bf2) {
+            $bp2 = WPULTRA_DIR . 'includes/' . $bf2 . '.php';
+            if (is_readable($bp2)) { require_once $bp2; }
+        }
     }
     // Skills subsystem (CPT + catalog + per-skill prompts) registers its own abilities/prompts.
     if (!in_array('skills', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/skills/cpt.php')) {
@@ -362,6 +382,7 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/skills/sources.php';
         require_once WPULTRA_DIR . 'includes/skills/catalog.php';
         require_once WPULTRA_DIR . 'includes/skills/prompts.php';
+        if (is_readable(WPULTRA_DIR . 'includes/skills/sync.php')) { require_once WPULTRA_DIR . 'includes/skills/sync.php'; }
     }
     if (!in_array('custom', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/recipes/cpt.php')) {
         require_once WPULTRA_DIR . 'includes/recipes/cpt.php';
@@ -389,7 +410,7 @@ function wpultra_apply_ability_policy(): void {
 function wpultra_load_seo_frontend(): void {
     if (!wpultra_is_enabled()) { return; }
     if (in_array('seo', wpultra_disabled_categories(), true)) { return; }
-    foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit'] as $sf) {
+    foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit', 'monitor'] as $sf) {
         $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
         if (is_readable($sp)) { require_once $sp; }
     }
@@ -409,6 +430,30 @@ function wpultra_load_fields_frontend(): void {
     }
     if (function_exists('wpultra_fields_mb_register_groups')) {
         add_filter('rwmb_meta_boxes', 'wpultra_fields_mb_register_groups');
+    }
+}
+
+/**
+ * Register the monitor runtimes on EVERY request: login tracking (activity),
+ * fatal-error reports (self-healing v2), the 404 monitor + IndexNow auto-ping.
+ * All fire outside the REST/abilities loop, so they must always be present.
+ */
+function wpultra_load_monitors_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    $disabled = wpultra_disabled_categories();
+    if (!in_array('diagnostics', $disabled, true)) {
+        foreach (['system/activity', 'system/errors'] as $mf) {
+            $mp = WPULTRA_DIR . 'includes/' . $mf . '.php';
+            if (is_readable($mp)) { require_once $mp; }
+        }
+        if (function_exists('wpultra_activity_boot')) { wpultra_activity_boot(); }
+        if (function_exists('wpultra_errors_boot')) { wpultra_errors_boot(); }
+    }
+    if (!in_array('seo', $disabled, true)) {
+        // monitor.php self-registers its hooks (transition_post_status auto-ping
+        // + template_redirect 404 logger) at file level — requiring it is enough.
+        $sp = WPULTRA_DIR . 'includes/seo/monitor.php';
+        if (is_readable($sp)) { require_once $sp; }
     }
 }
 

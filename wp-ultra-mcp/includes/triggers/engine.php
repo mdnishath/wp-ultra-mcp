@@ -51,12 +51,13 @@ function wpultra_triggers_next_id(array $triggers): int {
     return $max + 1;
 }
 
-/** Pure: enabled triggers bound to $event. */
-function wpultra_triggers_match(array $triggers, string $event): array {
+/** Pure: enabled triggers bound to $event (optionally filtered against event $data). */
+function wpultra_triggers_match(array $triggers, string $event, array $data = []): array {
     $out = [];
     foreach ($triggers as $t) {
         if ((string) ($t['event'] ?? '') !== $event) { continue; }
         if (($t['enabled'] ?? true) === false) { continue; }
+        if (isset($t['filter']) && is_array($t['filter']) && !wpultra_triggers_filter_match($t['filter'], $data)) { continue; }
         $out[] = $t;
     }
     return $out;
@@ -176,7 +177,7 @@ function wpultra_triggers_set_enabled(int $id, bool $enabled): bool {
 function wpultra_triggers_fire(string $event, array $data): void {
     try {
         if (function_exists('wpultra_category_enabled') && !wpultra_category_enabled('triggers')) { return; }
-        $triggers = wpultra_triggers_match(wpultra_triggers_load(), $event);
+        $triggers = wpultra_triggers_match(wpultra_triggers_load(), $event, $data);
         if ($triggers === []) { return; }
 
         $site = function_exists('home_url') ? (string) home_url() : '';
@@ -236,12 +237,18 @@ function wpultra_triggers_dispatch(int $id, array $payload): void {
         $action = (string) ($trigger['action_type'] ?? '');
         if ($action === 'webhook') {
             $url = (string) ($trigger['url'] ?? '');
+            // Optional payload template reshapes the body (e.g. into a CRM/Zapier field map).
+            $body_data = $payload;
+            if (isset($trigger['template']) && is_array($trigger['template']) && $trigger['template'] !== []) {
+                $body_data = wpultra_triggers_render_template($trigger['template'], $payload);
+            }
+            $body = (string) wp_json_encode($body_data);
             $headers = ['Content-Type' => 'application/json'];
-            if (!empty($trigger['secret'])) { $headers['X-WPUltra-Signature'] = hash_hmac('sha256', (string) wp_json_encode($payload), (string) $trigger['secret']); }
+            if (!empty($trigger['secret'])) { $headers['X-WPUltra-Signature'] = hash_hmac('sha256', $body, (string) $trigger['secret']); }
             wp_safe_remote_post($url, [
                 'timeout' => 15,
                 'headers' => $headers,
-                'body'    => (string) wp_json_encode($payload),
+                'body'    => $body,
             ]);
             wpultra_audit_log('trigger-webhook', "POST $url for {$payload['event']}", true);
         } elseif ($action === 'playbook') {
@@ -281,6 +288,10 @@ function wpultra_triggers_boot_runtime(): void {
         if (in_array($post->post_type, ['revision', 'nav_menu_item'], true)) { return; }
         if (function_exists('wpultra_reserved_post_types') && in_array($post->post_type, wpultra_reserved_post_types(), true)) { return; }
         $data = ['post_id' => (int) $post->ID, 'post_type' => (string) $post->post_type, 'title' => (string) $post->post_title, 'status' => (string) $new];
+        // Enrich with the fields social auto-post templates want: permalink, featured image, excerpt.
+        $data['permalink']      = function_exists('get_permalink') ? (string) get_permalink((int) $post->ID) : '';
+        $data['featured_image'] = function_exists('get_the_post_thumbnail_url') ? (string) (get_the_post_thumbnail_url((int) $post->ID, 'full') ?: '') : '';
+        $data['excerpt']        = function_exists('wp_trim_words') ? (string) wp_trim_words((string) $post->post_content, 40, '') : '';
         if ($new === 'publish' && $old !== 'publish') { wpultra_triggers_fire('post_published', $data); }
         elseif ($new === 'publish' && $old === 'publish') { wpultra_triggers_fire('post_updated', $data); }
     }, 10, 3);
@@ -309,15 +320,136 @@ function wpultra_triggers_boot_runtime(): void {
     // Forms (guarded — each hook only fires when its plugin is active).
     add_action('wpcf7_mail_sent', function ($cf) {
         $id = is_object($cf) && method_exists($cf, 'id') ? $cf->id() : 0;
-        wpultra_triggers_fire('form_submitted', ['plugin' => 'cf7', 'form' => (string) $id]);
+        $raw = [];
+        if (class_exists('WPCF7_Submission') && method_exists('WPCF7_Submission', 'get_instance')) {
+            $sub = \WPCF7_Submission::get_instance();
+            if (is_object($sub) && method_exists($sub, 'get_posted_data')) { $raw = (array) $sub->get_posted_data(); }
+        }
+        wpultra_triggers_fire('form_submitted', ['plugin' => 'cf7', 'form' => (string) $id, 'fields' => wpultra_triggers_sanitize_fields($raw)]);
     }, 10, 1);
     add_action('wpforms_process_complete', function ($fields, $entry, $form_data) {
-        wpultra_triggers_fire('form_submitted', ['plugin' => 'wpforms', 'form' => (string) ($form_data['id'] ?? '')]);
+        $raw = [];
+        foreach ((array) $fields as $f) {
+            if (!is_array($f)) { continue; }
+            $label = (string) ($f['name'] ?? '');
+            $key = $label !== '' ? $label : (string) ($f['id'] ?? '');
+            $raw[$key] = $f['value'] ?? '';
+        }
+        wpultra_triggers_fire('form_submitted', ['plugin' => 'wpforms', 'form' => (string) ($form_data['id'] ?? ''), 'fields' => wpultra_triggers_sanitize_fields($raw)]);
     }, 10, 3);
     add_action('gform_after_submission', function ($entry, $form) {
-        wpultra_triggers_fire('form_submitted', ['plugin' => 'gravity', 'form' => (string) ($form['id'] ?? '')]);
+        $raw = [];
+        $fields = is_array($form) ? (array) ($form['fields'] ?? []) : [];
+        if ($fields !== [] && function_exists('rgar')) {
+            foreach ($fields as $field) {
+                $fid = is_object($field) ? ($field->id ?? null) : (is_array($field) ? ($field['id'] ?? null) : null);
+                if ($fid === null) { continue; }
+                $label = is_object($field) ? (string) ($field->label ?? '') : (string) ($field['label'] ?? '');
+                $key = $label !== '' ? $label : (string) $fid;
+                $raw[$key] = rgar($entry, (string) $fid);
+            }
+        } elseif (is_array($entry)) {
+            $raw = $entry;
+        }
+        wpultra_triggers_fire('form_submitted', ['plugin' => 'gravity', 'form' => (string) ($form['id'] ?? ''), 'fields' => wpultra_triggers_sanitize_fields($raw)]);
     }, 10, 2);
     add_action('fluentform/submission_inserted', function ($entry_id, $form_data, $form) {
-        wpultra_triggers_fire('form_submitted', ['plugin' => 'fluent', 'form' => (string) (is_object($form) ? ($form->id ?? '') : '')]);
+        $raw = is_array($form_data) ? $form_data : [];
+        wpultra_triggers_fire('form_submitted', ['plugin' => 'fluent', 'form' => (string) (is_object($form) ? ($form->id ?? '') : ''), 'fields' => wpultra_triggers_sanitize_fields($raw)]);
     }, 10, 3);
+}
+
+/* ------------------------------------------------------------------ *
+ * Bridge helpers (roadmap #27 form->webhook/CRM, #31 social auto-post).
+ * All PURE — no WordPress.
+ * ------------------------------------------------------------------ */
+
+/**
+ * Pure: flatten + sanitize a raw submitted-field map into a safe transport shape.
+ * - keys and values coerced to plain strings (nested arrays joined, scalars cast)
+ * - each value truncated to 500 chars, each key to 200 chars
+ * - at most 40 keys kept (insertion order)
+ * Never emits objects/arrays, so it always JSON-encodes cleanly for a webhook.
+ */
+function wpultra_triggers_sanitize_fields(array $raw): array {
+    $out = [];
+    foreach ($raw as $k => $v) {
+        if (count($out) >= 40) { break; }
+        $key = substr(trim((string) $k), 0, 200);
+        if ($key === '') { continue; }
+        if (is_array($v)) {
+            $parts = [];
+            foreach ($v as $item) {
+                if (is_scalar($item) || $item === null) { $parts[] = (string) $item; }
+            }
+            $val = implode(', ', $parts);
+        } elseif (is_scalar($v) || $v === null) {
+            $val = (string) $v;
+        } else {
+            continue; // objects/resources dropped
+        }
+        if (function_exists('mb_substr')) { $val = mb_substr($val, 0, 500); }
+        else { $val = substr($val, 0, 500); }
+        $out[$key] = $val;
+    }
+    return $out;
+}
+
+/**
+ * Pure: does every key in $filter equal (as string) the same key in event $data?
+ * A missing key in $data is a mismatch. Empty filter matches everything.
+ * e.g. {form: '5', plugin: 'wpforms'} against $data.
+ */
+function wpultra_triggers_filter_match(array $filter, array $data): bool {
+    foreach ($filter as $k => $want) {
+        if (!array_key_exists($k, $data)) { return false; }
+        if ((string) $data[$k] !== (string) $want) { return false; }
+    }
+    return true;
+}
+
+/**
+ * Pure: read a dot-path out of a nested array/scalar. Returns [found, value].
+ * "data.title" / "data.fields.Email" walks arrays by string OR integer key.
+ * Local resolver so the triggers engine has no dependency on the playbook engine.
+ */
+function wpultra_triggers_path($data, string $path): array {
+    if ($path === '') { return [true, $data]; }
+    $cur = $data;
+    foreach (explode('.', $path) as $seg) {
+        if (is_array($cur) && array_key_exists($seg, $cur)) { $cur = $cur[$seg]; continue; }
+        if (is_array($cur) && ctype_digit($seg) && array_key_exists((int) $seg, $cur)) { $cur = $cur[(int) $seg]; continue; }
+        return [false, null];
+    }
+    return [true, $cur];
+}
+
+/**
+ * Pure: render a payload template (assoc of key => string-with-tokens) against
+ * the event $payload. Tokens are {dot.path} into the payload, e.g. {data.title},
+ * {event}, {site}, {data.fields.Email}. Unknown paths render as empty string.
+ * Non-scalar resolved values are cast to string via a safe join / json-ish flatten.
+ * Literal text outside braces is kept verbatim.
+ */
+function wpultra_triggers_render_template(array $template, array $payload): array {
+    $out = [];
+    foreach ($template as $key => $tpl) {
+        $out[(string) $key] = wpultra_triggers_render_string((string) $tpl, $payload);
+    }
+    return $out;
+}
+
+/** Pure: substitute every {dot.path} token in one string against $payload. */
+function wpultra_triggers_render_string(string $tpl, array $payload): string {
+    return (string) preg_replace_callback('/\{([a-zA-Z0-9_.]+)\}/', static function ($m) use ($payload) {
+        [$found, $val] = wpultra_triggers_path($payload, $m[1]);
+        if (!$found) { return ''; }
+        if (is_scalar($val) || $val === null) { return (string) $val; }
+        if (is_array($val)) {
+            $parts = [];
+            foreach ($val as $item) { if (is_scalar($item) || $item === null) { $parts[] = (string) $item; } }
+            return implode(', ', $parts);
+        }
+        return '';
+    }, $tpl);
 }

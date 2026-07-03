@@ -261,6 +261,13 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Waves 25–28 — Roadmap completion (shipped)
+
+- **🛒 WooCommerce:** `woo-export-products` / `woo-import-products` (CSV, dry-run) · `woo-manage-subscription` · `woo-manage-booking` · `woo-insights` (abandoned checkouts, stock alerts, repeat customers) · `woo-manage-email`
+- **🌐 Site Ops+:** `site-backup` (files + DB archive) · `staging-clone` (subdirectory staging, new table prefix, serialized-safe URL rewrite) · `multisite-manage` · `manage-server-rules` (marker-block .htaccess presets) · `activity-log` (+ login tracking)
+- **📊 Marketing:** `form-forward` (submissions with field values → any webhook/CRM) · `social-autopost` · `newsletter-status/subscribe` (MailPoet / MC4WP) · `analytics-report` (GA4 + Search Console via Site Kit) · `seo-indexnow` · `seo-404-log`
+- **🤖 AI-Native:** `skill-sync` (community skills from GitHub) · `site-brain` (one-call session orientation) · `error-reports` (structured fatals with fix suggestions) · `usage-stats` + wp-admin dashboard
+
 ### Wave 24 — Content & Fields completion (shipped)
 
 - **`field-manage-rows`** — deep row ops on ACF/SCF repeater, flexible-content, and group fields (get/set/add/update/delete by index)

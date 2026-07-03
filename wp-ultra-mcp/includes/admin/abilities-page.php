@@ -74,6 +74,7 @@ function wpultra_category_ui_labels(): array {
         'access'         => ['label' => 'Access Control', 'desc' => 'Grant non-admin roles a limited ability set; rate-limit abuse.', 'icon' => 'lock'],
         'builders'       => ['label' => 'Page Builders', 'desc' => 'Divi / Beaver Builder / Oxygen content read-write.', 'icon' => 'editor-table'],
         'jetengine'      => ['label' => 'JetEngine', 'desc' => 'CPTs, taxonomies, meta boxes, relations, listings.', 'icon' => 'database-add'],
+        'newsletter'     => ['label' => 'Newsletter', 'desc' => 'MailPoet / Mailchimp for WP subscribers and lists.', 'icon' => 'email-alt'],
     ];
     // Derive rows from the ability map so every category — including ones added
     // by future waves — stays toggleable without touching this curated list.
