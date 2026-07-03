@@ -261,6 +261,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 19 — One-call page cloner (shipped)
+
+- **`elementor-clone-url`** — build a whole Elementor page from a reference in one call. The AI looks at a URL/screenshot and passes a structured brief (design tokens + sections with real content); the server mints token Variables, composes adaptive blueprint sections, applies section colors via global classes, validates strictly, writes atomically, and returns a render-check + preview URL. A `url` mode auto-extracts a rough brief from static HTML as a starting point.
+
 ### Wave 18 — Custom widget generator (shipped)
 
 - **`create-atomic-widget` / `list-atomic-widgets` / `delete-atomic-widget`** — the AI mints REAL Elementor v4 atomic widgets from a declarative spec (props: string/textarea/html/number/boolean/select/image/link + optional Twig/CSS). Generated PHP class + Twig template land under `wp-content/wpultra-widgets/` and register as `wpu-<name>` — placeable, editable, and stylable like any core widget. Correct-by-construction (no caller PHP accepted) and crash-quarantined: a widget that fatals is skipped and flagged, never white-screens the site. Compounds with `ability-write`: the AI mints both its own tools *and* its own widgets.

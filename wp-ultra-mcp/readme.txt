@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.20.0
+Stable tag: 0.21.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.21.0 =
+* One-call page cloner (Wave 19): `elementor-clone-url`. Builds a whole Elementor v4 page from a reference in one call — mints design-token Variables, composes adaptive blueprint sections (navbar/hero/feature-grid/cta/footer/custom) filled with real content, styles sections via global classes (background/text color), validates strictly, writes atomically, and returns a render-check + preview URL. Preferred mode: the AI perceives the reference URL/screenshot itself and passes a structured brief; `url` mode fetches static HTML server-side and derives a rough brief (headings/paragraphs/buttons/palette/fonts heuristics, with a JS-rendered warning). Productizes the proven clone workflow the elementor-v4-architect skill describes. 171 → 172 abilities.
 
 = 0.20.0 =
 * Custom widget generator (Wave 18): `create-atomic-widget` / `list-atomic-widgets` / `delete-atomic-widget`. The AI describes a widget declaratively (name, title, props: string/textarea/html/number/boolean/select/image/link, optional Twig template + stylesheet) and gets a REAL Elementor v4 atomic widget — generated PHP class + Twig + CSS under wp-content/wpultra-widgets/, registered as element type `wpu-<name>`, placeable/stylable like any core widget. Generated code comes only from the plugin's own templates (no caller PHP; Twig rejects script/PHP); a widget file that fatals is auto-quarantined and skipped instead of white-screening the site (visible as status "crashed", healed by regenerate). 168 → 171 abilities.
