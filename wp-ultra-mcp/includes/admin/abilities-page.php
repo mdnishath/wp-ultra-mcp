@@ -72,6 +72,7 @@ function wpultra_category_ui_labels(): array {
         'playbooks'      => ['label' => 'Playbooks', 'desc' => 'Chain many abilities into one declarative multi-step run.', 'icon' => 'list-view'],
         'triggers'       => ['label' => 'Event Triggers', 'desc' => 'Fire a webhook / playbook / log on post/order/comment/form events.', 'icon' => 'megaphone'],
         'access'         => ['label' => 'Access Control', 'desc' => 'Grant non-admin roles a limited ability set; rate-limit abuse.', 'icon' => 'lock'],
+        'builders'       => ['label' => 'Page Builders', 'desc' => 'Divi / Beaver Builder / Oxygen content read-write.', 'icon' => 'editor-table'],
     ];
     // Derive rows from the ability map so every category — including ones added
     // by future waves — stays toggleable without touching this curated list.

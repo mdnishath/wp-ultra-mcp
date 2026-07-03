@@ -106,6 +106,8 @@ function wpultra_ability_files(): array {
         'elementor-clone-url',
         // Elementor Pro surface (Wave 20)
         'elementor-pro-status', 'elementor-manage-library', 'elementor-manage-popup', 'elementor-form-submissions',
+        // Divi / Beaver / Oxygen adapter foundation (Wave 21)
+        'pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements',
     ];
 }
 
@@ -132,6 +134,7 @@ function wpultra_ability_category_map(): array {
         'fse'            => ['theme-json-get', 'theme-json-set', 'manage-template', 'custom-css'],
         'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
         'bricks'         => ['bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content'],
+        'builders'       => ['pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements'],
         'multilingual'   => ['translation-status', 'duplicate-to-language'],
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
@@ -195,6 +198,7 @@ function wpultra_register_categories(): void {
         'fse' => 'Block-theme design: theme.json global styles, templates, custom CSS.',
         'forms' => 'Forms via CF7, WPForms, Gravity Forms, or Fluent Forms.',
         'bricks' => 'Bricks builder page content.',
+        'builders' => 'Divi / Beaver Builder / Oxygen page-builder content.',
         'multilingual' => 'Translations via WPML or Polylang.',
         'jobs' => 'Background job runner for long operations (bulk, audits, search-replace).',
         'undo' => 'Universal undo — snapshots before option/CSS/theme.json/term changes.',
@@ -297,6 +301,12 @@ function wpultra_load_abilities(): void {
     }
     if (!in_array('bricks', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/bricks/engine.php')) {
         require_once WPULTRA_DIR . 'includes/bricks/engine.php';
+    }
+    if (!in_array('builders', $disabled, true)) {
+        foreach (['setup', 'adapters/divi', 'adapters/beaver', 'adapters/oxygen'] as $pbf) {
+            $pbp = WPULTRA_DIR . 'includes/builders/' . $pbf . '.php';
+            if (is_readable($pbp)) { require_once $pbp; }
+        }
     }
     if (!in_array('multilingual', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/i18n/engine.php')) {
         require_once WPULTRA_DIR . 'includes/i18n/engine.php';

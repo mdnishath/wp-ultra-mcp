@@ -261,6 +261,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 21 — Divi / Beaver Builder / Oxygen foundation (shipped)
+
+- **`pagebuilder-status` · `pagebuilder-get-content` · `pagebuilder-set-content` · `pagebuilder-list-elements`** — one unified surface over three more builders (auto-detected driver). Divi shortcode trees are parsed/serialized with balance validation; Beaver Builder's flat node map round-trips as a nested tree with id/parent/module validation; Oxygen 4 JSON component trees are validated and written (3.x read-only). Graceful when no builder is installed.
+
 ### Wave 20 — Elementor Pro surface (shipped)
 
 - **`elementor-pro-status` · `elementor-manage-library` · `elementor-manage-popup` · `elementor-form-submissions`** — theme-builder templates (create headers/footers/singles/archives + display conditions in Pro's native format), popups (friendly triggers: on_click, page_load delay, scroll %, exit intent, inactivity → Pro's native display settings), and Pro form submissions (distinct forms, filtered lists with flattened field values, mark-read/delete). Verified against a live Elementor Pro 4.1.2 install; degrades gracefully without Pro.

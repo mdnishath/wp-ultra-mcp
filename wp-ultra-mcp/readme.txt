@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.22.0
+Stable tag: 0.23.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.23.0 =
+* Divi / Beaver Builder / Oxygen foundation (Wave 21): unified `pagebuilder-status` / `pagebuilder-get-content` / `pagebuilder-set-content` / `pagebuilder-list-elements` with per-builder adapters (auto-detected driver, explicit `builder` override). Divi: full shortcode-tree parser/serializer ([et_pb_*] with attrs, leaf content, balance validation) writing post_content + enabling the builder. Beaver Builder: flat node map ↔ nested tree (parent/position), validation (ids, parents, module slugs), object-settings storage in _fl_builder_data + cache clear. Oxygen: 4.x ct_builder_json component tree with root wrapper, duplicate-id validation, 3.x shortcodes read-only. Everything degrades gracefully when no builder is installed. 176 → 180 abilities.
 
 = 0.22.0 =
 * Elementor Pro surface (Wave 20): `elementor-pro-status` (version, template counts, popups + conditions, form totals), `elementor-manage-library` (theme-builder templates: list/get/create/delete + display conditions in Pro's native include/exclude format, with conditions-cache flush), `elementor-manage-popup` (friendly trigger options — on_click / page_load delay / scroll percent / exit_intent / inactivity / show_times — mapped to Pro's native display settings, plus conditions), `elementor-form-submissions` (read Pro form submissions from the e_submissions tables: distinct forms, filtered lists with flattened field values, get/mark-read/delete). Storage layout verified against a live Pro 4.1.2 install; everything degrades gracefully without Pro. 172 → 176 abilities.
