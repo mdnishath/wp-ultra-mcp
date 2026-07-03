@@ -29,7 +29,7 @@ This is the complete candidate list for what comes next. Items are numbered for 
 
 ## 🧩 Content & Fields
 
-- [ ] **12 · JetEngine wave** — CPTs, meta boxes, relations, listings. JetEngine 3.4.6 is live on a connected production site, so this is finally live-testable (it was dropped from Wave 5 for lack of a test install).
+- [x] ~~**12 · JetEngine wave**~~ — ✅ SHIPPED v0.25.0. `jetengine-status` / `-manage-cpt` / `-manage-taxonomy` / `-manage-meta-box`. **Production-proven on live JetEngine 3.4.6**: created a CPT with 3 typed fields → JetEngine itself registered it next request (post_type_exists=true) → full round-trip get → delete. Relations/listings inventoried read-only.
 - [ ] **13 · ACF Pro deep** — Repeater / flexible-content / group nested read-write.
 - [ ] **14 · `media-generate`** — AI image API → media library → set as featured image, one flow.
 - [ ] **15 · Image editing** — Resize/crop/convert/optimize; bulk AI alt-text fill.
