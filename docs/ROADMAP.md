@@ -30,11 +30,11 @@ This is the complete candidate list for what comes next. Items are numbered for 
 ## 🧩 Content & Fields
 
 - [x] ~~**12 · JetEngine wave**~~ — ✅ SHIPPED v0.25.0. `jetengine-status` / `-manage-cpt` / `-manage-taxonomy` / `-manage-meta-box`. **Production-proven on live JetEngine 3.4.6**: created a CPT with 3 typed fields → JetEngine itself registered it next request (post_type_exists=true) → full round-trip get → delete. Relations/listings inventoried read-only.
-- [ ] **13 · ACF Pro deep** — Repeater / flexible-content / group nested read-write.
-- [ ] **14 · `media-generate`** — AI image API → media library → set as featured image, one flow.
-- [ ] **15 · Image editing** — Resize/crop/convert/optimize; bulk AI alt-text fill.
-- [ ] **16 · Translation auto-fill** — After `duplicate-to-language`, actually place AI-translated content (WPML/Polylang).
-- [ ] **17 · Content calendar** — Plan/list/reschedule scheduled posts in one view.
+- [x] ~~**13 · ACF Pro deep**~~ — ✅ SHIPPED v0.26.0. `field-manage-rows` — repeater/flexible/group row ops, production-proven on live SCF 6.9 (full set/add/update/delete cycle, exact ACF meta format verified).
+- [x] ~~**14 · `media-generate`**~~ — ✅ SHIPPED v0.26.0. `media-generate` — url/base64 or server-side OpenAI prompt (wpultra_openai_api_key) → media library + alt + featured, one call.
+- [x] ~~**15 · Image editing**~~ — ✅ SHIPPED v0.26.0. `media-edit-image` (ordered resize/crop/rotate/convert/quality ops) + `media-bulk-alt` (list-missing → AI writes → set). Live-verified resize+webp.
+- [x] ~~**16 · Translation auto-fill**~~ — ✅ SHIPPED v0.26.0. `translation-set-content` — JSON-safe find→replace inside Elementor data + title/content/meta. Bengali/quotes/backslash round-trip proven.
+- [x] ~~**17 · Content calendar**~~ — ✅ SHIPPED v0.26.0. `content-calendar` — day-grouped schedule, reschedule, spread drafts evenly. Live-verified.
 
 ## 🛒 WooCommerce
 
