@@ -261,6 +261,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 22 — Bricks deep (shipped)
+
+- **`bricks-add-element` · `bricks-edit-element` · `bricks-delete-element` · `bricks-move-element` · `bricks-validate` · `bricks-get-element-schema` · `bricks-manage-global-class` · `bricks-insert-blueprint`** — the same reliability arc Elementor got, adapted to Bricks' flat dual-linked structure (parent pointers + children lists kept consistent both ways, every mutation re-validated before writing, moves cycle-guarded, deletes take the subtree). Global classes CRUD + apply, five structural blueprints, and control-schema introspection from Bricks' own registry.
+
 ### Wave 21 — Divi / Beaver Builder / Oxygen foundation (shipped)
 
 - **`pagebuilder-status` · `pagebuilder-get-content` · `pagebuilder-set-content` · `pagebuilder-list-elements`** — one unified surface over three more builders (auto-detected driver). Divi shortcode trees are parsed/serialized with balance validation; Beaver Builder's flat node map round-trips as a nested tree with id/parent/module validation; Oxygen 4 JSON component trees are validated and written (3.x read-only). Graceful when no builder is installed.

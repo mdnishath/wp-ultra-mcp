@@ -108,6 +108,9 @@ function wpultra_ability_files(): array {
         'elementor-pro-status', 'elementor-manage-library', 'elementor-manage-popup', 'elementor-form-submissions',
         // Divi / Beaver / Oxygen adapter foundation (Wave 21)
         'pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements',
+        // Bricks deep (Wave 22)
+        'bricks-get-element-schema', 'bricks-validate', 'bricks-add-element', 'bricks-edit-element',
+        'bricks-delete-element', 'bricks-move-element', 'bricks-manage-global-class', 'bricks-insert-blueprint',
     ];
 }
 
@@ -133,7 +136,11 @@ function wpultra_ability_category_map(): array {
         ],
         'fse'            => ['theme-json-get', 'theme-json-set', 'manage-template', 'custom-css'],
         'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
-        'bricks'         => ['bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content'],
+        'bricks'         => [
+            'bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content',
+            'bricks-get-element-schema', 'bricks-validate', 'bricks-add-element', 'bricks-edit-element',
+            'bricks-delete-element', 'bricks-move-element', 'bricks-manage-global-class', 'bricks-insert-blueprint',
+        ],
         'builders'       => ['pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements'],
         'multilingual'   => ['translation-status', 'duplicate-to-language'],
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
@@ -299,8 +306,11 @@ function wpultra_load_abilities(): void {
             if (is_readable($fmp)) { require_once $fmp; }
         }
     }
-    if (!in_array('bricks', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/bricks/engine.php')) {
-        require_once WPULTRA_DIR . 'includes/bricks/engine.php';
+    if (!in_array('bricks', $disabled, true)) {
+        foreach (['engine', 'ops'] as $bf) {
+            $bp = WPULTRA_DIR . 'includes/bricks/' . $bf . '.php';
+            if (is_readable($bp)) { require_once $bp; }
+        }
     }
     if (!in_array('builders', $disabled, true)) {
         foreach (['setup', 'adapters/divi', 'adapters/beaver', 'adapters/oxygen'] as $pbf) {

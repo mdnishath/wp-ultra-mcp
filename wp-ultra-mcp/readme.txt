@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.23.0
+Stable tag: 0.24.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.24.0 =
+* Bricks deep (Wave 22): the same reliability arc Elementor got. `bricks-add-element` / `bricks-edit-element` (deep-merge) / `bricks-delete-element` (subtree) / `bricks-move-element` (cycle-guarded) — all element ops keep Bricks' dual parent-pointer + children-list structure consistent both ways and re-validate before writing. `bricks-validate` (structural + two-way consistency + registry check on live Bricks), `bricks-get-element-schema` (control introspection from Bricks' own registry), `bricks-manage-global-class` (bricks_global_classes CRUD + apply/remove via _cssGlobalClasses), `bricks-insert-blueprint` (navbar/hero/feature-grid/cta/footer skeletons, collision-free re-id). 180 → 188 abilities.
 
 = 0.23.0 =
 * Divi / Beaver Builder / Oxygen foundation (Wave 21): unified `pagebuilder-status` / `pagebuilder-get-content` / `pagebuilder-set-content` / `pagebuilder-list-elements` with per-builder adapters (auto-detected driver, explicit `builder` override). Divi: full shortcode-tree parser/serializer ([et_pb_*] with attrs, leaf content, balance validation) writing post_content + enabling the builder. Beaver Builder: flat node map ↔ nested tree (parent/position), validation (ids, parents, module slugs), object-settings storage in _fl_builder_data + cache clear. Oxygen: 4.x ct_builder_json component tree with root wrapper, duplicate-id validation, 3.x shortcodes read-only. Everything degrades gracefully when no builder is installed. 176 → 180 abilities.
