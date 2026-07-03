@@ -71,6 +71,7 @@ function wpultra_category_ui_labels(): array {
         'undo'           => ['label' => 'Universal Undo', 'desc' => 'Auto-snapshot before option/CSS/theme.json/term changes; roll back on demand.', 'icon' => 'undo'],
         'playbooks'      => ['label' => 'Playbooks', 'desc' => 'Chain many abilities into one declarative multi-step run.', 'icon' => 'list-view'],
         'triggers'       => ['label' => 'Event Triggers', 'desc' => 'Fire a webhook / playbook / log on post/order/comment/form events.', 'icon' => 'megaphone'],
+        'access'         => ['label' => 'Access Control', 'desc' => 'Grant non-admin roles a limited ability set; rate-limit abuse.', 'icon' => 'lock'],
     ];
     // Derive rows from the ability map so every category — including ones added
     // by future waves — stays toggleable without touching this curated list.

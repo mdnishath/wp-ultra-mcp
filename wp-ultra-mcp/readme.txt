@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.18.0
+Stable tag: 0.19.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.19.0 =
+* Access control (Wave 17): `manage-access` — grant non-admin roles a limited set of abilities/categories, and set per-minute rate limits (per ability, per category, or a default; admins throttled too, to cap runaway loops). Enforced in two layers: a relaxed baseline permission (admin, or a role holding at least one grant) plus a per-ability gate on core's `wp_before_execute_ability` that denies ungranted abilities and over-limit calls. The policy editor itself stays admin-only, so a granted role can never widen its own access. Empty policy by default = unchanged admin-only behaviour. 167 → 168 abilities.
 
 = 0.18.0 =
 * Event triggers / webhooks (Wave 16): `trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`. Register a trigger on a WordPress event (post published/updated, comment posted, user registered, WooCommerce order placed / status changed, form submitted via CF7/WPForms/Gravity/Fluent) that fires an action — POST the event payload to a webhook (optional HMAC signature), auto-run a saved playbook with the event data as inputs, or just log it for the AI to poll. Delivery is async (WP-Cron) so a slow endpoint never blocks checkout/publish. 163 → 167 abilities.

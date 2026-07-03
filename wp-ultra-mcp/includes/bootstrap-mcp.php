@@ -98,6 +98,8 @@ function wpultra_ability_files(): array {
         'playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete',
         // event triggers / webhooks (Wave 16)
         'trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log',
+        // access control — per-role grants + rate limits (Wave 17)
+        'manage-access',
     ];
 }
 
@@ -129,6 +131,7 @@ function wpultra_ability_category_map(): array {
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
         'playbooks'      => ['playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete'],
         'triggers'       => ['trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log'],
+        'access'         => ['manage-access'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
         'elementor'      => [
@@ -188,6 +191,7 @@ function wpultra_register_categories(): void {
         'undo' => 'Universal undo — snapshots before option/CSS/theme.json/term changes.',
         'playbooks' => 'Multi-step playbooks that chain many abilities into one run.',
         'triggers' => 'Event triggers — webhook / auto-playbook / log on WordPress events.',
+        'access' => 'Access control — per-role ability grants and per-minute rate limits.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -208,6 +212,13 @@ function wpultra_load_abilities(): void {
     // is a no-op when the 'undo' category is disabled (checked inside the helper).
     if (is_readable(WPULTRA_DIR . 'includes/undo/engine.php')) {
         require_once WPULTRA_DIR . 'includes/undo/engine.php';
+    }
+    // Load the access engine early (before permission callbacks fire) so the
+    // relaxed baseline + per-ability rate/role gate are in effect. With an empty
+    // policy this is a no-op (admin-only, unlimited).
+    if (!in_array('access', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/access/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/access/engine.php';
+        wpultra_access_register_gate();
     }
     // Load the Elementor engine (only if the elementor category is enabled) so ability
     // callbacks can reference its functions.

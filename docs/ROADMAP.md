@@ -16,7 +16,7 @@ This is the complete candidate list for what comes next. Items are numbered for 
 - [x] ~~**2 · Async job runner (`job-start` / `job-status` / `job-list` / `job-cancel`)**~~ — ✅ SHIPPED v0.15.0. WP-Cron slice-per-tick (loopback-kicked); built-in types search-replace / bulk-post-meta / site-audit; confirm-gated, cancellable, filterable registry. Verified end-to-end on a live site (real cron processed a site-audit to done).
 - [x] ~~**3 · Universal undo / rollback**~~ — ✅ SHIPPED v0.16.0. Auto-snapshot ring buffer before option-set / custom-css / theme.json / term-update; `undo-list` / `undo-restore` / `undo-last`. Absent-sentinel undoes a newly-created option by deleting it. Live round-trip verified in production.
 - [x] ~~**4 · Recipe playbooks (multi-step)**~~ — ✅ SHIPPED v0.17.0. `playbook-run` / `playbook-save` / `playbook-list` / `playbook-delete` chain many abilities; `{input.*}` + `{steps.<save_as>.<path>}` token passing (lone token keeps type); dry-run, continue-on-error, saved playbooks, no-nesting guard. Verified live in production (create → publish via captured id).
-- [ ] **5 · Webhook / event triggers** — On order placed / form submitted / post published → notify the AI or auto-run a recipe.
+- [x] ~~**5 · Webhook / event triggers**~~ — ✅ SHIPPED v0.18.0. `trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log` on post/comment/user/Woo-order/form events → webhook (HMAC) / auto-playbook / log. Async via WP-Cron. Verified live in production (real publish → trigger logged).
 - [ ] **6 · Rate-limits + per-ability roles** — Grant non-admin roles a limited ability set; throttle abuse.
 
 ## 🎨 Builders

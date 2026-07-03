@@ -261,6 +261,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 17 — Access control (shipped)
+
+- **`manage-access`** — grant non-admin roles a limited set of abilities/categories, and rate-limit any ability (per-minute, per ability/category/default; admins throttled too, to cap runaway loops). Two-layer enforcement: a relaxed baseline permission plus a per-ability gate on WordPress core's `wp_before_execute_ability`. The policy editor stays admin-only, so a granted role can never widen its own access. Empty by default → unchanged admin-only behaviour.
+
 ### Planned
 Deeper **Bricks** authoring (schema-driven like the Elementor arc), **JetEngine**, form entries export, IndexNow. The goal: literally do everything in WordPress through AI.
 

@@ -172,7 +172,13 @@ function wpultra_current_user_can_manage(): bool {
 }
 
 function wpultra_permission_callback(): bool {
-    return wpultra_is_enabled() && wpultra_current_user_can_manage();
+    if (!wpultra_is_enabled()) { return false; }
+    // When the access engine is loaded, use its relaxed baseline (admin, OR a
+    // non-admin whose role holds at least one grant). The per-ability gate on
+    // wp_before_execute_ability then enforces the fine-grained policy + rate
+    // limits. With an empty policy this is identical to admin-only.
+    if (function_exists('wpultra_access_baseline_user')) { return wpultra_access_baseline_user(); }
+    return wpultra_current_user_can_manage();
 }
 
 /**
