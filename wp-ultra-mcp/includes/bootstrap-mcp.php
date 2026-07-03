@@ -104,6 +104,8 @@ function wpultra_ability_files(): array {
         'create-atomic-widget', 'list-atomic-widgets', 'delete-atomic-widget',
         // one-call page cloner (Wave 19)
         'elementor-clone-url',
+        // Elementor Pro surface (Wave 20)
+        'elementor-pro-status', 'elementor-manage-library', 'elementor-manage-popup', 'elementor-form-submissions',
     ];
 }
 
@@ -147,6 +149,7 @@ function wpultra_ability_category_map(): array {
             'elementor-list-blueprints', 'elementor-insert-blueprint',
             'create-atomic-widget', 'list-atomic-widgets', 'delete-atomic-widget',
             'elementor-clone-url',
+            'elementor-pro-status', 'elementor-manage-library', 'elementor-manage-popup', 'elementor-form-submissions',
         ],
         'gutenberg' => [
             'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
@@ -229,7 +232,7 @@ function wpultra_load_abilities(): void {
     // Load the Elementor engine (only if the elementor category is enabled) so ability
     // callbacks can reference its functions.
     if (!in_array('elementor', $disabled, true)) {
-        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints', 'widgets', 'clone'] as $elf) {
+        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints', 'widgets', 'clone', 'pro'] as $elf) {
             $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
             if (is_readable($elp)) { require_once $elp; }
         }

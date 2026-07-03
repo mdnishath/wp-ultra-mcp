@@ -17,13 +17,13 @@ This is the complete candidate list for what comes next. Items are numbered for 
 - [x] ~~**3 · Universal undo / rollback**~~ — ✅ SHIPPED v0.16.0. Auto-snapshot ring buffer before option-set / custom-css / theme.json / term-update; `undo-list` / `undo-restore` / `undo-last`. Absent-sentinel undoes a newly-created option by deleting it. Live round-trip verified in production.
 - [x] ~~**4 · Recipe playbooks (multi-step)**~~ — ✅ SHIPPED v0.17.0. `playbook-run` / `playbook-save` / `playbook-list` / `playbook-delete` chain many abilities; `{input.*}` + `{steps.<save_as>.<path>}` token passing (lone token keeps type); dry-run, continue-on-error, saved playbooks, no-nesting guard. Verified live in production (create → publish via captured id).
 - [x] ~~**5 · Webhook / event triggers**~~ — ✅ SHIPPED v0.18.0. `trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log` on post/comment/user/Woo-order/form events → webhook (HMAC) / auto-playbook / log. Async via WP-Cron. Verified live in production (real publish → trigger logged).
-- [ ] **6 · Rate-limits + per-ability roles** — Grant non-admin roles a limited ability set; throttle abuse.
+- [x] ~~**6 · Rate-limits + per-ability roles**~~ — ✅ SHIPPED v0.19.0. `manage-access` (admin-only) grants non-admin roles a limited ability/category set + per-minute rate limits (per ability/category/default). Two-layer: relaxed baseline + per-ability gate on `wp_before_execute_ability`. Live-verified. **Entire Platform Power tier (#1-#6) complete.**
 
 ## 🎨 Builders
 
 - [ ] **7 · Bricks deep wave** — Element schema introspection, validate, add/edit/delete/move element, global classes, blueprints — the same reliability arc Elementor got. Current 4 Bricks abilities are foundation-only and unverified against a live Bricks install.
-- [ ] **8 · `create-atomic-widget`** — AI code-generates a custom Elementor atomic widget (Novamira Pro's signature feature). Compounds with `ability-write`: the AI mints both its own tools *and* its own widgets.
-- [ ] **9 · `elementor-clone-url`** — Rebuild a full Elementor page from a URL/screenshot in one ability (the proven manual clone workflow, productized).
+- [x] ~~**8 · `create-atomic-widget`**~~ — ✅ SHIPPED v0.20.0. Declarative spec → real Elementor v4 atomic widget (PHP+Twig+CSS, element type `wpu-<name>`), correct-by-construction + crash-quarantined. Live-verified: minted → registered → placed → rendered (0 drops) → quarantine/regen cycle proven.
+- [x] ~~**9 · `elementor-clone-url`**~~ — ✅ SHIPPED v0.21.0. One call: AI brief (or static-URL auto-extract) → tokens + adaptive blueprint sections + section colors via global classes + strict validation + atomic write + render-check. Live-verified: 26/26 nodes rendered, 0 dropped.
 - [ ] **10 · Elementor Pro surface** — Theme-builder templates, popups, Pro forms.
 - [ ] **11 · Divi / Beaver Builder / Oxygen foundation** — Starter set (status/get/set/list) like the Bricks foundation.
 

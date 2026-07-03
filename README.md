@@ -261,6 +261,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 20 — Elementor Pro surface (shipped)
+
+- **`elementor-pro-status` · `elementor-manage-library` · `elementor-manage-popup` · `elementor-form-submissions`** — theme-builder templates (create headers/footers/singles/archives + display conditions in Pro's native format), popups (friendly triggers: on_click, page_load delay, scroll %, exit intent, inactivity → Pro's native display settings), and Pro form submissions (distinct forms, filtered lists with flattened field values, mark-read/delete). Verified against a live Elementor Pro 4.1.2 install; degrades gracefully without Pro.
+
 ### Wave 19 — One-call page cloner (shipped)
 
 - **`elementor-clone-url`** — build a whole Elementor page from a reference in one call. The AI looks at a URL/screenshot and passes a structured brief (design tokens + sections with real content); the server mints token Variables, composes adaptive blueprint sections, applies section colors via global classes, validates strictly, writes atomically, and returns a render-check + preview URL. A `url` mode auto-extracts a rough brief from static HTML as a starting point.
