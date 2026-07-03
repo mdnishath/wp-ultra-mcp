@@ -1,6 +1,6 @@
 # WP-Ultra-MCP — Feature Roadmap (Master List)
 
-Current: **v0.13.0 · 151 abilities** (Waves 1–11 shipped: core, hubs+sandbox, full Elementor arc, Gutenberg, WooCommerce, SEO, custom fields, content core, site ops + FSE, forms + audits, ecosystem).
+Current: **v0.27.0 · 220 abilities — ALL 35 ROADMAP ITEMS SHIPPED 🏁** (Waves 1–11 shipped: core, hubs+sandbox, full Elementor arc, Gutenberg, WooCommerce, SEO, custom fields, content core, site ops + FSE, forms + audits, ecosystem).
 
 This is the complete candidate list for what comes next. Items are numbered for easy reference — pick a number, it becomes a wave/plan.
 
@@ -38,33 +38,33 @@ This is the complete candidate list for what comes next. Items are numbered for 
 
 ## 🛒 WooCommerce
 
-- [ ] **18 · CSV / bulk product import-export**
-- [ ] **19 · Subscriptions + Bookings** — When those plugins are present.
-- [ ] **20 · Abandoned-cart / stock-alert reports**
-- [ ] **21 · Woo email template customization**
+- [x] ~~**18 · CSV / bulk product import-export**~~ — ✅ SHIPPED v0.27.0. CSV import/export w/ dry-run, sku upsert.
+- [x] ~~**19 · Subscriptions + Bookings**~~ — ✅ SHIPPED v0.27.0. subscriptions + bookings adapters.
+- [x] ~~**20 · Abandoned-cart / stock-alert reports**~~ — ✅ SHIPPED v0.27.0. abandoned/stock/repeat insights.
+- [x] ~~**21 · Woo email template customization**~~ — ✅ SHIPPED v0.27.0. email template settings.
 
 ## 🌐 Site Ops+
 
-- [ ] **22 · Full-site backup + restore** — Files + DB in one archive (extends `db-snapshot`).
-- [ ] **23 · Staging clone** — Clone site → subdirectory/subdomain staging.
-- [ ] **24 · Multisite network abilities** — create-site, network settings.
-- [ ] **25 · htaccess / nginx rules manager** — Beyond redirects: caching + security headers.
-- [ ] **26 · User activity log reader** — Who did what, surfaced to the AI.
+- [x] ~~**22 · Full-site backup + restore**~~ — ✅ SHIPPED v0.27.0. files+DB archive backup/restore.
+- [x] ~~**23 · Staging clone**~~ — ✅ SHIPPED v0.27.0. subdirectory staging, new prefix + URL rewrite.
+- [x] ~~**24 · Multisite network abilities**~~ — ✅ SHIPPED v0.27.0. multisite sites + network options.
+- [x] ~~**25 · htaccess / nginx rules manager**~~ — ✅ SHIPPED v0.27.0. marker-block .htaccess presets + validator.
+- [x] ~~**26 · User activity log reader**~~ — ✅ SHIPPED v0.27.0. audit trail + login tracking.
 
 ## 📊 Marketing & Integration
 
-- [ ] **27 · Form → webhook/CRM bridge** — Auto-forward entries.
-- [ ] **28 · Newsletter plugins** — MailPoet / MC4WP abilities.
-- [ ] **29 · Analytics reader** — Expose Site Kit / GA data (Site Kit live on a connected site).
-- [ ] **30 · IndexNow ping + 404 monitor** — SEO extension.
-- [ ] **31 · Social auto-post** — Trigger share plugins on publish.
+- [x] ~~**27 · Form → webhook/CRM bridge**~~ — ✅ SHIPPED v0.27.0. form→webhook w/ field values, filters, templates.
+- [x] ~~**28 · Newsletter plugins**~~ — ✅ SHIPPED v0.27.0. MailPoet/MC4WP adapters.
+- [x] ~~**29 · Analytics reader**~~ — ✅ SHIPPED v0.27.0. GA4+SC via Site Kit internal proxy.
+- [x] ~~**30 · IndexNow ping + 404 monitor**~~ — ✅ SHIPPED v0.27.0. IndexNow + grouped 404 monitor.
+- [x] ~~**31 · Social auto-post**~~ — ✅ SHIPPED v0.27.0. publish→webhook autopost.
 
 ## 🤖 AI-Native (deepens the moat)
 
-- [ ] **32 · Skill marketplace sync** — Auto-import community skills from a GitHub repo.
-- [ ] **33 · `site-brain`** — Memory + snapshot fused into a living per-site knowledge base for the AI.
-- [ ] **34 · Self-healing v2** — On fatal: auto-rollback the last change + hand the AI a structured error report.
-- [ ] **35 · Usage analytics dashboard** — Per-ability usage/failure charts in wp-admin.
+- [x] ~~**32 · Skill marketplace sync**~~ — ✅ SHIPPED v0.27.0. GitHub skill import (live-tested on own repo).
+- [x] ~~**33 · `site-brain`**~~ — ✅ SHIPPED v0.27.0. one-call session orientation doc.
+- [x] ~~**34 · Self-healing v2**~~ — ✅ SHIPPED v0.27.0. structured fatal reports + fix suggestions.
+- [x] ~~**35 · Usage analytics dashboard**~~ — ✅ SHIPPED v0.27.0. usage-stats + wp-admin dashboard.
 
 ---
 
