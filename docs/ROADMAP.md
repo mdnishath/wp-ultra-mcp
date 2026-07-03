@@ -24,7 +24,7 @@ This is the complete candidate list for what comes next. Items are numbered for 
 - [ ] **7 · Bricks deep wave** — Element schema introspection, validate, add/edit/delete/move element, global classes, blueprints — the same reliability arc Elementor got. Current 4 Bricks abilities are foundation-only and unverified against a live Bricks install.
 - [x] ~~**8 · `create-atomic-widget`**~~ — ✅ SHIPPED v0.20.0. Declarative spec → real Elementor v4 atomic widget (PHP+Twig+CSS, element type `wpu-<name>`), correct-by-construction + crash-quarantined. Live-verified: minted → registered → placed → rendered (0 drops) → quarantine/regen cycle proven.
 - [x] ~~**9 · `elementor-clone-url`**~~ — ✅ SHIPPED v0.21.0. One call: AI brief (or static-URL auto-extract) → tokens + adaptive blueprint sections + section colors via global classes + strict validation + atomic write + render-check. Live-verified: 26/26 nodes rendered, 0 dropped.
-- [ ] **10 · Elementor Pro surface** — Theme-builder templates, popups, Pro forms.
+- [x] ~~**10 · Elementor Pro surface**~~ — ✅ SHIPPED v0.22.0. `elementor-pro-status` / `elementor-manage-library` (theme-builder templates + display conditions) / `elementor-manage-popup` (friendly triggers → native settings) / `elementor-form-submissions` (e_submissions reader). Verified against live Pro 4.1.2 in production (create→conditions→delete cycle + real submissions read).
 - [ ] **11 · Divi / Beaver Builder / Oxygen foundation** — Starter set (status/get/set/list) like the Bricks foundation.
 
 ## 🧩 Content & Fields
