@@ -113,6 +113,9 @@ function wpultra_ability_files(): array {
         'bricks-delete-element', 'bricks-move-element', 'bricks-manage-global-class', 'bricks-insert-blueprint',
         // JetEngine (Wave 23)
         'jetengine-status', 'jetengine-manage-cpt', 'jetengine-manage-taxonomy', 'jetengine-manage-meta-box',
+        // Content & Fields completion (Wave 24: roadmap #13-#17)
+        'field-manage-rows', 'media-generate', 'media-edit-image', 'media-bulk-alt',
+        'translation-set-content', 'content-calendar',
     ];
 }
 
@@ -129,6 +132,7 @@ function wpultra_ability_category_map(): array {
             'list-posts', 'get-post', 'search-content', 'duplicate-post',
             'manage-term', 'register-cpt', 'register-taxonomy', 'manage-menu',
             'media-list', 'media-get', 'media-update', 'media-delete', 'manage-comment',
+            'media-generate', 'media-edit-image', 'media-bulk-alt', 'content-calendar',
         ],
         'users'          => ['manage-user', 'list-users'],
         'system'         => [
@@ -145,7 +149,7 @@ function wpultra_ability_category_map(): array {
         ],
         'builders'       => ['pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements'],
         'jetengine'      => ['jetengine-status', 'jetengine-manage-cpt', 'jetengine-manage-taxonomy', 'jetengine-manage-meta-box'],
-        'multilingual'   => ['translation-status', 'duplicate-to-language'],
+        'multilingual'   => ['translation-status', 'duplicate-to-language', 'translation-set-content'],
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
         'playbooks'      => ['playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete'],
@@ -171,7 +175,7 @@ function wpultra_ability_category_map(): array {
         ],
         'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway'],
         'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup'],
-        'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields'],
+        'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields', 'field-manage-rows'],
     ];
 }
 
@@ -271,14 +275,14 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('fields', $disabled, true)) {
-        foreach (['setup', 'values', 'driver', 'groups', 'adapters/acf', 'adapters/metabox', 'adapters/pods'] as $ff) {
+        foreach (['setup', 'values', 'driver', 'groups', 'complex', 'adapters/acf', 'adapters/metabox', 'adapters/pods'] as $ff) {
             $fp = WPULTRA_DIR . 'includes/fields/' . $ff . '.php';
             if (is_readable($fp)) { require_once $fp; }
         }
     }
     // Power-feature engines (media/users/system) — loaded when their category is enabled.
     if (!in_array('content', $disabled, true)) {
-        foreach (['media/engine', 'content/engine', 'content/structure', 'content/comments'] as $cf) {
+        foreach (['media/engine', 'media/generate', 'media/editing', 'content/engine', 'content/structure', 'content/comments', 'content/calendar'] as $cf) {
             $cp = WPULTRA_DIR . 'includes/' . $cf . '.php';
             if (is_readable($cp)) { require_once $cp; }
         }

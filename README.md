@@ -261,6 +261,14 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 24 — Content & Fields completion (shipped)
+
+- **`field-manage-rows`** — deep row ops on ACF/SCF repeater, flexible-content, and group fields (get/set/add/update/delete by index)
+- **`media-generate`** — an image from url/base64 or a server-side OpenAI prompt → media library + alt + featured image, one call
+- **`media-edit-image` · `media-bulk-alt`** — ordered resize/crop/rotate/convert/quality ops via WP_Image_Editor; find images missing alt text and fill them in bulk
+- **`translation-set-content`** — write AI-translated content to a duplicated translation, including JSON-safe find→replace inside Elementor data
+- **`content-calendar`** — see the publishing schedule grouped by day, reschedule one post, or spread drafts evenly
+
 ### Wave 23 — JetEngine (shipped)
 
 - **`jetengine-status` · `jetengine-manage-cpt` · `jetengine-manage-taxonomy` · `jetengine-manage-meta-box`** — full CRUD over JetEngine's content model: CPTs and taxonomies (native tables, auto-built labels, validated meta fields in JetEngine's field shape, built-in-row protection), standalone meta boxes attached to any post type, plus relations/listings inventory. Verified against a live JetEngine 3.4.6 install.

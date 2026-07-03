@@ -465,3 +465,144 @@ function wpultra_i18n_duplicate_to_language(int $post_id, string $target_lang, b
         'edit_link'   => (string) get_edit_post_link($new_id, 'raw'),
     ];
 }
+
+// ---------------------------------------------------------------------------
+// Translation auto-fill (roadmap #16): after duplicate-to-language creates the
+// shell translation post, this writes the AI-translated strings into it.
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure: find→replace on JSON-encoded string values inside a raw JSON string,
+ * without ever decoding/re-encoding the whole structure (which would risk
+ * reordering keys or mangling values PHP's json_decode/json_encode round-trip
+ * doesn't preserve byte-for-byte). Each pair's find/replace text is run through
+ * json_encode() and stripped of its surrounding quotes, so the search operates
+ * on the *escaped* form actually present in the JSON string — this is what
+ * makes it safe for multi-byte text (Bengali, emoji), embedded double quotes,
+ * and backslashes: they get matched in their escaped-in-JSON representation,
+ * not their raw form.
+ *
+ * $applied_count is incremented by the number of replacements actually made
+ * (summed across all pairs, each counted via substr_count before replacing).
+ *
+ * @param array<int,array{find:string,replace:string}> $pairs
+ */
+function wpultra_i18n_replace_in_json(string $json, array $pairs, int &$applied_count = 0): string {
+    $applied_count = 0;
+    foreach ($pairs as $pair) {
+        $find = (string) ($pair['find'] ?? '');
+        $replace = (string) ($pair['replace'] ?? '');
+        if ($find === '') { continue; }
+
+        // json_encode a plain string always yields `"escaped"` — strip the wrapping quotes
+        // to get just the escaped-form needle/replacement to match inside the larger JSON string.
+        $needle = json_encode($find);
+        $replacement = json_encode($replace);
+        if (!is_string($needle) || !is_string($replacement)) { continue; } // encode failure (e.g. invalid UTF-8) — skip this pair rather than corrupt the JSON.
+        $needle = substr($needle, 1, -1);
+        $replacement = substr($replacement, 1, -1);
+        if ($needle === '') { continue; }
+
+        $count = substr_count($json, $needle);
+        if ($count > 0) {
+            $json = str_replace($needle, $replacement, $json);
+            $applied_count += $count;
+        }
+    }
+    return $json;
+}
+
+/**
+ * Pure: validate the translation-set-content input shape. Returns true when
+ * valid, or a human-readable error string describing the first problem.
+ * At least one of title/content/excerpt/meta/elementor_texts must be present
+ * so the ability never no-ops silently; elementor_texts entries must each be
+ * an array with a non-empty 'find' key.
+ */
+function wpultra_i18n_fill_validate(array $in) {
+    $has_any = false;
+    foreach (['title', 'content', 'excerpt'] as $k) {
+        if (array_key_exists($k, $in) && trim((string) $in[$k]) !== '') { $has_any = true; }
+    }
+    if (!empty($in['meta']) && is_array($in['meta'])) { $has_any = true; }
+    if (!empty($in['elementor_texts']) && is_array($in['elementor_texts'])) { $has_any = true; }
+    if (!$has_any) {
+        return 'At least one of title, content, excerpt, meta, or elementor_texts must be provided.';
+    }
+
+    if (array_key_exists('elementor_texts', $in)) {
+        if (!is_array($in['elementor_texts'])) { return 'elementor_texts must be an array of {find, replace} pairs.'; }
+        foreach ($in['elementor_texts'] as $i => $pair) {
+            if (!is_array($pair)) { return "elementor_texts[$i] must be an object with 'find' and 'replace'."; }
+            if (!array_key_exists('find', $pair) || trim((string) $pair['find']) === '') {
+                return "elementor_texts[$i].find is required and cannot be empty.";
+            }
+            if (!array_key_exists('replace', $pair)) {
+                return "elementor_texts[$i].replace is required (use an empty string to delete the text).";
+            }
+        }
+    }
+
+    if (array_key_exists('meta', $in) && !is_array($in['meta'])) {
+        return 'meta must be an object of key => value pairs.';
+    }
+
+    return true;
+}
+
+/**
+ * Write AI-translated content onto an existing translation post (created by
+ * duplicate-to-language). Thin wrapper: the only function here that touches
+ * wp_update_post()/update_post_meta() directly; JSON find/replace itself is
+ * delegated to the pure wpultra_i18n_replace_in_json() above.
+ *
+ * @param array $in {title?, content?, excerpt?, meta?: array, elementor_texts?: array<int,array{find:string,replace:string}>}
+ * @return array|WP_Error {post_id, updated_fields: string[], elementor_replacements: int}
+ */
+function wpultra_i18n_fill(int $post_id, array $in) {
+    $valid = wpultra_i18n_fill_validate($in);
+    if ($valid !== true) { return wpultra_err('invalid_input', (string) $valid); }
+
+    $post = get_post($post_id);
+    if (!$post) { return wpultra_err('not_found', "No post with id $post_id."); }
+    if (in_array((string) $post->post_type, wpultra_reserved_post_types(), true)) {
+        return wpultra_err('reserved_post_type', "Post $post_id is a plugin-internal '{$post->post_type}'; it cannot be translated via this ability.");
+    }
+
+    $updated = [];
+
+    $postarr = ['ID' => $post_id];
+    $map = ['title' => 'post_title', 'content' => 'post_content', 'excerpt' => 'post_excerpt'];
+    foreach ($map as $key => $col) {
+        if (array_key_exists($key, $in)) { $postarr[$col] = (string) $in[$key]; $updated[] = $key; }
+    }
+    // Slash before wp_update_post() — it unslashes internally, so raw backslashes/quotes in
+    // translated text (Bengali punctuation, embedded quotes) survive the round trip.
+    if (count($postarr) > 1) {
+        $res = wp_update_post(wp_slash($postarr), true);
+        if (is_wp_error($res)) { return $res; }
+    }
+
+    if (!empty($in['meta']) && is_array($in['meta'])) {
+        foreach ($in['meta'] as $k => $v) { update_post_meta($post_id, (string) $k, wp_slash($v)); }
+        $updated[] = 'meta';
+    }
+
+    $elementor_replacements = 0;
+    if (!empty($in['elementor_texts']) && is_array($in['elementor_texts'])) {
+        $raw = get_post_meta($post_id, '_elementor_data', true);
+        if (is_string($raw) && $raw !== '') {
+            $new_json = wpultra_i18n_replace_in_json($raw, $in['elementor_texts'], $elementor_replacements);
+            if ($elementor_replacements > 0) {
+                update_post_meta($post_id, '_elementor_data', wp_slash($new_json));
+                $updated[] = 'elementor_texts';
+            }
+        }
+    }
+
+    return [
+        'post_id'                 => $post_id,
+        'updated_fields'          => $updated,
+        'elementor_replacements'  => $elementor_replacements,
+    ];
+}
