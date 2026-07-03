@@ -261,6 +261,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 18 — Custom widget generator (shipped)
+
+- **`create-atomic-widget` / `list-atomic-widgets` / `delete-atomic-widget`** — the AI mints REAL Elementor v4 atomic widgets from a declarative spec (props: string/textarea/html/number/boolean/select/image/link + optional Twig/CSS). Generated PHP class + Twig template land under `wp-content/wpultra-widgets/` and register as `wpu-<name>` — placeable, editable, and stylable like any core widget. Correct-by-construction (no caller PHP accepted) and crash-quarantined: a widget that fatals is skipped and flagged, never white-screens the site. Compounds with `ability-write`: the AI mints both its own tools *and* its own widgets.
+
 ### Wave 17 — Access control (shipped)
 
 - **`manage-access`** — grant non-admin roles a limited set of abilities/categories, and rate-limit any ability (per-minute, per ability/category/default; admins throttled too, to cap runaway loops). Two-layer enforcement: a relaxed baseline permission plus a per-ability gate on WordPress core's `wp_before_execute_ability`. The policy editor stays admin-only, so a granted role can never widen its own access. Empty by default → unchanged admin-only behaviour.

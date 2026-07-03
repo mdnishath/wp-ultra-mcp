@@ -11,7 +11,7 @@ require __DIR__ . '/../wp-ultra-mcp/includes/bootstrap-mcp.php';
 
 it('ability file list is complete and unique', function () {
     $files = wpultra_ability_files();
-    assert_eq(173, count($files), 'count');
+    assert_eq(176, count($files), 'count');
     assert_eq(count($files), count(array_unique($files)), 'unique');
     assert_true(in_array('execute-wp-query', $files, true), 'has sql');
     assert_true(in_array('memory-save', $files, true), 'has memory');

@@ -100,6 +100,8 @@ function wpultra_ability_files(): array {
         'trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log',
         // access control — per-role grants + rate limits (Wave 17)
         'manage-access',
+        // custom atomic widget generator (Wave 18)
+        'create-atomic-widget', 'list-atomic-widgets', 'delete-atomic-widget',
     ];
 }
 
@@ -141,6 +143,7 @@ function wpultra_ability_category_map(): array {
             'elementor-manage-global-colors', 'elementor-manage-variables', 'elementor-apply-design-tokens',
             'elementor-list-global-classes', 'elementor-upsert-global-class', 'elementor-apply-class', 'elementor-set-interaction',
             'elementor-list-blueprints', 'elementor-insert-blueprint',
+            'create-atomic-widget', 'list-atomic-widgets', 'delete-atomic-widget',
         ],
         'gutenberg' => [
             'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
@@ -223,7 +226,7 @@ function wpultra_load_abilities(): void {
     // Load the Elementor engine (only if the elementor category is enabled) so ability
     // callbacks can reference its functions.
     if (!in_array('elementor', $disabled, true)) {
-        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints'] as $elf) {
+        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints', 'widgets'] as $elf) {
             $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
             if (is_readable($elp)) { require_once $elp; }
         }
@@ -370,6 +373,22 @@ function wpultra_load_fields_frontend(): void {
     if (function_exists('wpultra_fields_mb_register_groups')) {
         add_filter('rwmb_meta_boxes', 'wpultra_fields_mb_register_groups');
     }
+}
+
+/**
+ * Register generated custom atomic widgets with Elementor on EVERY request —
+ * the editor and front-end render paths run outside the REST/abilities loop.
+ * Crash-guarded: a widget file that fatals is quarantined and skipped next time.
+ */
+function wpultra_load_widgets_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('elementor', wpultra_disabled_categories(), true)) { return; }
+    $wf = WPULTRA_DIR . 'includes/elementor/widgets.php';
+    if (!is_readable($wf)) { return; }
+    require_once $wf;
+    register_shutdown_function('wpultra_widgets_shutdown_check');
+    add_action('elementor/widgets/register', 'wpultra_widgets_register_all');
+    add_action('wp_enqueue_scripts', 'wpultra_widgets_enqueue_styles');
 }
 
 /**
