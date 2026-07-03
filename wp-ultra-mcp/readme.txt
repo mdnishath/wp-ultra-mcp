@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.24.0
+Stable tag: 0.25.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.25.0 =
+* JetEngine (Wave 23): `jetengine-status` (version, modules, CPTs with field lists, taxonomies, meta boxes, relations, listings — one orientation call), `jetengine-manage-cpt` and `jetengine-manage-taxonomy` (full CRUD on the jet_post_types / jet_taxonomies tables: auto-built label sets, sane arg defaults with overrides, validated meta_fields in JetEngine's native shape, built-in-row protection), `jetengine-manage-meta-box` (standalone field groups in the jet_engine_meta_boxes option, attached to any post type). Storage layout verified against a live JetEngine 3.4.6 install. 188 → 192 abilities.
 
 = 0.24.0 =
 * Bricks deep (Wave 22): the same reliability arc Elementor got. `bricks-add-element` / `bricks-edit-element` (deep-merge) / `bricks-delete-element` (subtree) / `bricks-move-element` (cycle-guarded) — all element ops keep Bricks' dual parent-pointer + children-list structure consistent both ways and re-validate before writing. `bricks-validate` (structural + two-way consistency + registry check on live Bricks), `bricks-get-element-schema` (control introspection from Bricks' own registry), `bricks-manage-global-class` (bricks_global_classes CRUD + apply/remove via _cssGlobalClasses), `bricks-insert-blueprint` (navbar/hero/feature-grid/cta/footer skeletons, collision-free re-id). 180 → 188 abilities.

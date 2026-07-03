@@ -111,6 +111,8 @@ function wpultra_ability_files(): array {
         // Bricks deep (Wave 22)
         'bricks-get-element-schema', 'bricks-validate', 'bricks-add-element', 'bricks-edit-element',
         'bricks-delete-element', 'bricks-move-element', 'bricks-manage-global-class', 'bricks-insert-blueprint',
+        // JetEngine (Wave 23)
+        'jetengine-status', 'jetengine-manage-cpt', 'jetengine-manage-taxonomy', 'jetengine-manage-meta-box',
     ];
 }
 
@@ -142,6 +144,7 @@ function wpultra_ability_category_map(): array {
             'bricks-delete-element', 'bricks-move-element', 'bricks-manage-global-class', 'bricks-insert-blueprint',
         ],
         'builders'       => ['pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements'],
+        'jetengine'      => ['jetengine-status', 'jetengine-manage-cpt', 'jetengine-manage-taxonomy', 'jetengine-manage-meta-box'],
         'multilingual'   => ['translation-status', 'duplicate-to-language'],
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
@@ -206,6 +209,7 @@ function wpultra_register_categories(): void {
         'forms' => 'Forms via CF7, WPForms, Gravity Forms, or Fluent Forms.',
         'bricks' => 'Bricks builder page content.',
         'builders' => 'Divi / Beaver Builder / Oxygen page-builder content.',
+        'jetengine' => 'JetEngine: CPTs, taxonomies, meta boxes, relations, listings.',
         'multilingual' => 'Translations via WPML or Polylang.',
         'jobs' => 'Background job runner for long operations (bulk, audits, search-replace).',
         'undo' => 'Universal undo — snapshots before option/CSS/theme.json/term changes.',
@@ -317,6 +321,9 @@ function wpultra_load_abilities(): void {
             $pbp = WPULTRA_DIR . 'includes/builders/' . $pbf . '.php';
             if (is_readable($pbp)) { require_once $pbp; }
         }
+    }
+    if (!in_array('jetengine', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/jetengine/engine.php')) {
+        require_once WPULTRA_DIR . 'includes/jetengine/engine.php';
     }
     if (!in_array('multilingual', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/i18n/engine.php')) {
         require_once WPULTRA_DIR . 'includes/i18n/engine.php';

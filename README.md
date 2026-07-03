@@ -261,6 +261,10 @@ The everyday-WordPress layer — 17 abilities so the AI never falls back to raw 
 
 - **`trigger-create` / `trigger-list` / `trigger-delete` / `trigger-log`** — react to the site. Register a trigger on a WordPress event (post published/updated, comment, user registration, WooCommerce order placed / status change, form submission across CF7/WPForms/Gravity/Fluent) that POSTs the payload to a **webhook** (optional HMAC signature), auto-runs a saved **playbook** with the event data as inputs, or **logs** it for the AI to poll. Delivery is async via WP-Cron, so a slow endpoint never blocks checkout or publish.
 
+### Wave 23 — JetEngine (shipped)
+
+- **`jetengine-status` · `jetengine-manage-cpt` · `jetengine-manage-taxonomy` · `jetengine-manage-meta-box`** — full CRUD over JetEngine's content model: CPTs and taxonomies (native tables, auto-built labels, validated meta fields in JetEngine's field shape, built-in-row protection), standalone meta boxes attached to any post type, plus relations/listings inventory. Verified against a live JetEngine 3.4.6 install.
+
 ### Wave 22 — Bricks deep (shipped)
 
 - **`bricks-add-element` · `bricks-edit-element` · `bricks-delete-element` · `bricks-move-element` · `bricks-validate` · `bricks-get-element-schema` · `bricks-manage-global-class` · `bricks-insert-blueprint`** — the same reliability arc Elementor got, adapted to Bricks' flat dual-linked structure (parent pointers + children lists kept consistent both ways, every mutation re-validated before writing, moves cycle-guarded, deletes take the subtree). Global classes CRUD + apply, five structural blueprints, and control-schema introspection from Bricks' own registry.
