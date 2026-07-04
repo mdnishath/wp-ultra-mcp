@@ -62,4 +62,5 @@ if (!function_exists('apply_filters')) { function apply_filters($tag, $value, ..
 if (!function_exists('add_action')) { function add_action(...$a) { return true; } }
 if (!function_exists('add_filter')) { function add_filter(...$a) { return true; } }
 if (!function_exists('trailingslashit')) { function trailingslashit($s) { return rtrim($s, "/\\") . '/'; } }
+if (!function_exists('untrailingslashit')) { function untrailingslashit($s) { return rtrim($s, "/\\"); } }
 if (!function_exists('wp_json_encode')) { function wp_json_encode($d, $f = 0, $depth = 512) { return json_encode($d, $f, $depth); } }

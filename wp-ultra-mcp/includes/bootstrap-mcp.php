@@ -126,6 +126,29 @@ function wpultra_ability_files(): array {
         'analytics-report', 'seo-indexnow', 'seo-404-log',
         // AI-Native (Wave 28: roadmap #32-#35)
         'skill-sync', 'site-brain', 'error-reports', 'usage-stats',
+        // Tier S high-demand (Wave 29: roadmap-2 S1-S4)
+        'content-plan', 'content-generate', 'security-harden', 'security-scan',
+        'optimize-database', 'optimize-images', 'optimize-cache', 'woo-bulk-edit',
+        // Growth & Money (Wave 30: roadmap-2 A1-A5)
+        'email-campaign', 'ab-test', 'lead-manage', 'popup-campaign', 'affiliate-manage',
+        // Store Power (Wave 31: roadmap-2 B1-B6)
+        'woo-pricing-rules', 'woo-fulfillment', 'woo-review-engine', 'woo-wishlist', 'woo-loyalty', 'woo-currency',
+        // Site Safety & Health (Wave 32: roadmap-2 C1-C4)
+        'health-monitor', 'link-fixer', 'backup-schedule', 'firewall-manage',
+        // AI-Native Moat (Wave 33: roadmap-2 F1-F6)
+        'ai-chatbot', 'agent-run', 'visual-diff', 'nl-analytics', 'seo-autopilot', 'design-from-brief',
+        // Ops & Compliance (Wave 34: roadmap-2 G1-G5)
+        'gdpr-tools', 'site-migrate', 'roles-manage', 'scheduled-reports', 'white-label',
+        // Content & SEO Reach (Wave 35: roadmap-2 D1-D6)
+        'schema-generate', 'autotranslate', 'content-freshness', 'link-optimizer', 'feed-import', 'social-scheduler',
+        // Business Verticals (Wave 36: roadmap-2 E1-E6)
+        'booking-manage', 'membership-manage', 'lms-manage', 'events-manage', 'directory-manage', 'donations-manage',
+        // Headless foundation (Wave H1: roadmap-3 H1.1-H1.6)
+        'headless-status', 'headless-setup', 'graphql-introspect', 'graphql-query', 'headless-expose', 'headless-rest-bundle',
+        // Headless frontend loop (Wave H2: roadmap-3 H2.1-H2.4)
+        'headless-scaffold', 'headless-preview', 'headless-auth', 'headless-revalidate',
+        // Headless showcase (Wave H3: roadmap-3 H3.1-H3.5)
+        'headless-build-site', 'headless-woo', 'headless-seo', 'headless-deploy', 'graphql-persisted-queries',
     ];
 }
 
@@ -135,7 +158,7 @@ function wpultra_ability_category_map(): array {
         'filesystem'     => ['read-file', 'write-file', 'edit-file', 'delete-file', 'list-directory'],
         'code-execution' => ['run-wp-cli', 'execute-php'],
         'database'       => ['execute-wp-query', 'search-replace', 'db-snapshot'],
-        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry', 'activity-log', 'analytics-report', 'error-reports', 'usage-stats'],
+        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry', 'activity-log', 'analytics-report', 'error-reports', 'usage-stats', 'security-harden', 'security-scan', 'health-monitor', 'firewall-manage', 'scheduled-reports'],
         'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete', 'site-brain'],
         'content'        => [
             'create-post', 'update-post', 'delete-post', 'media-upload', 'content-restore',
@@ -143,13 +166,17 @@ function wpultra_ability_category_map(): array {
             'manage-term', 'register-cpt', 'register-taxonomy', 'manage-menu',
             'media-list', 'media-get', 'media-update', 'media-delete', 'manage-comment',
             'media-generate', 'media-edit-image', 'media-bulk-alt', 'content-calendar',
+            'content-plan', 'content-generate', 'optimize-images',
+            'content-freshness', 'feed-import',
         ],
-        'users'          => ['manage-user', 'list-users'],
+        'users'          => ['manage-user', 'list-users', 'roles-manage'],
         'system'         => [
             'manage-plugin-theme', 'option-get', 'option-set', 'site-snapshot',
             'export-content', 'import-content', 'manage-cron', 'maintenance-mode',
             'send-email', 'purge-cache', 'self-update',
             'site-backup', 'staging-clone', 'multisite-manage', 'manage-server-rules',
+            'optimize-database', 'optimize-cache', 'backup-schedule',
+            'site-migrate', 'white-label',
         ],
         'fse'            => ['theme-json-get', 'theme-json-set', 'manage-template', 'custom-css'],
         'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
@@ -160,12 +187,17 @@ function wpultra_ability_category_map(): array {
         ],
         'builders'       => ['pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements'],
         'jetengine'      => ['jetengine-status', 'jetengine-manage-cpt', 'jetengine-manage-taxonomy', 'jetengine-manage-meta-box'],
-        'multilingual'   => ['translation-status', 'duplicate-to-language', 'translation-set-content'],
+        'multilingual'   => ['translation-status', 'duplicate-to-language', 'translation-set-content', 'autotranslate'],
         'jobs'           => ['job-start', 'job-status', 'job-list', 'job-cancel'],
         'undo'           => ['undo-list', 'undo-restore', 'undo-last'],
         'playbooks'      => ['playbook-run', 'playbook-save', 'playbook-list', 'playbook-delete'],
         'triggers'       => ['trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log', 'form-forward', 'social-autopost'],
         'newsletter'     => ['newsletter-status', 'newsletter-subscribe'],
+        'marketing'      => ['email-campaign', 'ab-test', 'lead-manage', 'popup-campaign', 'affiliate-manage', 'social-scheduler'],
+        'ai'             => ['ai-chatbot', 'agent-run', 'visual-diff', 'nl-analytics', 'design-from-brief'],
+        'compliance'     => ['gdpr-tools'],
+        'verticals'      => ['booking-manage', 'membership-manage', 'lms-manage', 'events-manage', 'directory-manage', 'donations-manage'],
+        'headless'       => ['headless-status', 'headless-setup', 'graphql-introspect', 'graphql-query', 'headless-expose', 'headless-rest-bundle', 'headless-scaffold', 'headless-preview', 'headless-auth', 'headless-revalidate', 'headless-build-site', 'headless-woo', 'headless-seo', 'headless-deploy', 'graphql-persisted-queries'],
         'access'         => ['manage-access'],
         'skills'         => ['skill-get', 'skill-write', 'skill-edit', 'skill-delete', 'skill-sync'],
         'custom'         => ['ability-write', 'ability-get', 'ability-delete'],
@@ -185,8 +217,8 @@ function wpultra_ability_category_map(): array {
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
         ],
-        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway', 'woo-export-products', 'woo-import-products', 'woo-manage-subscription', 'woo-manage-booking', 'woo-insights', 'woo-manage-email'],
-        'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup', 'seo-indexnow', 'seo-404-log'],
+        'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway', 'woo-export-products', 'woo-import-products', 'woo-manage-subscription', 'woo-manage-booking', 'woo-insights', 'woo-manage-email', 'woo-bulk-edit', 'woo-pricing-rules', 'woo-fulfillment', 'woo-review-engine', 'woo-wishlist', 'woo-loyalty', 'woo-currency'],
+        'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup', 'seo-indexnow', 'seo-404-log', 'link-fixer', 'seo-autopilot', 'schema-generate', 'link-optimizer'],
         'fields' => ['field-status', 'field-read-values', 'field-write-values', 'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields', 'field-manage-rows'],
     ];
 }
@@ -233,6 +265,11 @@ function wpultra_register_categories(): void {
         'triggers' => 'Event triggers — webhook / auto-playbook / log on WordPress events.',
         'access' => 'Access control — per-role ability grants and per-minute rate limits.',
         'newsletter' => 'Newsletter subscribers via MailPoet or Mailchimp for WP.',
+        'marketing' => 'Growth tools — email campaigns, A/B tests, leads CRM, popups, affiliate tracking.',
+        'ai' => 'AI-native — RAG chatbot, agent loop, visual diff, NL analytics, design-from-brief.',
+        'compliance' => 'Compliance — GDPR cookie consent, data export/erase, privacy tools.',
+        'verticals' => 'Business verticals — booking, membership, LMS, events, directory, donations.',
+        'headless' => 'Headless WordPress — WPGraphQL backend, schema introspection, frontend scaffold, preview, revalidation.',
         'skills' => 'Reusable AI skill documents.',
         'memory'  => 'Persistent cross-session memory.',
         'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
@@ -276,13 +313,13 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('woocommerce', $disabled, true)) {
-        foreach (['setup', 'schema', 'products', 'orders', 'customers', 'coupons', 'settings', 'reports', 'bridge', 'shipping', 'csv', 'extensions', 'insights', 'emails'] as $wcf) {
+        foreach (['setup', 'schema', 'products', 'orders', 'customers', 'coupons', 'settings', 'reports', 'bridge', 'shipping', 'csv', 'extensions', 'insights', 'emails', 'bulk', 'pricing', 'fulfillment', 'reviews-engine', 'wishlist', 'loyalty', 'currency'] as $wcf) {
             $wcp = WPULTRA_DIR . 'includes/woocommerce/' . $wcf . '.php';
             if (is_readable($wcp)) { require_once $wcp; }
         }
     }
     if (!in_array('seo', $disabled, true)) {
-        foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit', 'monitor'] as $sf) {
+        foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit', 'monitor', 'schema-gen', 'linkgraph'] as $sf) {
             $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
             if (is_readable($sp)) { require_once $sp; }
         }
@@ -295,7 +332,7 @@ function wpultra_load_abilities(): void {
     }
     // Power-feature engines (media/users/system) — loaded when their category is enabled.
     if (!in_array('content', $disabled, true)) {
-        foreach (['media/engine', 'media/generate', 'media/editing', 'content/engine', 'content/structure', 'content/comments', 'content/calendar'] as $cf) {
+        foreach (['media/engine', 'media/generate', 'media/editing', 'content/engine', 'content/structure', 'content/comments', 'content/calendar', 'content/pipeline', 'content/freshness', 'content/feed-import'] as $cf) {
             $cp = WPULTRA_DIR . 'includes/' . $cf . '.php';
             if (is_readable($cp)) { require_once $cp; }
         }
@@ -304,19 +341,28 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/users/engine.php';
     }
     if (!in_array('system', $disabled, true)) {
-        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools', 'system/updater', 'system/backup', 'system/staging', 'system/network', 'system/rules'] as $sf2) {
+        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools', 'system/updater', 'system/backup', 'system/staging', 'system/network', 'system/rules', 'system/optimize', 'system/backup-schedule', 'system/migration', 'system/whitelabel'] as $sf2) {
             $sp2 = WPULTRA_DIR . 'includes/' . $sf2 . '.php';
             if (is_readable($sp2)) { require_once $sp2; }
         }
+    }
+    if (!in_array('users', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/system/roles.php')) {
+        require_once WPULTRA_DIR . 'includes/system/roles.php';
+    }
+    if (!in_array('compliance', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/compliance/gdpr.php')) {
+        require_once WPULTRA_DIR . 'includes/compliance/gdpr.php';
     }
     if (!in_array('database', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/system/siteops.php')) {
         require_once WPULTRA_DIR . 'includes/system/siteops.php'; // search-replace + db-snapshot engine
     }
     if (!in_array('diagnostics', $disabled, true)) {
-        foreach (['system/audits', 'system/devtools', 'system/siteops', 'system/activity', 'system/analytics', 'system/errors', 'system/usage'] as $df) {
+        foreach (['system/audits', 'system/devtools', 'system/siteops', 'system/activity', 'system/analytics', 'system/errors', 'system/usage', 'system/security', 'system/rules', 'system/health', 'system/firewall', 'system/reports'] as $df) {
             $dp = WPULTRA_DIR . 'includes/' . $df . '.php';
             if (is_readable($dp)) { require_once $dp; }
         }
+    }
+    if (!in_array('seo', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/system/linkfix.php')) {
+        require_once WPULTRA_DIR . 'includes/system/linkfix.php';
     }
     if (!in_array('fse', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/fse/engine.php')) {
         require_once WPULTRA_DIR . 'includes/fse/engine.php';
@@ -347,6 +393,40 @@ function wpultra_load_abilities(): void {
     }
     if (!in_array('multilingual', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/i18n/engine.php')) {
         require_once WPULTRA_DIR . 'includes/i18n/engine.php';
+        if (is_readable(WPULTRA_DIR . 'includes/i18n/autotranslate.php')) { require_once WPULTRA_DIR . 'includes/i18n/autotranslate.php'; }
+    }
+    if (!in_array('marketing', $disabled, true)) {
+        foreach (['campaigns', 'ab', 'leads', 'popups', 'affiliates', 'track', 'social-scheduler'] as $mkf) {
+            $mkp = WPULTRA_DIR . 'includes/marketing/' . $mkf . '.php';
+            if (is_readable($mkp)) { require_once $mkp; }
+        }
+    }
+    if (!in_array('verticals', $disabled, true)) {
+        foreach (['booking', 'membership', 'lms', 'events', 'directory', 'donations'] as $vf) {
+            $vp = WPULTRA_DIR . 'includes/verticals/' . $vf . '.php';
+            if (is_readable($vp)) { require_once $vp; }
+        }
+    }
+    if (!in_array('headless', $disabled, true)) {
+        foreach (['setup', 'introspect', 'query', 'expose', 'rest', 'scaffold', 'preview', 'auth', 'revalidate', 'build', 'woo', 'seo', 'deploy', 'persisted'] as $hf) {
+            $hp = WPULTRA_DIR . 'includes/headless/' . $hf . '.php';
+            if (is_readable($hp)) { require_once $hp; }
+        }
+    }
+    // AI-native engines (Group F): shared setup first, then per-feature engines.
+    // seopilot lives under the 'seo' category; the rest under 'ai'. Load setup
+    // whenever either category is enabled so the shared helpers exist.
+    if (!in_array('ai', $disabled, true) || !in_array('seo', $disabled, true)) {
+        if (is_readable(WPULTRA_DIR . 'includes/ai/setup.php')) { require_once WPULTRA_DIR . 'includes/ai/setup.php'; }
+    }
+    if (!in_array('ai', $disabled, true)) {
+        foreach (['kb', 'agent', 'visualdiff', 'nlquery', 'designbrief'] as $aif) {
+            $aip = WPULTRA_DIR . 'includes/ai/' . $aif . '.php';
+            if (is_readable($aip)) { require_once $aip; }
+        }
+    }
+    if (!in_array('seo', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/ai/seopilot.php')) {
+        require_once WPULTRA_DIR . 'includes/ai/seopilot.php';
     }
     if (!in_array('jobs', $disabled, true)) {
         // Jobs handlers reuse the siteops (search-replace) + seo (audit) engines.
@@ -410,7 +490,9 @@ function wpultra_apply_ability_policy(): void {
 function wpultra_load_seo_frontend(): void {
     if (!wpultra_is_enabled()) { return; }
     if (in_array('seo', wpultra_disabled_categories(), true)) { return; }
-    foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit', 'monitor'] as $sf) {
+    // schema-gen loaded too so the wp_head JSON-LD renderer can use the rich
+    // Product/Recipe/Event/… builders for schema-generate's persisted schemas.
+    foreach (['setup', 'meta', 'head', 'analyze', 'links', 'research', 'technical', 'local', 'audit', 'monitor', 'schema-gen'] as $sf) {
         $sp = WPULTRA_DIR . 'includes/seo/' . $sf . '.php';
         if (is_readable($sp)) { require_once $sp; }
     }
@@ -434,6 +516,184 @@ function wpultra_load_fields_frontend(): void {
 }
 
 /**
+ * Register the ops & compliance runtimes on EVERY request: GDPR consent banner
+ * (front-end), scheduled-reports cron, white-label admin rebrand + client-mode,
+ * roles/migration (no runtime hooks — persisted state). All boots try/catch.
+ */
+function wpultra_load_ops_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    $disabled = wpultra_disabled_categories();
+    if (!in_array('compliance', $disabled, true)) {
+        $gp = WPULTRA_DIR . 'includes/compliance/gdpr.php';
+        if (is_readable($gp)) { require_once $gp; if (function_exists('wpultra_gdpr_boot')) { try { wpultra_gdpr_boot(); } catch (\Throwable $e) {} } }
+    }
+    if (!in_array('diagnostics', $disabled, true)) {
+        $rp = WPULTRA_DIR . 'includes/system/reports.php';
+        if (is_readable($rp)) { require_once $rp; if (function_exists('wpultra_reports_boot')) { try { wpultra_reports_boot(); } catch (\Throwable $e) {} } }
+    }
+    if (!in_array('system', $disabled, true)) {
+        foreach (['whitelabel' => 'wpultra_wlabel_boot', 'migration' => 'wpultra_migrate_boot'] as $file => $boot) {
+            $fp = WPULTRA_DIR . 'includes/system/' . $file . '.php';
+            if (is_readable($fp)) { require_once $fp; if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) {} } }
+        }
+    }
+    if (!in_array('users', $disabled, true)) {
+        $rl = WPULTRA_DIR . 'includes/system/roles.php';
+        if (is_readable($rl)) { require_once $rl; if (function_exists('wpultra_roles_boot')) { try { wpultra_roles_boot(); } catch (\Throwable $e) {} } }
+    }
+}
+
+/**
+ * Register the AI-native runtimes on EVERY request: the RAG chatbot widget +
+ * its public /chat REST endpoint, agent-loop cron, SEO-autopilot cron, and any
+ * design/analytics shortcodes. All fire outside the REST/abilities loop.
+ */
+function wpultra_load_ai_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    $disabled = wpultra_disabled_categories();
+    if (!in_array('ai', $disabled, true) || !in_array('seo', $disabled, true)) {
+        if (is_readable(WPULTRA_DIR . 'includes/ai/setup.php')) { require_once WPULTRA_DIR . 'includes/ai/setup.php'; }
+    }
+    if (!in_array('ai', $disabled, true)) {
+        foreach (['kb', 'agent', 'visualdiff', 'nlquery', 'designbrief'] as $aif) {
+            $aip = WPULTRA_DIR . 'includes/ai/' . $aif . '.php';
+            if (is_readable($aip)) { require_once $aip; }
+        }
+        foreach (['wpultra_kb_boot', 'wpultra_agent_boot', 'wpultra_vdiff_boot', 'wpultra_nlq_boot', 'wpultra_dfb_boot'] as $boot) {
+            if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) { /* an AI hook must never take the site down */ } }
+        }
+        // The RAG chatbot's public chat endpoint (widget beacons from cached pages can't auth).
+        if (function_exists('wpultra_kb_register_routes')) { add_action('rest_api_init', 'wpultra_kb_register_routes'); }
+    }
+    if (!in_array('seo', $disabled, true)) {
+        $sp = WPULTRA_DIR . 'includes/ai/seopilot.php';
+        if (is_readable($sp)) { require_once $sp; if (function_exists('wpultra_seopilot_boot')) { try { wpultra_seopilot_boot(); } catch (\Throwable $e) {} } }
+    }
+}
+
+/**
+ * Register the site-safety runtimes on EVERY request: firewall (evaluates +
+ * blocks the current request immediately when enabled), health-monitor cron,
+ * link-fixer scheduled crawl, off-site backup schedule. Firewall is loaded
+ * FIRST and boots first so enforcement happens as early as possible.
+ */
+function wpultra_load_safety_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    $disabled = wpultra_disabled_categories();
+    // Firewall + health monitor live under diagnostics; link-fixer under seo;
+    // backup schedule under system. Load each engine only when its category is on.
+    if (!in_array('diagnostics', $disabled, true)) {
+        foreach (['system/firewall', 'system/health'] as $sf) {
+            $sp = WPULTRA_DIR . 'includes/' . $sf . '.php';
+            if (is_readable($sp)) { require_once $sp; }
+        }
+        // Firewall boots FIRST — registers an init-prio-1 evaluator that may
+        // block-and-die the request when mode is log/block; that is the point.
+        if (function_exists('wpultra_firewall_boot')) {
+            try { wpultra_firewall_boot(); } catch (\Throwable $e) { /* firewall fails OPEN — never take the site down */ }
+        }
+        if (function_exists('wpultra_health_boot')) {
+            try { wpultra_health_boot(); } catch (\Throwable $e) {}
+        }
+    }
+    if (!in_array('seo', $disabled, true)) {
+        $lf = WPULTRA_DIR . 'includes/system/linkfix.php';
+        if (is_readable($lf)) { require_once $lf; if (function_exists('wpultra_linkfix_boot')) { try { wpultra_linkfix_boot(); } catch (\Throwable $e) {} } }
+    }
+    if (!in_array('system', $disabled, true)) {
+        $bs = WPULTRA_DIR . 'includes/system/backup-schedule.php';
+        if (is_readable($bs)) { require_once $bs; if (function_exists('wpultra_bksched_boot')) { try { wpultra_bksched_boot(); } catch (\Throwable $e) {} } }
+    }
+}
+
+/**
+ * Register the store-power runtimes on EVERY request: dynamic-pricing cart
+ * hooks, shipped status + email tracking info, review-photo/Q&A shortcodes,
+ * wishlist + back-in-stock front-end, loyalty point earning, currency switch.
+ */
+function wpultra_load_woopower_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('woocommerce', wpultra_disabled_categories(), true)) { return; }
+    foreach (['pricing', 'fulfillment', 'reviews-engine', 'wishlist', 'loyalty', 'currency'] as $wpf) {
+        $wpp = WPULTRA_DIR . 'includes/woocommerce/' . $wpf . '.php';
+        if (is_readable($wpp)) { require_once $wpp; }
+    }
+    foreach (['wpultra_pricing_boot', 'wpultra_fulfill_boot', 'wpultra_reviews_engine_boot', 'wpultra_wishlist_boot', 'wpultra_loyalty_boot', 'wpultra_currency_boot'] as $boot) {
+        if (function_exists($boot)) {
+            try { $boot(); } catch (\Throwable $e) { /* a broken store hook must never take the site down */ }
+        }
+    }
+}
+
+/**
+ * Register the business-verticals runtimes on EVERY request: booking, membership,
+ * LMS, events, directory, donations. Their engines register CPTs on init (needed
+ * on the front-end + cron, outside the REST/abilities loop) and wire crons
+ * (booking reminders, donation recurring) + enforcement filters (membership
+ * paywall). All boots are cheap + try/catch-wrapped (a vertical must never take
+ * the site down).
+ */
+function wpultra_load_verticals_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('verticals', wpultra_disabled_categories(), true)) { return; }
+    foreach (['booking', 'membership', 'lms', 'events', 'directory', 'donations'] as $vf) {
+        $vp = WPULTRA_DIR . 'includes/verticals/' . $vf . '.php';
+        if (is_readable($vp)) { require_once $vp; }
+    }
+    foreach (['wpultra_booking_boot', 'wpultra_member_boot', 'wpultra_lms_boot', 'wpultra_event_boot', 'wpultra_dir_boot', 'wpultra_donate_boot'] as $boot) {
+        if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) { /* a broken vertical must never take the site down */ } }
+    }
+}
+
+/**
+ * Register the content-reach cron runtimes on EVERY request: autotranslate
+ * batch tick (multilingual) and RSS feed-import poll (content). Their cron
+ * handlers fire outside the REST/abilities loop, so the engines + boots must
+ * always be present. Both boots are cheap + no-op until a job/feed is active.
+ */
+function wpultra_load_contentreach_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    $disabled = wpultra_disabled_categories();
+    if (!in_array('multilingual', $disabled, true)) {
+        foreach (['i18n/engine', 'i18n/autotranslate'] as $af) {
+            $ap = WPULTRA_DIR . 'includes/' . $af . '.php';
+            if (is_readable($ap)) { require_once $ap; }
+        }
+        if (function_exists('wpultra_atrans_boot')) { try { wpultra_atrans_boot(); } catch (\Throwable $e) {} }
+    }
+    if (!in_array('content', $disabled, true)) {
+        $fp = WPULTRA_DIR . 'includes/content/feed-import.php';
+        if (is_readable($fp)) { require_once $fp; if (function_exists('wpultra_feed_boot')) { try { wpultra_feed_boot(); } catch (\Throwable $e) {} } }
+    }
+}
+
+/**
+ * Register the marketing runtimes on EVERY request: campaign cron sender,
+ * A/B assignment + title/content filters, lead form-capture, popup renderer,
+ * affiliate ?ref= cookie + Woo order attribution, and the shared /track REST
+ * endpoint. All fire outside the REST/abilities loop.
+ */
+function wpultra_load_marketing_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('marketing', wpultra_disabled_categories(), true)) { return; }
+    foreach (['campaigns', 'ab', 'leads', 'popups', 'affiliates', 'track'] as $mkf) {
+        $mkp = WPULTRA_DIR . 'includes/marketing/' . $mkf . '.php';
+        if (is_readable($mkp)) { require_once $mkp; }
+    }
+    // social-scheduler (Group D6) is a marketing-category engine with a cron tick.
+    $ss = WPULTRA_DIR . 'includes/marketing/social-scheduler.php';
+    if (is_readable($ss)) { require_once $ss; }
+    foreach (['wpultra_campaigns_boot', 'wpultra_ab_boot', 'wpultra_leads_boot', 'wpultra_popups_boot', 'wpultra_affiliates_boot', 'wpultra_social_boot'] as $boot) {
+        if (function_exists($boot)) {
+            try { $boot(); } catch (\Throwable $e) { /* a broken marketing hook must never take the site down */ }
+        }
+    }
+    if (function_exists('wpultra_track_register_routes')) {
+        add_action('rest_api_init', 'wpultra_track_register_routes');
+    }
+}
+
+/**
  * Register the monitor runtimes on EVERY request: login tracking (activity),
  * fatal-error reports (self-healing v2), the 404 monitor + IndexNow auto-ping.
  * All fire outside the REST/abilities loop, so they must always be present.
@@ -448,6 +708,12 @@ function wpultra_load_monitors_runtime(): void {
         }
         if (function_exists('wpultra_activity_boot')) { wpultra_activity_boot(); }
         if (function_exists('wpultra_errors_boot')) { wpultra_errors_boot(); }
+        $sp2 = WPULTRA_DIR . 'includes/system/security.php';
+        if (is_readable($sp2)) { require_once $sp2; if (function_exists('wpultra_security_boot')) { wpultra_security_boot(); } }
+    }
+    if (!in_array('system', $disabled, true)) {
+        $op = WPULTRA_DIR . 'includes/system/optimize.php';
+        if (is_readable($op)) { require_once $op; if (function_exists('wpultra_optimize_lazyload_filter') && get_option('wpultra_perf_lazyload')) { add_filter('wp_get_attachment_image_attributes', 'wpultra_optimize_lazyload_filter'); } }
     }
     if (!in_array('seo', $disabled, true)) {
         // monitor.php self-registers its hooks (transition_post_status auto-ping
@@ -515,6 +781,23 @@ function wpultra_load_updater_admin(): void {
     if (function_exists('wpultra_updater_inject_transient')) {
         add_filter('pre_set_site_transient_update_plugins', 'wpultra_updater_inject_transient');
         add_filter('site_transient_update_plugins', 'wpultra_updater_inject_transient');
+    }
+}
+
+/**
+ * Register the headless runtime on EVERY request: the JWT-secret filter must be
+ * present when WPGraphQL-JWT parses tokens on front-end /graphql requests, and
+ * the CORS headers attach to GraphQL responses outside the REST/abilities loop.
+ */
+function wpultra_load_headless_runtime(): void {
+    if (!wpultra_is_enabled()) { return; }
+    if (in_array('headless', wpultra_disabled_categories(), true)) { return; }
+    foreach (['setup', 'expose', 'rest', 'preview', 'revalidate', 'seo'] as $hf) {
+        $hp = WPULTRA_DIR . 'includes/headless/' . $hf . '.php';
+        if (is_readable($hp)) { require_once $hp; }
+    }
+    if (function_exists('wpultra_headless_boot')) {
+        try { wpultra_headless_boot(); } catch (\Throwable $e) { /* a headless hook must never take the site down */ }
     }
 }
 

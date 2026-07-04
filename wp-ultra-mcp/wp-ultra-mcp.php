@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP-Ultra-MCP
  * Description: Turn this WordPress site into an MCP server for AI CLIs — Elementor, SQL, WP-CLI, files, and more.
- * Version: 0.25.0
+ * Version: 0.27.0
  * Requires PHP: 8.0
  * Requires at least: 6.6
  * License: GPL-2.0-or-later
@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit(); }
 
-define('WPULTRA_VERSION', '0.25.0');
+define('WPULTRA_VERSION', '0.27.0');
 define('WPULTRA_FILE', __FILE__);
 define('WPULTRA_DIR', plugin_dir_path(__FILE__));
 define('WPULTRA_URL', plugin_dir_url(__FILE__));
@@ -64,6 +64,9 @@ if (is_admin()) {
     require_once WPULTRA_DIR . 'includes/admin/skill-hub.php';
     require_once WPULTRA_DIR . 'includes/admin/memory-hub.php';
     require_once WPULTRA_DIR . 'includes/admin/activity-page.php';
+    if (is_readable(WPULTRA_DIR . 'includes/admin/stats-page.php')) {
+        require_once WPULTRA_DIR . 'includes/admin/stats-page.php';
+    }
 }
 
 // Boot the MCP adapter + abilities (guarded internally on enabled-flag and adapter availability).
@@ -93,6 +96,43 @@ add_action('plugins_loaded', 'wpultra_load_triggers_runtime', 22);
 // Register AI-generated custom atomic widgets on every request (the Elementor
 // editor + front-end render paths run outside the REST/abilities loop).
 add_action('plugins_loaded', 'wpultra_load_widgets_runtime', 23);
+
+// Monitors on every request: login tracking, fatal-error reports, 404 log,
+// IndexNow auto-ping (all fire outside the REST/abilities loop).
+add_action('plugins_loaded', 'wpultra_load_monitors_runtime', 24);
+
+// Marketing runtimes on every request: campaign cron sender, A/B filters,
+// lead form-capture, popup renderer, affiliate attribution, /track endpoint.
+add_action('plugins_loaded', 'wpultra_load_marketing_runtime', 25);
+
+// Store-power runtimes on every request: dynamic pricing, fulfillment status,
+// review/Q&A shortcodes, wishlist + stock alerts, loyalty earning, currency.
+add_action('plugins_loaded', 'wpultra_load_woopower_runtime', 26);
+
+// Site-safety runtimes on every request: firewall (blocks early), health
+// monitor cron, link-fixer crawl, off-site backup schedule. Priority 5 so the
+// firewall evaluates the request before heavier runtimes do their work.
+add_action('plugins_loaded', 'wpultra_load_safety_runtime', 5);
+
+// AI-native runtimes on every request: RAG chatbot widget + /chat endpoint,
+// agent-loop + SEO-autopilot cron handlers, design/analytics helpers.
+add_action('plugins_loaded', 'wpultra_load_ai_runtime', 27);
+
+// Ops & compliance runtimes on every request: GDPR consent banner, scheduled
+// reports cron, white-label admin rebrand + client-mode, roles/migration.
+add_action('plugins_loaded', 'wpultra_load_ops_runtime', 28);
+
+// Content-reach cron runtimes on every request: autotranslate batch tick +
+// RSS feed-import poll (both fire on WP-Cron, outside the REST/abilities loop).
+add_action('plugins_loaded', 'wpultra_load_contentreach_runtime', 29);
+
+// Business-verticals runtimes on every request: booking/membership/LMS/events/
+// directory/donations register CPTs + crons + the membership paywall filter.
+add_action('plugins_loaded', 'wpultra_load_verticals_runtime', 30);
+
+// Headless runtime on every request: JWT-secret filter for WPGraphQL-JWT and
+// CORS headers on GraphQL responses (both fire outside the REST/abilities loop).
+add_action('plugins_loaded', 'wpultra_load_headless_runtime', 31);
 
 // Register persisted AI-defined CPTs/taxonomies on every request; the ability
 // engine-loop only runs on REST calls, so definitions saved by register-cpt /
