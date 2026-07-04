@@ -32,6 +32,17 @@ wp_register_ability('wpultra/manage-plugin-theme', [
 ]);
 
 function wpultra_manage_plugin_theme(array $input) {
+    // The upgrader skin (install/update/delete) echoes HTML progress; any stray
+    // byte corrupts the JSON-RPC response — buffer the whole run and discard.
+    ob_start();
+    try {
+        return wpultra_manage_plugin_theme_run($input);
+    } finally {
+        ob_end_clean();
+    }
+}
+
+function wpultra_manage_plugin_theme_run(array $input) {
     $action = (string) ($input['action'] ?? '');
     $plugin = (string) ($input['plugin'] ?? '');
     switch ($action) {

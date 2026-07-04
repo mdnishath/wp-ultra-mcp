@@ -96,7 +96,9 @@ function wpultra_system_update_plugin(string $plugin) {
 /** @return array|WP_Error */
 function wpultra_system_delete_plugin(string $plugin) {
     if (wpultra_system_is_self($plugin)) { return wpultra_err('self_protected', 'Refusing to delete WP-Ultra-MCP itself.'); }
-    wpultra_system_require_plugin_admin();
+    // delete_plugins() needs the filesystem API (file.php: request_filesystem_credentials,
+    // WP_Filesystem) — plugin.php alone fatals outside wp-admin requests.
+    wpultra_system_require_upgrader();
     if (is_plugin_active($plugin)) { return wpultra_err('active_plugin', 'Deactivate the plugin before deleting it.'); }
     $res = delete_plugins([$plugin]);
     if (is_wp_error($res)) { return $res; }
