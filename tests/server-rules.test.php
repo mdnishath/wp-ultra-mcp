@@ -104,6 +104,22 @@ it('compose returns empty array when given no presets and no custom lines', func
     assert_eq([], wpultra_rules_compose([], []));
 });
 
+it('compose keeps <IfModule> blocks balanced across multiple presets (no structural dedupe)', function () {
+    // Regression: line-level dedupe used to swallow the 2nd/3rd preset's
+    // closing </IfModule> (identical to the 1st's), breaking Apache.
+    $lines = wpultra_rules_compose(['security-headers', 'browser-caching', 'gzip'], []);
+    $open  = count(array_filter($lines, static fn($l) => stripos(trim($l), '<IfModule') === 0));
+    $close = count(array_filter($lines, static fn($l) => strcasecmp(trim($l), '</IfModule>') === 0));
+    assert_true($open >= 3, 'each preset opens its own IfModule');
+    assert_eq($open, $close, 'every <IfModule> has a matching </IfModule>');
+});
+
+it('compose de-duplicates repeated preset names', function () {
+    $once  = wpultra_rules_compose(['gzip'], []);
+    $twice = wpultra_rules_compose(['gzip', 'gzip'], []);
+    assert_eq($once, $twice, 'requesting a preset twice emits it once');
+});
+
 /* ============================================================
  * validate_lines() — matrix.
  * ============================================================ */

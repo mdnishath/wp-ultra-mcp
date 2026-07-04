@@ -139,31 +139,35 @@ function wpultra_rules_known_presets(): array {
 function wpultra_rules_compose(array $preset_names, array $custom_lines = []): array {
     $registry = wpultra_rules_preset_registry();
     $out = [];
-    $seen = [];
+    $emitted_presets = [];
 
+    // Dedupe at the PRESET level only. Preset body lines are emitted verbatim:
+    // line-level dedup across presets used to swallow shared structural lines
+    // (a second preset's `</IfModule>` matched the first's), producing an
+    // unbalanced — Apache-fatal — .htaccess block.
     foreach ($preset_names as $name) {
         $name = (string) $name;
-        if (!isset($registry[$name])) { continue; }
+        if (!isset($registry[$name]) || isset($emitted_presets[$name])) { continue; }
         $builder = $registry[$name];
         $lines = (array) call_user_func($builder);
         if ($lines === []) { continue; }
 
+        $emitted_presets[$name] = true;
         $out[] = "# $name";
-        $seen["# $name"] = true;
         foreach ($lines as $line) {
-            $line = (string) $line;
-            if (isset($seen[$line])) { continue; }
-            $seen[$line] = true;
-            $out[] = $line;
+            $out[] = (string) $line;
         }
     }
 
+    // Custom lines still dedupe against everything already emitted (a custom
+    // line duplicating a preset directive adds nothing).
     if ($custom_lines !== []) {
-        $out[] = '# custom';
-        $seen['# custom'] = true;
+        $seen = array_fill_keys($out, true);
+        $header_added = false;
         foreach ($custom_lines as $line) {
             $line = (string) $line;
             if (isset($seen[$line])) { continue; }
+            if (!$header_added) { $out[] = '# custom'; $seen['# custom'] = true; $header_added = true; }
             $seen[$line] = true;
             $out[] = $line;
         }

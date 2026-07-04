@@ -175,6 +175,18 @@ function wpultra_seo_render_schema() {
     if (!is_singular()) { return; }
     $s = wpultra_seo_get_schema(get_queried_object_id());
     if (empty($s['type'])) { return; }
-    $json = wpultra_seo_build_jsonld((string) $s['type'], is_array($s['fields'] ?? null) ? $s['fields'] : []);
+    $type   = (string) $s['type'];
+    $fields = is_array($s['fields'] ?? null) ? $s['fields'] : [];
+    // Prefer the advanced schema-generator's rich builder (Product/Recipe/Event/
+    // Review/FAQPage/HowTo/JobPosting) when available + it supports this type, so
+    // schema-generate's persisted schemas render in full instead of the thin
+    // legacy shape. Fall back to the built-in builder for everything else.
+    $json = null;
+    if (function_exists('wpultra_schemagen_is_supported') && function_exists('wpultra_schemagen_build')
+        && wpultra_schemagen_is_supported($type)) {
+        $built = wpultra_schemagen_build($type, $fields);
+        if (is_array($built)) { $json = $built; }
+    }
+    if ($json === null) { $json = wpultra_seo_build_jsonld($type, $fields); }
     echo "\n<script type=\"application/ld+json\">" . wp_json_encode($json) . "</script>\n"; // phpcs:ignore
 }
