@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "roadmap-tracker",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["docs/roadmap-tracker.mjs"],
+      "port": 4488
+    }
+  ]
+}

@@ -149,6 +149,8 @@ function wpultra_ability_files(): array {
         'headless-scaffold', 'headless-preview', 'headless-auth', 'headless-revalidate',
         // Headless showcase (Wave H3: roadmap-3 H3.1-H3.5)
         'headless-build-site', 'headless-woo', 'headless-seo', 'headless-deploy', 'graphql-persisted-queries',
+        // Bug Fixer core (Wave 37: roadmap-4 BF1)
+        'debug-mode', 'conflict-bisect', 'fix-permalinks', 'repair-database', 'php-env-info', 'safe-mode-manage',
     ];
 }
 
@@ -157,8 +159,8 @@ function wpultra_ability_category_map(): array {
     return [
         'filesystem'     => ['read-file', 'write-file', 'edit-file', 'delete-file', 'list-directory'],
         'code-execution' => ['run-wp-cli', 'execute-php'],
-        'database'       => ['execute-wp-query', 'search-replace', 'db-snapshot'],
-        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry', 'activity-log', 'analytics-report', 'error-reports', 'usage-stats', 'security-harden', 'security-scan', 'health-monitor', 'firewall-manage', 'scheduled-reports'],
+        'database'       => ['execute-wp-query', 'search-replace', 'db-snapshot', 'repair-database'],
+        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry', 'activity-log', 'analytics-report', 'error-reports', 'usage-stats', 'security-harden', 'security-scan', 'health-monitor', 'firewall-manage', 'scheduled-reports', 'debug-mode', 'conflict-bisect', 'fix-permalinks', 'php-env-info', 'safe-mode-manage'],
         'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete', 'site-brain'],
         'content'        => [
             'create-post', 'update-post', 'delete-post', 'media-upload', 'content-restore',
@@ -354,9 +356,11 @@ function wpultra_load_abilities(): void {
     }
     if (!in_array('database', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/system/siteops.php')) {
         require_once WPULTRA_DIR . 'includes/system/siteops.php'; // search-replace + db-snapshot engine
+        // repair-database engine (reuses siteops db-snapshot before any repair).
+        if (is_readable(WPULTRA_DIR . 'includes/system/dbrepair.php')) { require_once WPULTRA_DIR . 'includes/system/dbrepair.php'; }
     }
     if (!in_array('diagnostics', $disabled, true)) {
-        foreach (['system/audits', 'system/devtools', 'system/siteops', 'system/activity', 'system/analytics', 'system/errors', 'system/usage', 'system/security', 'system/rules', 'system/health', 'system/firewall', 'system/reports'] as $df) {
+        foreach (['system/audits', 'system/devtools', 'system/siteops', 'system/activity', 'system/analytics', 'system/errors', 'system/usage', 'system/security', 'system/rules', 'system/health', 'system/firewall', 'system/reports', 'system/engine', 'system/debugmode', 'system/bisect', 'system/permalinks', 'system/envinfo', 'sandbox/manage'] as $df) {
             $dp = WPULTRA_DIR . 'includes/' . $df . '.php';
             if (is_readable($dp)) { require_once $dp; }
         }
