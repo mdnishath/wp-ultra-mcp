@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.28.0
+Stable tag: 0.28.1
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,10 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.28.1 =
+* FIX: the v0.28.0 release zip was packaged with backslash entry-name separators, which Linux servers extract as flat junk files ("wp-ultra-mcp\...") — the plugin then fatals on activation because its includes/ tree does not exist. The zip is now built with forward-slash entries and the build script hard-rejects any zip containing backslash entry names. If v0.28.0 left junk files in wp-content/plugins/, delete every file whose name starts with "wp-ultra-mcp\" and install this zip.
+* FIX: manage-plugin-theme delete action fataled outside wp-admin (delete_plugins() needs wp-admin/includes/file.php); the whole callback is now output-buffered so upgrader HTML progress can no longer corrupt the JSON-RPC response.
 
 = 0.28.0 =
 * ROADMAP-2 COMPLETE (Waves 29–36, 42 items, 57 abilities): Tier-S content/security/optimize/woo-bulk; marketing suite (email campaigns, A/B tests, leads CRM, popups, affiliates + /track beacon); Store Power (dynamic pricing, fulfillment, review engine, wishlist, loyalty, multi-currency); Site Safety (health monitor, link fixer, backup schedule, fail-open firewall); AI-Native moat (RAG chatbot + public /chat, agent loop, visual diff, NL analytics, SEO autopilot, design-from-brief); Ops & Compliance (GDPR tools, site migrate, roles, scheduled reports, white-label); Content & SEO Reach (schema generator, autotranslate, freshness, link optimizer, RSS import, social scheduler); Business Verticals (booking, membership, LMS, events, directory, donations — 10 CPTs).

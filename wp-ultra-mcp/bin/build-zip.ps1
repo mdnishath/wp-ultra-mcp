@@ -24,4 +24,24 @@ try {
 } finally {
     $archive.Dispose()
 }
-Write-Host "Built $zip"
+
+# Verify: no backslash entry names (Linux PHP ZipArchive treats them as literal
+# filename chars -> flat junk files -> activation fatal; broke v0.13.0 AND v0.28.0),
+# and the main plugin file is present under the expected forward-slash path.
+$check = [System.IO.Compression.ZipFile]::OpenRead($zip)
+try {
+    $bad = @($check.Entries | Where-Object { $_.FullName -like '*\*' })
+    $main = @($check.Entries | Where-Object { $_.FullName -eq 'wp-ultra-mcp/wp-ultra-mcp.php' })
+    $count = $check.Entries.Count
+} finally {
+    $check.Dispose()
+}
+if ($bad.Count -gt 0) {
+    Remove-Item -Force $zip
+    throw "ZIP REJECTED: $($bad.Count) entries use backslash separators (e.g. '$($bad[0].FullName)'). Never publish this zip."
+}
+if ($main.Count -ne 1) {
+    Remove-Item -Force $zip
+    throw "ZIP REJECTED: wp-ultra-mcp/wp-ultra-mcp.php entry missing."
+}
+Write-Host "Built $zip ($count entries, separators verified)"
