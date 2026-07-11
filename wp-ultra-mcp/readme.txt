@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.28.1
+Stable tag: 0.29.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,11 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.29.0 =
+* ROADMAP-4 COMPLETE — two new pillars, 19 abilities (286 → 305).
+* BUG FIXER (11): `debug-mode` (safely toggle WP_DEBUG/WP_DEBUG_LOG/WP_DEBUG_DISPLAY/SCRIPT_DEBUG/SAVEQUERIES with backup + verify + restore-on-failure), `conflict-bisect` (automated plugin-conflict hunt via silent active_plugins toggling + HTTP probe + binary search; restore-safe, never deactivates itself), `fix-permalinks` (flush rewrite rules + regenerate the WordPress .htaccess block + verify), `repair-database` (CHECK/REPAIR TABLE with InnoDB skipped + dbDelta schema repair, auto DB-snapshot first), `php-env-info` (one-call hosting environment report + advisory warnings), `safe-mode-manage` (status/clear/arm the sandbox crash sentinel; clear requires a named cause), `auto-recover` (on a fatal, deactivate the offending plugin or revert last undo; opt-in + reversible), `query-profiler` (SAVEQUERIES top-N slowest + duplicate detection), `rest-probe` (invoke any REST route in-process), `js-error-log` (front-end window.onerror beacon → capped ring), `plugin-checksum-verify` (plugin files vs the wp.org checksum API). Undo now also covers file edits, plugin/theme activation, and marks destructive SQL non-undoable honestly.
+* PIXEL-PERFECT (8): `elementor-style-variant` (device-specific/responsive AND hover/focus/active state styling for global classes — the biggest gap), `element-custom-css` (per-element raw Custom CSS: Elementor Pro field + a free-path fallback), `pixel-diff` (server-side GD pixel comparison of two screenshots → mismatch %, changed-region box, diff heatmap), `inspect-element` (resolved-CSS readback flagging token vs hardcoded values), `manage-fonts` (@font-face upload + Google-Fonts self-host), `design-audit` (page-wide token-consistency, off-scale spacing, WCAG contrast warnings), `gutenberg-apply-design-tokens` + `bricks-apply-design-tokens` (mint a design brief into theme.json / Bricks tokens — parity with Elementor).
 
 = 0.28.1 =
 * FIX: the v0.28.0 release zip was packaged with backslash entry-name separators, which Linux servers extract as flat junk files ("wp-ultra-mcp\...") — the plugin then fatals on activation because its includes/ tree does not exist. The zip is now built with forward-slash entries and the build script hard-rejects any zip containing backslash entry names. If v0.28.0 left junk files in wp-content/plugins/, delete every file whose name starts with "wp-ultra-mcp\" and install this zip.

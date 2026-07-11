@@ -1,6 +1,6 @@
 # WP-Ultra-MCP — Roadmap 4 (Bug Fixer + Pixel-Perfect Design)
 
-> **Status: PLANNED** (from deep-scan 2026-07-11, v0.28.1 / 286 abilities).
+> **Status: ✅ COMPLETE 2026-07-11 — all 20 tasks built, TDD'd, reviewed, and live-verified end-to-end** (19 new abilities, count 286 → 305, shipped in v0.29.0 across 4 wave commits: BF1, BF2, PP1, PP2).
 > Two new pillars: **(1) WP Bug Fixer** — automated diagnosis + remediation (today the plugin is strong on observability, weak on automated fixing); **(2) Pixel-Perfect Design** — responsive control, states, per-element CSS, pixel-diff (today tokens/classes are strong, but the "pixel" tooling is missing).
 
 Roadmaps 1+2+3 complete (286 abilities). This roadmap closes the gaps found in the 2026-07-11 deep-scan.
