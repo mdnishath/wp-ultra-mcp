@@ -50,6 +50,11 @@ function wpultra_system_list_plugins(): array {
 /** @return array|WP_Error */
 function wpultra_system_activate_plugin(string $plugin) {
     wpultra_system_require_plugin_admin();
+    // Undo coverage (BF2.6): snapshot the active_plugins option before activating,
+    // so undo-restore can revert the toggle. Guarded — never blocks activation.
+    if (function_exists('wpultra_undo_capture') && function_exists('get_option')) {
+        wpultra_undo_capture('active_plugins', 'active_plugins', get_option('active_plugins', []), 'activate-plugin ' . $plugin);
+    }
     $res = activate_plugin($plugin);
     if (is_wp_error($res)) { return $res; }
     return ['plugin' => $plugin, 'active' => true];
@@ -59,6 +64,11 @@ function wpultra_system_activate_plugin(string $plugin) {
 function wpultra_system_deactivate_plugin(string $plugin) {
     if (wpultra_system_is_self($plugin)) { return wpultra_err('self_protected', 'Refusing to deactivate WP-Ultra-MCP itself (would cut off AI control).'); }
     wpultra_system_require_plugin_admin();
+    // Undo coverage (BF2.6): snapshot the active_plugins option before deactivating,
+    // so undo-restore can revert the toggle. Guarded — never blocks deactivation.
+    if (function_exists('wpultra_undo_capture') && function_exists('get_option')) {
+        wpultra_undo_capture('active_plugins', 'active_plugins', get_option('active_plugins', []), 'deactivate-plugin ' . $plugin);
+    }
     deactivate_plugins([$plugin]);
     return ['plugin' => $plugin, 'active' => false];
 }
@@ -118,6 +128,14 @@ function wpultra_system_list_themes(): array {
 /** @return array|WP_Error */
 function wpultra_system_activate_theme(string $stylesheet) {
     if (!wp_get_theme($stylesheet)->exists()) { return wpultra_err('theme_not_found', "Theme '$stylesheet' is not installed."); }
+    // Undo coverage (BF2.6): snapshot the current template/stylesheet options before
+    // switching, so undo-restore can revert the theme change. Guarded — never blocks activation.
+    if (function_exists('wpultra_undo_capture') && function_exists('get_option')) {
+        wpultra_undo_capture('active_theme', 'active_theme', [
+            'template'   => (string) get_option('template', ''),
+            'stylesheet' => (string) get_option('stylesheet', ''),
+        ], 'activate-theme ' . $stylesheet);
+    }
     switch_theme($stylesheet);
     return ['stylesheet' => $stylesheet, 'active' => true];
 }

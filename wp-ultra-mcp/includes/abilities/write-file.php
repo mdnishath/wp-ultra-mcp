@@ -44,6 +44,12 @@ function wpultra_write_file(array $input) {
     if (function_exists('wpultra_sandbox_harden') && wpultra_path_requires_sandbox($resolved)) {
         wpultra_sandbox_harden();
     }
+    // Undo coverage (BF2.6): snapshot the prior file state before writing so
+    // undo-restore can revert this write. Guarded — never blocks the write.
+    if (function_exists('wpultra_undo_capture') && defined('WPULTRA_UNDO_ABSENT')) {
+        $wpultra_undo_before = is_file($resolved) ? @file_get_contents($resolved) : false;
+        wpultra_undo_capture('file', $resolved, $wpultra_undo_before === false ? WPULTRA_UNDO_ABSENT : $wpultra_undo_before, 'write-file');
+    }
     $dir = dirname($resolved);
     if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) { return wpultra_err('mkdir_failed', "Could not create dir: $dir"); }
     if ($append) {

@@ -26,6 +26,17 @@ function wpultra_undo_supported_types(): array {
     return ['option', 'custom_css', 'theme_json', 'term'];
 }
 
+/**
+ * BF2.6 (undo-coverage extension): the original four types plus file edits and
+ * plugin/theme toggles. Kept SEPARATE from wpultra_undo_supported_types() so
+ * that function's existing return value — and any caller/test relying on it
+ * being exactly the original four-type list — is untouched; wpultra_undo_capture()
+ * gates on this superset instead.
+ */
+function wpultra_undo_extended_types(): array {
+    return array_merge(wpultra_undo_supported_types(), ['file', 'active_plugins', 'active_theme']);
+}
+
 /** Pure: next id = (max existing id) + 1. */
 function wpultra_undo_next_id(array $stack): int {
     $max = 0;
@@ -67,6 +78,17 @@ function wpultra_undo_make_entry(int $id, string $type, string $target, $before,
     return ['id' => $id, 'type' => $type, 'target' => $target, 'before' => $before, 'label' => $label, 'created' => $created];
 }
 
+/**
+ * Pure (BF2.6): decide what a 'file' restore should do given the captured
+ * before-value. ABSENT (the file did not exist before the mutation) means the
+ * restore should delete it; any string means rewrite the file to that content.
+ * @param mixed $before
+ */
+function wpultra_undo_file_restore_plan($before): array {
+    if ($before === WPULTRA_UNDO_ABSENT) { return ['op' => 'delete']; }
+    return ['op' => 'rewrite', 'contents' => (string) $before];
+}
+
 /* ------------------------------------------------------------------ *
  * Store (thin WordPress wrappers).
  * ------------------------------------------------------------------ */
@@ -88,7 +110,7 @@ function wpultra_undo_save_stack(array $stack): void {
  */
 function wpultra_undo_capture(string $type, string $target, $before, string $label = ''): int {
     try {
-        if (!in_array($type, wpultra_undo_supported_types(), true)) { return 0; }
+        if (!in_array($type, wpultra_undo_extended_types(), true)) { return 0; }
         if (function_exists('wpultra_category_enabled') && !wpultra_category_enabled('undo')) { return 0; }
         $stack = wpultra_undo_load_stack();
         $id = wpultra_undo_next_id($stack);
@@ -117,6 +139,9 @@ function wpultra_undo_restore(int $id) {
         case 'custom_css': $res = wpultra_undo_restore_custom_css($entry); break;
         case 'theme_json': $res = wpultra_undo_restore_theme_json($entry); break;
         case 'term':       $res = wpultra_undo_restore_term($entry);       break;
+        case 'file':           $res = wpultra_undo_restore_file($entry);           break;
+        case 'active_plugins': $res = wpultra_undo_restore_active_plugins($entry); break;
+        case 'active_theme':   $res = wpultra_undo_restore_active_theme($entry);   break;
         default:           return wpultra_err('unsupported_type', "Cannot restore snapshot type '$type'.");
     }
     if (is_wp_error($res)) { return $res; }
@@ -176,4 +201,75 @@ function wpultra_undo_restore_term(array $entry) {
     ]);
     if (is_wp_error($res)) { return $res; }
     return ['action' => 'reverted', 'term_id' => $term_id];
+}
+
+/* ------------------------------------------------------------------ *
+ * BF2.6 (undo-coverage extension): file edits + plugin/theme toggles.
+ * ------------------------------------------------------------------ */
+
+/**
+ * Restore a captured file snapshot: rewrite it to the prior contents, or
+ * delete it if it did not exist before the mutation (wpultra_undo_file_restore_plan).
+ * Re-validates the target is still inside the plugin's filesystem jail before
+ * touching anything — this reuses the same containment check the fs abilities
+ * apply in wpultra_resolve_path() (wpultra_filesystem_base_dir() +
+ * wpultra_path_is_within_directory()), so a snapshot can never be used to
+ * write/delete outside the allowed base directory even if the stored option
+ * were tampered with.
+ * @return array|WP_Error
+ */
+function wpultra_undo_restore_file(array $entry) {
+    $path = (string) ($entry['target'] ?? '');
+    if ($path === '') { return wpultra_err('bad_snapshot', 'file snapshot has no target path.'); }
+    if (function_exists('wpultra_filesystem_base_dir') && function_exists('wpultra_path_is_within_directory')) {
+        $base = wpultra_filesystem_base_dir();
+        if (!wpultra_path_is_within_directory($path, $base)) {
+            return wpultra_err('path_outside_base', "Refusing to restore a path outside the allowed base directory: $path");
+        }
+    }
+    $before = $entry['before'] ?? WPULTRA_UNDO_ABSENT;
+    $plan = wpultra_undo_file_restore_plan($before);
+    if ($plan['op'] === 'delete') {
+        if (is_file($path) && !@unlink($path)) { return wpultra_err('delete_failed', "Could not delete: $path"); }
+        return ['path' => $path, 'action' => 'deleted'];
+    }
+    $dir = dirname($path);
+    if (!is_dir($dir) && function_exists('wp_mkdir_p')) { wp_mkdir_p($dir); }
+    if (@file_put_contents($path, $plan['contents']) === false) { return wpultra_err('write_failed', "Could not write: $path"); }
+    return ['path' => $path, 'action' => 'reverted'];
+}
+
+/**
+ * Restore the `active_plugins` option DIRECTLY (no activate_plugin()/
+ * deactivate_plugins() calls, so no (de)activation hooks re-fire on undo) —
+ * matches conflict-bisect's own silent plugin-toggle style
+ * (wpultra_bisect_silent_set_active_plugins() in includes/system/bisect.php).
+ * @return array|WP_Error
+ */
+function wpultra_undo_restore_active_plugins(array $entry) {
+    $before = $entry['before'] ?? null;
+    if (!is_array($before)) { return wpultra_err('bad_snapshot', 'active_plugins snapshot is not an array.'); }
+    $plugins = array_values(array_map('strval', $before));
+    if (function_exists('update_option')) { update_option('active_plugins', $plugins); }
+    return ['option' => 'active_plugins', 'action' => 'reverted', 'count' => count($plugins)];
+}
+
+/**
+ * Restore the active theme by writing the `template`/`stylesheet` options
+ * DIRECTLY — same silent, no-hooks style as wpultra_undo_restore_active_plugins()
+ * and conflict-bisect's wpultra_bisect_silent_set_theme(), avoiding a
+ * switch_theme() side effect (widget/menu remapping, `switch_theme` action)
+ * firing purely to undo a prior activate-theme.
+ * @return array|WP_Error
+ */
+function wpultra_undo_restore_active_theme(array $entry) {
+    $before = (array) ($entry['before'] ?? []);
+    $stylesheet = (string) ($before['stylesheet'] ?? '');
+    $template   = (string) ($before['template'] ?? $stylesheet);
+    if ($stylesheet === '') { return wpultra_err('bad_snapshot', 'active_theme snapshot has no stylesheet.'); }
+    if (function_exists('update_option')) {
+        update_option('template', $template);
+        update_option('stylesheet', $stylesheet);
+    }
+    return ['stylesheet' => $stylesheet, 'template' => $template, 'action' => 'reverted'];
 }

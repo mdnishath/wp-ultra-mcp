@@ -46,6 +46,11 @@ function wpultra_edit_file(array $input) {
     if ($count === 0) { return wpultra_err('not_found', 'old_string not found in file.'); }
     if ($count > 1) { return wpultra_err('not_unique', "old_string occurs $count times; make it unique."); }
     $updated = str_replace($old, $new, $content);
+    // Undo coverage (BF2.6): snapshot the prior file contents before writing so
+    // undo-restore can revert this edit. Guarded — never blocks the write.
+    if (function_exists('wpultra_undo_capture')) {
+        wpultra_undo_capture('file', $resolved, $content, 'edit-file');
+    }
     if (file_put_contents($resolved, $updated) === false) { return wpultra_err('write_failed', "Could not write: $resolved"); }
     wpultra_audit_log('edit-file', $resolved, true);
     return wpultra_ok(['path' => $resolved, 'replacements' => 1]);

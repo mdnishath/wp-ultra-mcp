@@ -26,6 +26,8 @@ wp_register_ability('wpultra/execute-wp-query', [
             'row_count'     => ['type' => 'integer'],
             'rows_affected' => ['type' => 'integer'],
             'insert_id'     => ['type' => 'integer'],
+            'undoable'      => ['type' => 'boolean'],
+            'undo_note'     => ['type' => 'string'],
         ],
         'required' => ['success'],
     ],
@@ -56,5 +58,15 @@ function wpultra_execute_wp_query(array $input) {
     }
     $affected = $wpdb->query($prepared);
     wpultra_audit_log('execute-wp-query', $sql, $affected !== false);
-    return wpultra_ok(['verb' => $class['verb'], 'rows_affected' => (int) $affected, 'insert_id' => (int) $wpdb->insert_id]);
+    $result = ['verb' => $class['verb'], 'rows_affected' => (int) $affected, 'insert_id' => (int) $wpdb->insert_id];
+    // Undo coverage (BF2.6): a generic, safe before-snapshot of an arbitrary
+    // destructive statement's affected rows isn't feasible (no reliable way to
+    // build the equivalent SELECT for any DELETE/UPDATE/DDL). Rather than fake a
+    // capture that could produce a wrong restore, be explicit that this change
+    // is not undoable via undo-restore.
+    if ($class['destructive']) {
+        $result['undoable']  = false;
+        $result['undo_note'] = 'Destructive SQL statements are not captured in the undo ring (no safe generic before-snapshot is feasible); this change cannot be reverted via undo-restore.';
+    }
+    return wpultra_ok($result);
 }

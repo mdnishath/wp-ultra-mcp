@@ -151,6 +151,8 @@ function wpultra_ability_files(): array {
         'headless-build-site', 'headless-woo', 'headless-seo', 'headless-deploy', 'graphql-persisted-queries',
         // Bug Fixer core (Wave 37: roadmap-4 BF1)
         'debug-mode', 'conflict-bisect', 'fix-permalinks', 'repair-database', 'php-env-info', 'safe-mode-manage',
+        // Bug Fixer reach (Wave 38: roadmap-4 BF2) — undo-coverage (BF2.6) adds no ability, only engine wiring
+        'auto-recover', 'query-profiler', 'rest-probe', 'js-error-log', 'plugin-checksum-verify',
     ];
 }
 
@@ -160,7 +162,7 @@ function wpultra_ability_category_map(): array {
         'filesystem'     => ['read-file', 'write-file', 'edit-file', 'delete-file', 'list-directory'],
         'code-execution' => ['run-wp-cli', 'execute-php'],
         'database'       => ['execute-wp-query', 'search-replace', 'db-snapshot', 'repair-database'],
-        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry', 'activity-log', 'analytics-report', 'error-reports', 'usage-stats', 'security-harden', 'security-scan', 'health-monitor', 'firewall-manage', 'scheduled-reports', 'debug-mode', 'conflict-bisect', 'fix-permalinks', 'php-env-info', 'safe-mode-manage'],
+        'diagnostics'    => ['read-debug-log', 'self-test', 'site-health', 'security-audit', 'performance-audit', 'render-page', 'list-registry', 'activity-log', 'analytics-report', 'error-reports', 'usage-stats', 'security-harden', 'security-scan', 'health-monitor', 'firewall-manage', 'scheduled-reports', 'debug-mode', 'conflict-bisect', 'fix-permalinks', 'php-env-info', 'safe-mode-manage', 'auto-recover', 'query-profiler', 'rest-probe', 'js-error-log', 'plugin-checksum-verify'],
         'memory'         => ['memory-save', 'memory-get', 'memory-list', 'memory-delete', 'site-brain'],
         'content'        => [
             'create-post', 'update-post', 'delete-post', 'media-upload', 'content-restore',
@@ -360,7 +362,7 @@ function wpultra_load_abilities(): void {
         if (is_readable(WPULTRA_DIR . 'includes/system/dbrepair.php')) { require_once WPULTRA_DIR . 'includes/system/dbrepair.php'; }
     }
     if (!in_array('diagnostics', $disabled, true)) {
-        foreach (['system/audits', 'system/devtools', 'system/siteops', 'system/activity', 'system/analytics', 'system/errors', 'system/usage', 'system/security', 'system/rules', 'system/health', 'system/firewall', 'system/reports', 'system/engine', 'system/debugmode', 'system/bisect', 'system/permalinks', 'system/envinfo', 'sandbox/manage'] as $df) {
+        foreach (['system/audits', 'system/devtools', 'system/siteops', 'system/activity', 'system/analytics', 'system/errors', 'system/usage', 'system/security', 'system/rules', 'system/health', 'system/firewall', 'system/reports', 'system/engine', 'system/debugmode', 'system/bisect', 'system/permalinks', 'system/envinfo', 'sandbox/manage', 'system/autorecover', 'system/queryprofiler', 'system/restprobe', 'system/jserrors', 'system/pluginchecksum'] as $df) {
             $dp = WPULTRA_DIR . 'includes/' . $df . '.php';
             if (is_readable($dp)) { require_once $dp; }
         }
@@ -706,12 +708,14 @@ function wpultra_load_monitors_runtime(): void {
     if (!wpultra_is_enabled()) { return; }
     $disabled = wpultra_disabled_categories();
     if (!in_array('diagnostics', $disabled, true)) {
-        foreach (['system/activity', 'system/errors'] as $mf) {
+        foreach (['system/activity', 'system/errors', 'system/jserrors'] as $mf) {
             $mp = WPULTRA_DIR . 'includes/' . $mf . '.php';
             if (is_readable($mp)) { require_once $mp; }
         }
         if (function_exists('wpultra_activity_boot')) { wpultra_activity_boot(); }
         if (function_exists('wpultra_errors_boot')) { wpultra_errors_boot(); }
+        // js-error-log (BF2.4): enqueue the front-end error beacon snippet + register the beacon route.
+        if (function_exists('wpultra_jserrors_boot')) { wpultra_jserrors_boot(); }
         $sp2 = WPULTRA_DIR . 'includes/system/security.php';
         if (is_readable($sp2)) { require_once $sp2; if (function_exists('wpultra_security_boot')) { wpultra_security_boot(); } }
     }

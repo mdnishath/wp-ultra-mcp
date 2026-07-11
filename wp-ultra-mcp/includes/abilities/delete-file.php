@@ -49,6 +49,17 @@ function wpultra_delete_file(array $input) {
     }
     if (!file_exists($resolved)) { return wpultra_ok(['path' => $resolved, 'deleted' => false]); }
     if (is_dir($resolved)) { return wpultra_err('is_directory', 'Refusing to delete a directory.'); }
+    // Undo coverage (BF2.6): snapshot the prior file contents before deleting so
+    // undo-restore can recreate this file. Guarded — never blocks the delete. If the
+    // content can't be read (e.g. a permission error) we skip the capture rather than
+    // guess: a missing snapshot is safe, a wrong one (mis-recorded as never-existed)
+    // is not.
+    if (function_exists('wpultra_undo_capture')) {
+        $wpultra_undo_before = @file_get_contents($resolved);
+        if ($wpultra_undo_before !== false) {
+            wpultra_undo_capture('file', $resolved, $wpultra_undo_before, 'delete-file');
+        }
+    }
     if (!unlink($resolved)) { return wpultra_err('delete_failed', "Could not delete: $resolved"); }
     wpultra_audit_log('delete-file', $resolved, true);
     return wpultra_ok(['path' => $resolved, 'deleted' => true]);
