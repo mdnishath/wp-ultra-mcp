@@ -153,6 +153,8 @@ function wpultra_ability_files(): array {
         'debug-mode', 'conflict-bisect', 'fix-permalinks', 'repair-database', 'php-env-info', 'safe-mode-manage',
         // Bug Fixer reach (Wave 38: roadmap-4 BF2) — undo-coverage (BF2.6) adds no ability, only engine wiring
         'auto-recover', 'query-profiler', 'rest-probe', 'js-error-log', 'plugin-checksum-verify',
+        // Pixel-Perfect core (Wave 39: roadmap-4 PP1)
+        'elementor-style-variant', 'element-custom-css', 'pixel-diff', 'inspect-element',
     ];
 }
 
@@ -198,7 +200,7 @@ function wpultra_ability_category_map(): array {
         'triggers'       => ['trigger-create', 'trigger-list', 'trigger-delete', 'trigger-log', 'form-forward', 'social-autopost'],
         'newsletter'     => ['newsletter-status', 'newsletter-subscribe'],
         'marketing'      => ['email-campaign', 'ab-test', 'lead-manage', 'popup-campaign', 'affiliate-manage', 'social-scheduler'],
-        'ai'             => ['ai-chatbot', 'agent-run', 'visual-diff', 'nl-analytics', 'design-from-brief'],
+        'ai'             => ['ai-chatbot', 'agent-run', 'visual-diff', 'nl-analytics', 'design-from-brief', 'pixel-diff'],
         'compliance'     => ['gdpr-tools'],
         'verticals'      => ['booking-manage', 'membership-manage', 'lms-manage', 'events-manage', 'directory-manage', 'donations-manage'],
         'headless'       => ['headless-status', 'headless-setup', 'graphql-introspect', 'graphql-query', 'headless-expose', 'headless-rest-bundle', 'headless-scaffold', 'headless-preview', 'headless-auth', 'headless-revalidate', 'headless-build-site', 'headless-woo', 'headless-seo', 'headless-deploy', 'graphql-persisted-queries'],
@@ -215,6 +217,7 @@ function wpultra_ability_category_map(): array {
             'create-atomic-widget', 'list-atomic-widgets', 'delete-atomic-widget',
             'elementor-clone-url',
             'elementor-pro-status', 'elementor-manage-library', 'elementor-manage-popup', 'elementor-form-submissions',
+            'elementor-style-variant', 'element-custom-css', 'inspect-element',
         ],
         'gutenberg' => [
             'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
@@ -305,7 +308,7 @@ function wpultra_load_abilities(): void {
     // Load the Elementor engine (only if the elementor category is enabled) so ability
     // callbacks can reference its functions.
     if (!in_array('elementor', $disabled, true)) {
-        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints', 'widgets', 'clone', 'pro'] as $elf) {
+        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints', 'widgets', 'clone', 'pro', 'variants', 'customcss', 'inspect'] as $elf) {
             $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
             if (is_readable($elp)) { require_once $elp; }
         }
@@ -426,7 +429,7 @@ function wpultra_load_abilities(): void {
         if (is_readable(WPULTRA_DIR . 'includes/ai/setup.php')) { require_once WPULTRA_DIR . 'includes/ai/setup.php'; }
     }
     if (!in_array('ai', $disabled, true)) {
-        foreach (['kb', 'agent', 'visualdiff', 'nlquery', 'designbrief'] as $aif) {
+        foreach (['kb', 'agent', 'visualdiff', 'nlquery', 'designbrief', 'pixeldiff'] as $aif) {
             $aip = WPULTRA_DIR . 'includes/ai/' . $aif . '.php';
             if (is_readable($aip)) { require_once $aip; }
         }
@@ -561,7 +564,7 @@ function wpultra_load_ai_runtime(): void {
         if (is_readable(WPULTRA_DIR . 'includes/ai/setup.php')) { require_once WPULTRA_DIR . 'includes/ai/setup.php'; }
     }
     if (!in_array('ai', $disabled, true)) {
-        foreach (['kb', 'agent', 'visualdiff', 'nlquery', 'designbrief'] as $aif) {
+        foreach (['kb', 'agent', 'visualdiff', 'nlquery', 'designbrief', 'pixeldiff'] as $aif) {
             $aip = WPULTRA_DIR . 'includes/ai/' . $aif . '.php';
             if (is_readable($aip)) { require_once $aip; }
         }
