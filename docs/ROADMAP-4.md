@@ -7,8 +7,8 @@ Roadmaps 1+2+3 complete (286 abilities). This roadmap closes the gaps found in t
 
 ## The thesis
 
-- [ ] **Bug Fixer**: "amar site venge geche" is the #1 client call. One MCP command that finds AND fixes the problem (conflict bisect, permalink fix, DB repair, debug toggle) is directly sellable as a service. All building blocks (render-page probe, error-reports, manage-plugin-theme, wp-config define editor) already exist — only orchestrators are missing.
-- [ ] **Pixel-Perfect**: the design loop (perceive → build → render-check → screenshot → refine) exists, but the plugin cannot control responsive values, hover states, or per-element CSS, and cannot measure a pixel gap. Close those and "pixel-perfect clone" becomes a true claim.
+- [x] **Bug Fixer**: "amar site venge geche" is the #1 client call. One MCP command that finds AND fixes the problem (conflict bisect, permalink fix, DB repair, debug toggle) is directly sellable as a service. All building blocks (render-page probe, error-reports, manage-plugin-theme, wp-config define editor) already exist — only orchestrators are missing.
+- [x] **Pixel-Perfect**: the design loop (perceive → build → render-check → screenshot → refine) exists, but the plugin cannot control responsive values, hover states, or per-element CSS, and cannot measure a pixel gap. Close those and "pixel-perfect clone" becomes a true claim.
 
 **Demand:** 🔥🔥🔥 huge · 🔥🔥 strong · 🔥 solid niche.
 
@@ -42,9 +42,9 @@ Roadmaps 1+2+3 complete (286 abilities). This roadmap closes the gaps found in t
 
 ## 🎨 Wave PP2 — Pixel-Perfect reach (fonts + audit + parity)
 
-- [ ] **PP2.1 · manage-fonts** 🔥🔥 — upload font files → register `@font-face` (Elementor Custom Fonts API when available, else custom-css fallback), list/delete; optional Google-Fonts helper (enqueue or download-and-self-host for GDPR). Fonts are half of pixel-perfect; today only token *names* exist.
-- [ ] **PP2.2 · design-audit** 🔥 — page-wide consistency report: every element's spacing/typography/color settings, hardcoded-value vs token usage %, off-scale spacing values, contrast warnings. The "why does it look almost right?" detector.
-- [ ] **PP2.3 · gutenberg/bricks token parity** 🔥 — `apply-design-tokens` counterparts: Gutenberg (mint into theme.json user layer via existing `theme-json-set` engine) and Bricks (global colors/variables). Elementor-only today.
+- [x] **PP2.1 · manage-fonts** 🔥🔥 — upload font files → register `@font-face` (Elementor Custom Fonts API when available, else custom-css fallback), list/delete; optional Google-Fonts helper (enqueue or download-and-self-host for GDPR). Fonts are half of pixel-perfect; today only token *names* exist.
+- [x] **PP2.2 · design-audit** 🔥 — page-wide consistency report: every element's spacing/typography/color settings, hardcoded-value vs token usage %, off-scale spacing values, contrast warnings. The "why does it look almost right?" detector.
+- [x] **PP2.3 · gutenberg/bricks token parity** 🔥 — `apply-design-tokens` counterparts: Gutenberg (mint into theme.json user layer via existing `theme-json-set` engine) and Bricks (global colors/variables). Elementor-only today.
 
 ---
 

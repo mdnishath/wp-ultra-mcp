@@ -155,6 +155,8 @@ function wpultra_ability_files(): array {
         'auto-recover', 'query-profiler', 'rest-probe', 'js-error-log', 'plugin-checksum-verify',
         // Pixel-Perfect core (Wave 39: roadmap-4 PP1)
         'elementor-style-variant', 'element-custom-css', 'pixel-diff', 'inspect-element',
+        // Pixel-Perfect reach (Wave 40: roadmap-4 PP2)
+        'manage-fonts', 'design-audit', 'gutenberg-apply-design-tokens', 'bricks-apply-design-tokens',
     ];
 }
 
@@ -173,7 +175,7 @@ function wpultra_ability_category_map(): array {
             'media-list', 'media-get', 'media-update', 'media-delete', 'manage-comment',
             'media-generate', 'media-edit-image', 'media-bulk-alt', 'content-calendar',
             'content-plan', 'content-generate', 'optimize-images',
-            'content-freshness', 'feed-import',
+            'content-freshness', 'feed-import', 'manage-fonts',
         ],
         'users'          => ['manage-user', 'list-users', 'roles-manage'],
         'system'         => [
@@ -190,6 +192,7 @@ function wpultra_ability_category_map(): array {
             'bricks-status', 'bricks-list-elements', 'bricks-get-content', 'bricks-set-content',
             'bricks-get-element-schema', 'bricks-validate', 'bricks-add-element', 'bricks-edit-element',
             'bricks-delete-element', 'bricks-move-element', 'bricks-manage-global-class', 'bricks-insert-blueprint',
+            'bricks-apply-design-tokens',
         ],
         'builders'       => ['pagebuilder-status', 'pagebuilder-get-content', 'pagebuilder-set-content', 'pagebuilder-list-elements'],
         'jetengine'      => ['jetengine-status', 'jetengine-manage-cpt', 'jetengine-manage-taxonomy', 'jetengine-manage-meta-box'],
@@ -217,12 +220,13 @@ function wpultra_ability_category_map(): array {
             'create-atomic-widget', 'list-atomic-widgets', 'delete-atomic-widget',
             'elementor-clone-url',
             'elementor-pro-status', 'elementor-manage-library', 'elementor-manage-popup', 'elementor-form-submissions',
-            'elementor-style-variant', 'element-custom-css', 'inspect-element',
+            'elementor-style-variant', 'element-custom-css', 'inspect-element', 'design-audit',
         ],
         'gutenberg' => [
             'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
             'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
+            'gutenberg-apply-design-tokens',
         ],
         'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway', 'woo-export-products', 'woo-import-products', 'woo-manage-subscription', 'woo-manage-booking', 'woo-insights', 'woo-manage-email', 'woo-bulk-edit', 'woo-pricing-rules', 'woo-fulfillment', 'woo-review-engine', 'woo-wishlist', 'woo-loyalty', 'woo-currency'],
         'seo' => ['seo-status', 'seo-get-meta', 'seo-set-meta', 'seo-analyze-page', 'seo-suggest-internal-links', 'seo-insert-internal-link', 'seo-link-audit', 'seo-keyword-research', 'seo-content-gap', 'seo-competitor-analysis', 'seo-optimize-content', 'seo-manage-sitemap', 'seo-manage-robots', 'seo-manage-redirects', 'seo-manage-schema', 'seo-manage-local-business', 'seo-site-audit', 'seo-bulk-set-meta', 'seo-quick-setup', 'seo-indexnow', 'seo-404-log', 'link-fixer', 'seo-autopilot', 'schema-generate', 'link-optimizer'],
@@ -308,7 +312,7 @@ function wpultra_load_abilities(): void {
     // Load the Elementor engine (only if the elementor category is enabled) so ability
     // callbacks can reference its functions.
     if (!in_array('elementor', $disabled, true)) {
-        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints', 'widgets', 'clone', 'pro', 'variants', 'customcss', 'inspect'] as $elf) {
+        foreach (['setup', 'schema', 'tree', 'engine', 'coerce', 'design', 'classes', 'validate', 'blueprints', 'widgets', 'clone', 'pro', 'variants', 'customcss', 'inspect', 'audit'] as $elf) {
             $elp = WPULTRA_DIR . 'includes/elementor/' . $elf . '.php';
             if (is_readable($elp)) { require_once $elp; }
         }
@@ -339,7 +343,7 @@ function wpultra_load_abilities(): void {
     }
     // Power-feature engines (media/users/system) — loaded when their category is enabled.
     if (!in_array('content', $disabled, true)) {
-        foreach (['media/engine', 'media/generate', 'media/editing', 'content/engine', 'content/structure', 'content/comments', 'content/calendar', 'content/pipeline', 'content/freshness', 'content/feed-import'] as $cf) {
+        foreach (['media/engine', 'media/generate', 'media/editing', 'content/engine', 'content/structure', 'content/comments', 'content/calendar', 'content/pipeline', 'content/freshness', 'content/feed-import', 'system/fonts'] as $cf) {
             $cp = WPULTRA_DIR . 'includes/' . $cf . '.php';
             if (is_readable($cp)) { require_once $cp; }
         }
@@ -376,6 +380,12 @@ function wpultra_load_abilities(): void {
     if (!in_array('fse', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/fse/engine.php')) {
         require_once WPULTRA_DIR . 'includes/fse/engine.php';
     }
+    // gutenberg-apply-design-tokens (PP2-C) mints theme.json tokens via the FSE engine;
+    // load its engine when either the gutenberg or fse category is enabled.
+    if ((!in_array('gutenberg', $disabled, true) || !in_array('fse', $disabled, true)) && is_readable(WPULTRA_DIR . 'includes/fse/tokens.php')) {
+        if (is_readable(WPULTRA_DIR . 'includes/fse/engine.php')) { require_once WPULTRA_DIR . 'includes/fse/engine.php'; }
+        require_once WPULTRA_DIR . 'includes/fse/tokens.php';
+    }
     if (!in_array('forms', $disabled, true)) {
         foreach (['setup', 'adapters/cf7', 'adapters/wpforms', 'adapters/gravity', 'adapters/fluent'] as $fmf) {
             $fmp = WPULTRA_DIR . 'includes/forms/' . $fmf . '.php';
@@ -383,7 +393,7 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('bricks', $disabled, true)) {
-        foreach (['engine', 'ops'] as $bf) {
+        foreach (['engine', 'ops', 'tokens'] as $bf) {
             $bp = WPULTRA_DIR . 'includes/bricks/' . $bf . '.php';
             if (is_readable($bp)) { require_once $bp; }
         }
@@ -673,6 +683,9 @@ function wpultra_load_contentreach_runtime(): void {
     if (!in_array('content', $disabled, true)) {
         $fp = WPULTRA_DIR . 'includes/content/feed-import.php';
         if (is_readable($fp)) { require_once $fp; if (function_exists('wpultra_feed_boot')) { try { wpultra_feed_boot(); } catch (\Throwable $e) {} } }
+        // manage-fonts (PP2-A): register the wp_head @font-face style block for custom fonts.
+        $fop = WPULTRA_DIR . 'includes/system/fonts.php';
+        if (is_readable($fop)) { require_once $fop; if (function_exists('wpultra_fonts_boot')) { try { wpultra_fonts_boot(); } catch (\Throwable $e) {} } }
     }
 }
 
