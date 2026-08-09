@@ -795,11 +795,22 @@ function wpultra_load_jobs_runtime(): void {
 }
 
 /**
- * Load the self-updater on admin requests so WP core's Plugins page shows
- * GitHub releases as native plugin updates (update_plugins transient filter).
+ * Load the self-updater so WP core sees GitHub releases as native plugin
+ * updates (update_plugins transient filter).
+ *
+ * Registered on admin AND cron/WP-CLI — not admin alone. Unattended
+ * auto-updates run from wp-cron.php, which never defines WP_ADMIN, so
+ * is_admin() is false there. Gating on admin meant wp_update_plugins() during
+ * cron rebuilt and stored the update_plugins transient WITHOUT our release,
+ * and WP_Automatic_Updater then saw nothing to update — the wp-admin "update
+ * available" notice worked (admin requests do register the read filter) but
+ * true auto-update could never fire. Front-end requests stay excluded: the
+ * read filter runs on every get_site_transient() and would risk a remote call
+ * on a cold cache.
  */
-function wpultra_load_updater_admin(): void {
-    if (!is_admin()) { return; }
+function wpultra_load_updater(): void {
+    $wanted = is_admin() || wp_doing_cron() || (defined('WP_CLI') && WP_CLI);
+    if (!$wanted) { return; }
     $up = WPULTRA_DIR . 'includes/system/updater.php';
     if (is_readable($up)) { require_once $up; }
     if (function_exists('wpultra_updater_inject_transient')) {

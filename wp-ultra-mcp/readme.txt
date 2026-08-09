@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.30.0
+Stable tag: 0.30.1
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,9 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.30.1 =
+* FIX: unattended auto-updates never fired. The updater's `update_plugins` transient filters were registered behind an `is_admin()` gate, but WP-Cron requests are not admin requests (`wp-cron.php` never defines `WP_ADMIN`) — so when cron ran `wp_update_plugins()` it rebuilt and stored the transient WITHOUT the GitHub release, and `WP_Automatic_Updater` saw nothing to update. The wp-admin "update available" notice and one-click update always worked (admin requests do register the read filter), which masked the bug. The updater now also loads on cron and WP-CLI; front-end requests remain excluded so a cold cache can never trigger a remote call on a page view.
 
 = 0.30.0 =
 * FIX: the Connect page's "Copy" buttons silently did nothing on plain-http `.local` dev domains. `navigator.clipboard` is only defined in secure contexts (https, or localhost) — on a non-secure origin it's `undefined`, so calling `.writeText()` threw synchronously *before* the promise chain, meaning `.catch()` never ran and the `execCommand('copy')` fallback never fired. Now guarded so the fallback is used whenever the Clipboard API isn't available.
