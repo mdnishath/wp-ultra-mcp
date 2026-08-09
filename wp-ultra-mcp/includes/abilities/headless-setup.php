@@ -34,7 +34,7 @@ wp_register_ability('wpultra/headless-setup', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => true],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => true],
     ],
 ]);
 
@@ -51,9 +51,7 @@ function wpultra_headless_setup_cb(array $input) {
 }
 
 function wpultra_headless_setup_run(array $input) {
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'headless-setup installs plugins and writes config. Re-run with confirm:true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'headless-setup installs plugins and writes config. Re-run with confirm:true.', 'unconfirmed')) { return $e; }
 
     // Validate origins up-front so a typo aborts before any install.
     $origins = null;

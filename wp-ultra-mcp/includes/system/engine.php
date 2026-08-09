@@ -139,3 +139,51 @@ function wpultra_system_activate_theme(string $stylesheet) {
     switch_theme($stylesheet);
     return ['stylesheet' => $stylesheet, 'active' => true];
 }
+
+/** @return array|WP_Error install a theme from a wp.org slug or a zip URL. */
+function wpultra_system_install_theme(string $source) {
+    wpultra_system_require_upgrader();
+    if (!class_exists('Theme_Upgrader')) { return wpultra_err('upgrader_unavailable', 'Theme_Upgrader unavailable.'); }
+    $package = $source;
+    if (!preg_match('#^https?://#i', $source)) {
+        if (!function_exists('themes_api')) { require_once ABSPATH . 'wp-admin/includes/theme.php'; }
+        $api = themes_api('theme_information', ['slug' => sanitize_key($source), 'fields' => ['sections' => false]]);
+        if (is_wp_error($api)) { return $api; }
+        $package = $api->download_link;
+    }
+    $upgrader = new Theme_Upgrader(new WP_Upgrader_Skin());
+    $ok = $upgrader->install($package);
+    if (is_wp_error($ok)) { return $ok; }
+    if (!$ok) { return wpultra_err('install_failed', 'Theme install failed.'); }
+    $slug = method_exists($upgrader, 'theme_info') && $upgrader->theme_info() ? $upgrader->theme_info()->get_stylesheet() : '';
+    return ['installed' => true, 'stylesheet' => (string) $slug];
+}
+
+/** @return array|WP_Error update an installed theme to its latest version. */
+function wpultra_system_update_theme(string $stylesheet) {
+    wpultra_system_require_upgrader();
+    if (!class_exists('Theme_Upgrader')) { return wpultra_err('upgrader_unavailable', 'Theme_Upgrader unavailable.'); }
+    if (!wp_get_theme($stylesheet)->exists()) { return wpultra_err('theme_not_found', "Theme '$stylesheet' is not installed."); }
+    if (function_exists('wp_update_themes')) { wp_update_themes(); }
+    $upgrader = new Theme_Upgrader(new WP_Upgrader_Skin());
+    $ok = $upgrader->upgrade($stylesheet);
+    if (is_wp_error($ok)) { return $ok; }
+    return ['stylesheet' => $stylesheet, 'updated' => (bool) $ok];
+}
+
+/** @return array|WP_Error delete an installed theme (never the active one). */
+function wpultra_system_delete_theme(string $stylesheet) {
+    if (!wp_get_theme($stylesheet)->exists()) { return wpultra_err('theme_not_found', "Theme '$stylesheet' is not installed."); }
+    $active = function_exists('wp_get_theme') ? wp_get_theme()->get_stylesheet() : '';
+    if ($stylesheet === $active) { return wpultra_err('active_theme', 'Refusing to delete the active theme. Activate another theme first.'); }
+    // Also refuse the parent of the active theme (deleting it breaks the child).
+    if (function_exists('wp_get_theme') && wp_get_theme()->get_template() === $stylesheet) {
+        return wpultra_err('active_parent', 'Refusing to delete the parent of the active theme.');
+    }
+    if (!function_exists('delete_theme')) { require_once ABSPATH . 'wp-admin/includes/theme.php'; }
+    wpultra_system_require_upgrader(); // pulls in the filesystem API
+    $res = delete_theme($stylesheet);
+    if (is_wp_error($res)) { return $res; }
+    if (!$res) { return wpultra_err('delete_failed', "Could not delete theme '$stylesheet'."); }
+    return ['stylesheet' => $stylesheet, 'deleted' => true];
+}

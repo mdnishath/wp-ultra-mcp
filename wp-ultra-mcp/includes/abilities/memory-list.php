@@ -10,9 +10,9 @@ wp_register_ability('wpultra/memory-list', [
     'category'    => 'memory',
     'input_schema'  => [
         'type'       => 'object',
-        'properties' => [
+        'properties' => array_merge([
             'type' => ['type' => 'string', 'enum' => ['user', 'feedback', 'project', 'reference']],
-        ],
+        ], wpultra_pagination_schema()),
         'additionalProperties' => false,
     ],
     'output_schema' => [
@@ -20,6 +20,8 @@ wp_register_ability('wpultra/memory-list', [
         'properties' => [
             'success'  => ['type' => 'boolean'],
             'memories' => ['type' => 'array'],
+            'total'    => ['type' => 'integer'],
+            'returned' => ['type' => 'integer'],
         ],
         'required' => ['success'],
     ],
@@ -42,5 +44,8 @@ function wpultra_memory_list(array $input) {
         if ($filter !== '' && $shaped['type'] !== $filter) { continue; }
         $out[] = $shaped;
     }
-    return wpultra_ok(['memories' => $out]);
+    // Optional paging; default page size = the 500 fetch cap, so callers that
+    // pass nothing get exactly the previous result.
+    [$page, $meta] = wpultra_paginate($out, $input, 500);
+    return wpultra_ok(['memories' => $page, 'total' => $meta['total'], 'returned' => $meta['returned']]);
 }

@@ -7,6 +7,10 @@ if (!defined('ABSPATH')) { exit(); }
 if (!function_exists('wpultra_lms_grade_quiz') && defined('WPULTRA_DIR') && is_readable(WPULTRA_DIR . 'includes/verticals/lms.php')) {
     require_once WPULTRA_DIR . 'includes/verticals/lms.php';
 }
+// Third-party LMS drivers (LearnDash / LifterLMS / Tutor) — same defensive load.
+if (!function_exists('wpultra_lmsx_driver') && defined('WPULTRA_DIR') && is_readable(WPULTRA_DIR . 'includes/verticals/lms-adapters.php')) {
+    require_once WPULTRA_DIR . 'includes/verticals/lms-adapters.php';
+}
 
 wp_register_ability('wpultra/lms-manage', [
     'label'       => __('LMS: Courses, Lessons, Quizzes, Certificates', 'wp-ultra-mcp'),
@@ -23,6 +27,8 @@ wp_register_ability('wpultra/lms-manage', [
         . 'mark-complete {user_id, lesson_id} — mark a (non-quiz) lesson read/done; '
         . 'progress {user_id, course_id} — the full rollup {lessons_total, lessons_done, pct, complete, next_lesson_id, quiz_scores}; '
         . 'certificate {user_id, course_id} — issue + return the certificate HTML (ONLY when the course is complete, else an error). '
+        . 'THIRD-PARTY LMS ADAPTERS: detect-plugins {} — which of LearnDash / LifterLMS / Tutor LMS are installed. '
+        . 'Passing plugin (learndash|lifterlms|tutor) redirects list-courses, get-course, enroll, and progress to that plugin via its own API instead of the built-in CPT LMS — e.g. {action:"list-courses", plugin:"lifterlms"} or {action:"enroll", plugin:"tutor", user_id:5, course_id:99}. Omit plugin (or pass "builtin") for the built-in LMS. '
         . 'ACCESS MODELS: sequential=true locks a lesson until the lesson before it (in course order) is completed — the first lesson is always open; sequential=false allows free navigation to any lesson. '
         . 'COMPLETION: a course is complete when EVERY lesson is completed AND every quiz-bearing lesson is passed (recorded score pct >= course pass_pct). '
         . 'Examples: {action:"manage-course", name:"Plumbing 101", pass_pct:80} · '
@@ -37,8 +43,9 @@ wp_register_ability('wpultra/lms-manage', [
         'properties' => [
             'action' => [
                 'type' => 'string',
-                'enum' => ['manage-course', 'manage-lesson', 'list-courses', 'get-course', 'enroll', 'submit-quiz', 'mark-complete', 'progress', 'certificate'],
+                'enum' => ['manage-course', 'manage-lesson', 'list-courses', 'get-course', 'enroll', 'submit-quiz', 'mark-complete', 'progress', 'certificate', 'detect-plugins'],
             ],
+            'plugin' => ['type' => 'string', 'enum' => ['builtin', 'learndash', 'lifterlms', 'tutor']],
             'id'                  => ['type' => 'integer'],
             'course_id'           => ['type' => 'integer'],
             'lesson_id'           => ['type' => 'integer'],
@@ -107,6 +114,38 @@ function wpultra_lms_manage_ability(array $input) {
     }
 
     $action = (string) ($input['action'] ?? '');
+    $plugin = (string) ($input['plugin'] ?? '');
+    if ($plugin === 'builtin') { $plugin = ''; }
+
+    // Third-party dispatch (LearnDash / LifterLMS / Tutor) for the read/enroll
+    // surface. All other actions stay on the built-in CPT LMS.
+    if ($action === 'detect-plugins') {
+        if (!function_exists('wpultra_lmsx_status')) { return wpultra_err('lms_engine_missing', 'The LMS adapter engine (includes/verticals/lms-adapters.php) is not loaded.'); }
+        return wpultra_ok(['plugins' => wpultra_lmsx_status()]);
+    }
+    if ($plugin !== '') {
+        if (!function_exists('wpultra_lmsx_driver')) { return wpultra_err('lms_engine_missing', 'The LMS adapter engine (includes/verticals/lms-adapters.php) is not loaded.'); }
+        $driver = wpultra_lmsx_driver($plugin);
+        if (is_wp_error($driver)) { return $driver; }
+        switch ($action) {
+            case 'list-courses':
+                $res = wpultra_lmsx_list_courses($driver, max(1, min(500, (int) ($input['limit'] ?? 100))));
+                return is_wp_error($res) ? $res : wpultra_ok(['courses' => $res]);
+            case 'get-course':
+                $res = wpultra_lmsx_get_course($driver, (int) ($input['course_id'] ?? ($input['id'] ?? 0)));
+                return is_wp_error($res) ? $res : wpultra_ok($res);
+            case 'enroll':
+                $res = wpultra_lmsx_enroll($driver, (int) ($input['user_id'] ?? 0), (int) ($input['course_id'] ?? 0));
+                if (is_wp_error($res)) { wpultra_audit_log('lms-manage', "enroll ($driver) failed: " . $res->get_error_message(), false); return $res; }
+                wpultra_audit_log('lms-manage', "enroll ($driver) user #{$res['user_id']} course #{$res['course_id']}", true);
+                return wpultra_ok($res);
+            case 'progress':
+                $res = wpultra_lmsx_progress($driver, (int) ($input['user_id'] ?? 0), (int) ($input['course_id'] ?? 0));
+                return is_wp_error($res) ? $res : wpultra_ok(['progress' => $res]);
+            default:
+                return wpultra_err('unsupported_action', "Action '$action' is builtin-only. Third-party LMS plugins support: list-courses, get-course, enroll, progress (course/lesson authoring stays in each plugin's own UI).");
+        }
+    }
 
     switch ($action) {
         case 'manage-course':
@@ -159,7 +198,7 @@ function wpultra_lms_manage_ability(array $input) {
             return wpultra_ok(['cert' => $res['cert'], 'html' => $res['html']]);
 
         default:
-            return wpultra_err('unknown_action', "Unknown action '$action'. Known: manage-course, manage-lesson, list-courses, get-course, enroll, submit-quiz, mark-complete, progress, certificate.");
+            return wpultra_err('unknown_action', "Unknown action '$action'. Known: manage-course, manage-lesson, list-courses, get-course, enroll, submit-quiz, mark-complete, progress, certificate, detect-plugins.");
     }
 }
 

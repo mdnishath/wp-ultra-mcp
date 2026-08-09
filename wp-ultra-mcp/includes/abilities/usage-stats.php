@@ -56,6 +56,7 @@ function wpultra_usage_stats_execute(array $input) {
     if (!in_array($sort, ['calls', 'fails', 'fail_rate'], true)) { $sort = 'calls'; }
     $limit = isset($input['limit']) ? max(1, min(100, (int) $input['limit'])) : null;
 
+    if (function_exists('wpultra_audit_flush')) { wpultra_audit_flush(); } // include same-request buffered tallies
     $raw = function_exists('get_option') ? get_option('wpultra_ability_stats', []) : [];
     if (!is_array($raw)) { $raw = []; }
 

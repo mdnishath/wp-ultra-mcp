@@ -161,9 +161,7 @@ function wpultra_woo_fulfillment_cb(array $input) {
     // ---- notify ---------------------------------------------------------
     if ($action === 'notify') {
         if ($order_id < 1) { return wpultra_err('missing_order_id', 'order_id is required.'); }
-        if (($input['confirm'] ?? false) !== true) {
-            return wpultra_err('notify_unconfirmed', 'notify emails a real customer. Re-run with confirm:true.');
-        }
+        if ($e = wpultra_require_confirm($input, 'notify emails a real customer. Re-run with confirm:true.', 'notify_unconfirmed')) { return $e; }
         $res = wpultra_fulfill_send_notification($order_id);
         if (is_wp_error($res)) {
             wpultra_audit_log('woo-fulfillment', "notify #$order_id failed: " . $res->get_error_message(), false);
@@ -198,9 +196,7 @@ function wpultra_woo_fulfillment_cb(array $input) {
         if (count($ids) > 100) { return wpultra_err('too_many_orders', 'bulk-status is capped at 100 orders per call.'); }
         $status = trim((string) ($input['status'] ?? ''));
         if ($status === '') { return wpultra_err('missing_status', 'status is required.'); }
-        if (($input['confirm'] ?? false) !== true) {
-            return wpultra_err('bulk_status_unconfirmed', 'bulk-status changes many live orders. Re-run with confirm:true.');
-        }
+        if ($e = wpultra_require_confirm($input, 'bulk-status changes many live orders. Re-run with confirm:true.', 'bulk_status_unconfirmed')) { return $e; }
         $force = ($input['force'] ?? false) === true;
 
         $results = [];

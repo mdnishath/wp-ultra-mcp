@@ -18,9 +18,12 @@ add_action('admin_post_wpultra_save_recipe', function () {
     }
 
     $parsed = wpultra_recipe_parse($raw);
-    $err = is_wp_error($parsed)
-        ? $parsed
-        : (wpultra_recipe_validate($parsed) === true ? null : wpultra_recipe_validate($parsed));
+    if (is_wp_error($parsed)) {
+        $err = $parsed;
+    } else {
+        $valid = wpultra_recipe_validate($parsed);
+        $err = $valid === true ? null : $valid;
+    }
 
     if ($err) {
         set_transient('wpultra_recipe_err_' . get_current_user_id(), $err->get_error_message(), 60);
@@ -86,9 +89,12 @@ function wpultra_ability_hub_render(): void {
         }
     }
 
+    // Must satisfy wpultra_recipe_validate(): kebab-case name, and for run:php
+    // the code lives as a "code" string INSIDE the ```json block (the parser
+    // only reads ```json fences — a ```php fence would be discarded).
     $example = <<<'RECIPE'
 ---
-name: Hello World
+name: hello-world
 description: Returns a greeting for the given name.
 category: custom
 run: php
@@ -97,12 +103,9 @@ run: php
 {
   "input": {
     "name": { "type": "string", "required": true, "description": "The name to greet." }
-  }
+  },
+  "code": "$name = $input['name'] ?? 'world';\nreturn ['greeting' => 'Hello, ' . $name . '!'];"
 }
-```
-```php
-$name = $input['name'] ?? 'world';
-return ['greeting' => 'Hello, ' . $name . '!'];
 ```
 RECIPE;
 
@@ -211,81 +214,6 @@ RECIPE;
         <span id="wpu-toast" class="wpu-toast">Saved</span>
     </div>
 
-    <style>
-        .wpu-wrap { max-width: 920px; }
-        .wpu-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:8px 0 20px; flex-wrap:wrap; }
-        .wpu-title { display:flex; align-items:center; gap:10px; font-size:23px; margin:0; }
-        .wpu-title .dashicons { color:#6d4afe; font-size:26px; width:26px; height:26px; }
-        .wpu-sub { margin:6px 0 0; color:#646970; font-size:13px; }
-        .wpu-pill { background:#fff; border:1px solid #e2e4e9; border-radius:999px; padding:7px 16px; font-size:13px; color:#50575e; box-shadow:0 1px 2px rgba(0,0,0,.04); }
-        .wpu-pill-on strong { color:#1a9d5a; }
-
-        .wpu-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; margin:0 0 18px; overflow:hidden;
-            box-shadow:0 6px 20px rgba(18,20,40,.06), 0 1px 3px rgba(18,20,40,.05); }
-        .wpu-pad { padding:18px 22px; }
-        .wpu-step { display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; color:#1d2327; margin:0 0 14px; }
-        .wpu-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
-            background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; font-size:13px; flex:0 0 auto; }
-        .wpu-muted { color:#787c82; font-size:12.5px; }
-
-        /* Notice banners */
-        .wpu-notice { border-left:4px solid #6d4afe; background:#fafafa; border-radius:0 8px 8px 0; padding:10px 14px; margin:0 0 14px; }
-        .wpu-notice.notice-success { border-color:#1a9d5a; background:#f0faf5; }
-        .wpu-notice.notice-error   { border-color:#b3261e; background:#fff5f5; }
-        .wpu-notice.notice-info    { border-color:#0072b1; background:#f0f7ff; }
-        .wpu-notice p { margin:0; font-size:13px; }
-
-        /* Recipe textarea */
-        .wpu-recipe-ta {
-            display:block; width:100%; min-height:260px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-            font-size:12.5px; line-height:1.6; border:1px solid #d3d5db; border-radius:10px;
-            padding:14px; resize:vertical; box-sizing:border-box; color:#1d2327; background:#fafbff;
-            box-shadow:inset 0 1px 3px rgba(0,0,0,.06); transition:border-color .15s;
-        }
-        .wpu-recipe-ta:focus { border-color:#6d4afe; outline:none; background:#fff; }
-
-        .wpu-hub-row { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:12px; flex-wrap:wrap; }
-
-        .wpu-file-label { display:inline-flex; align-items:center; gap:7px; cursor:pointer;
-            background:#f3f3f7; border:1px solid #e2e4e9; border-radius:10px; padding:8px 14px;
-            font-size:13px; color:#50575e; transition:background .15s; }
-        .wpu-file-label:hover { background:#ecebff; border-color:#a89cff; }
-        .wpu-file-label .dashicons { color:#6d4afe; }
-
-        /* Ability list */
-        .wpu-ability-list { display:flex; flex-direction:column; gap:0; }
-        .wpu-ability-row { display:flex; align-items:center; justify-content:space-between; gap:16px;
-            padding:14px 4px; border-bottom:1px solid #f1f2f5; transition:background .15s ease; }
-        .wpu-ability-row:last-child { border-bottom:0; }
-        .wpu-ability-row:hover { background:#fafaff; }
-        .wpu-info { flex:1; min-width:0; }
-        .wpu-row-title { font-weight:600; color:#1d2327; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .wpu-slug { background:#f0f0f4; color:#6d4afe; border-radius:6px; padding:2px 8px; font-size:11px; }
-        .wpu-desc { color:#787c82; font-size:12.5px; margin-top:3px; }
-
-        /* Badges */
-        .wpu-cat-badge { background:#eef2ff; color:#4338ca; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600; }
-        .wpu-run-badge { border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
-        .wpu-run-php    { background:#f3e8ff; color:#7c3aed; }
-        .wpu-run-wp-cli { background:#e0f2fe; color:#0369a1; }
-        .wpu-run-http   { background:#fef9c3; color:#854d0e; }
-
-        /* Actions */
-        .wpu-ability-actions { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
-        .button-link-delete { color:#b3261e !important; background:transparent; border:none; cursor:pointer; font-size:13px; padding:4px 8px; }
-        .button-link-delete:hover { color:#7f1d1d !important; }
-
-        /* Empty state */
-        .wpu-empty { text-align:center; padding:32px 20px; color:#787c82; }
-        .wpu-empty-icon { font-size:36px; width:36px; height:36px; color:#c5beff; display:block; margin:0 auto 10px; }
-        .wpu-empty p { font-size:13.5px; }
-
-        /* Toast */
-        .wpu-toast { position:fixed; right:28px; bottom:28px; background:#1d2327; color:#fff; padding:11px 18px;
-            border-radius:10px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0; transform:translateY(10px);
-            pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:9999; }
-        .wpu-toast.show { opacity:1; transform:translateY(0); }
-    </style>
 
     <script>
     (function () {
@@ -298,20 +226,10 @@ RECIPE;
             });
         }
 
-        // Auto-dismiss toast for saved/deleted notices.
-        var toast = document.getElementById('wpu-toast');
-        var tt;
-        function showToast(m) {
-            if (!toast) return;
-            toast.textContent = m;
-            toast.classList.add('show');
-            clearTimeout(tt);
-            tt = setTimeout(function () { toast.classList.remove('show'); }, 2200);
-        }
         <?php if ($has_saved) : ?>
-        showToast('Ability saved!');
+        wpuToast('Ability saved!');
         <?php elseif ($has_deleted) : ?>
-        showToast('Ability deleted.');
+        wpuToast('Ability deleted.');
         <?php endif; ?>
     })();
     </script>

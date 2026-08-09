@@ -142,9 +142,7 @@ function wpultra_agent_run_cb(array $input) {
         }
 
         case 'run': {
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('agent_unconfirmed', 'Running an agent executes real abilities that may mutate the site. Re-run with confirm:true (use action:"plan-only" first to preview).');
-            }
+            if ($e = wpultra_require_confirm($input, 'Running an agent executes real abilities that may mutate the site. Re-run with confirm:true (use action:"plan-only" first to preview).', 'agent_unconfirmed')) { return $e; }
             $plan = wpultra_agent_resolve_plan($input);
             if (is_wp_error($plan)) { return $plan; }
             if (count($plan) > WPULTRA_AGENT_SYNC_CAP) {
@@ -174,9 +172,7 @@ function wpultra_agent_run_cb(array $input) {
         }
 
         case 'run-async': {
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('agent_unconfirmed', 'Running an agent executes real abilities that may mutate the site. Re-run with confirm:true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Running an agent executes real abilities that may mutate the site. Re-run with confirm:true.', 'agent_unconfirmed')) { return $e; }
             $plan = wpultra_agent_resolve_plan($input);
             if (is_wp_error($plan)) { return $plan; }
 

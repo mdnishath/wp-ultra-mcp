@@ -30,13 +30,7 @@ wp_register_ability('wpultra/multisite-manage', [
         ],
         'additionalProperties' => false,
     ],
-    'output_schema' => [
-        'type'       => 'object',
-        'properties' => [
-            'success' => ['type' => 'boolean'],
-        ],
-        'required' => ['success'],
-    ],
+    'output_schema' => wpultra_manager_output_schema(['action' => ['type' => 'string']]),
     'execute_callback'    => 'wpultra_multisite_manage',
     'permission_callback' => 'wpultra_multisite_manage_permission',
     'meta' => [

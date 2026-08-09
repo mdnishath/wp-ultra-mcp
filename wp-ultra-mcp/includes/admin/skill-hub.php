@@ -348,91 +348,10 @@ SKILL;
     </div>
 
     <style>
-        .wpu-wrap { max-width: 920px; }
-        .wpu-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:8px 0 20px; flex-wrap:wrap; }
-        .wpu-title { display:flex; align-items:center; gap:10px; font-size:23px; margin:0; }
-        .wpu-title .dashicons { color:#6d4afe; font-size:26px; width:26px; height:26px; }
-        .wpu-sub { margin:6px 0 0; color:#646970; font-size:13px; }
-        .wpu-counter { display:flex; gap:8px; }
-        .wpu-pill { background:#fff; border:1px solid #e2e4e9; border-radius:999px; padding:7px 16px; font-size:13px; color:#50575e; box-shadow:0 1px 2px rgba(0,0,0,.04); }
-        .wpu-pill-on strong { color:#1a9d5a; }
-
-        .wpu-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; margin:0 0 18px; overflow:hidden;
-            box-shadow:0 6px 20px rgba(18,20,40,.06), 0 1px 3px rgba(18,20,40,.05); }
-        .wpu-pad { padding:18px 22px; }
-        .wpu-step { display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; color:#1d2327; margin:0 0 14px; }
-        .wpu-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
-            background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; font-size:13px; flex:0 0 auto; }
-        .wpu-muted { color:#787c82; font-size:12.5px; }
-
-        /* Notice banners */
-        .wpu-notice { border-left:4px solid #6d4afe; background:#fafafa; border-radius:0 8px 8px 0; padding:10px 14px; margin:0 0 14px; }
-        .wpu-notice.notice-success { border-color:#1a9d5a; background:#f0faf5; }
-        .wpu-notice.notice-error   { border-color:#b3261e; background:#fff5f5; }
-        .wpu-notice.notice-info    { border-color:#0072b1; background:#f0f7ff; }
-        .wpu-notice p { margin:0; font-size:13px; }
-
-        /* Skill textarea */
-        .wpu-skill-ta {
-            display:block; width:100%; min-height:240px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-            font-size:12.5px; line-height:1.6; border:1px solid #d3d5db; border-radius:10px;
-            padding:14px; resize:vertical; box-sizing:border-box; color:#1d2327; background:#fafbff;
-            box-shadow:inset 0 1px 3px rgba(0,0,0,.06); transition:border-color .15s;
-        }
-        .wpu-skill-ta:focus { border-color:#6d4afe; outline:none; background:#fff; }
-
-        .wpu-hub-row { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:12px; flex-wrap:wrap; }
-
-        .wpu-file-label { display:inline-flex; align-items:center; gap:7px; cursor:pointer;
-            background:#f3f3f7; border:1px solid #e2e4e9; border-radius:10px; padding:8px 14px;
-            font-size:13px; color:#50575e; transition:background .15s; }
-        .wpu-file-label:hover { background:#ecebff; border-color:#a89cff; }
-        .wpu-file-label .dashicons { color:#6d4afe; }
-
-        /* Built-in badge */
-        .wpu-badge-builtin { background:#fef3c7; color:#92400e; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600; }
-
-        /* Skill list rows */
-        .wpu-skill-list { display:flex; flex-direction:column; gap:0; }
-        .wpu-skill-row { display:flex; align-items:center; justify-content:space-between; gap:16px;
-            padding:14px 4px; border-bottom:1px solid #f1f2f5; transition:background .15s ease; flex-wrap:wrap; }
-        .wpu-skill-row:last-child { border-bottom:0; }
-        .wpu-skill-row:hover { background:#fafaff; }
-        .wpu-info { flex:1; min-width:0; }
-        .wpu-row-title { font-weight:600; color:#1d2327; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .wpu-slug { background:#f0f0f4; color:#6d4afe; border-radius:6px; padding:2px 8px; font-size:11px; }
-        .wpu-desc { color:#787c82; font-size:12.5px; margin-top:3px; }
-
-        /* Toggles */
-        .wpu-toggles { display:flex; align-items:center; gap:6px; margin-top:10px; flex-wrap:wrap; }
-        .wpu-toggle-label { font-size:12px; color:#50575e; }
-        .wpu-switch { position:relative; display:inline-block; flex:0 0 auto; cursor:pointer; }
-        .wpu-switch input { position:absolute; opacity:0; width:0; height:0; }
-        .wpu-track { display:block; width:40px; height:22px; border-radius:999px; background:#cfd2da;
-            transition:background .25s ease; box-shadow:inset 0 1px 3px rgba(0,0,0,.18); }
-        .wpu-knob { position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff;
-            box-shadow:0 2px 5px rgba(0,0,0,.28); transition:transform .25s cubic-bezier(.4,.0,.2,1); }
-        .wpu-switch input:checked + .wpu-track { background:linear-gradient(135deg,#7b5cff,#5b34f2); }
-        .wpu-switch input:checked + .wpu-track .wpu-knob { transform:translateX(18px); }
-        .wpu-switch input:focus-visible + .wpu-track { outline:2px solid #5b34f2; outline-offset:2px; }
-        .wpu-switch.wpu-saving .wpu-track { opacity:.6; }
-
-        /* Actions */
-        .wpu-skill-actions { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
-        .button-link-delete { color:#b3261e !important; background:transparent; border:none; cursor:pointer; font-size:13px; padding:4px 8px; }
-        .button-link-delete:hover { color:#7f1d1d !important; }
-
-        /* Empty state */
-        .wpu-empty { text-align:center; padding:32px 20px; color:#787c82; }
-        .wpu-empty-icon { font-size:36px; width:36px; height:36px; color:#c5beff; display:block; margin:0 auto 10px; }
-        .wpu-empty p { font-size:13.5px; }
-
-        /* Toast */
-        .wpu-toast { position:fixed; right:28px; bottom:28px; background:#1d2327; color:#fff; padding:11px 18px;
-            border-radius:10px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0; transform:translateY(10px);
-            pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:9999; }
-        .wpu-toast.show { opacity:1; transform:translateY(0); }
-        .wpu-toast.err { background:#b3261e; }
+        /* Page-specific: compact switch variant for the per-skill flag toggles. */
+        .wpu-toggles .wpu-track { width: 40px; height: 22px; }
+        .wpu-toggles .wpu-knob { width: 18px; height: 18px; top: 2px; left: 2px; }
+        .wpu-toggles .wpu-switch input:checked + .wpu-track .wpu-knob { transform: translateX(18px); }
     </style>
 
     <script>
@@ -448,23 +367,12 @@ SKILL;
 
         var ajaxurl = window.ajaxurl || '<?php echo esc_js($ajax_url); ?>';
         var nonce   = '<?php echo esc_js($toggle_nonce); ?>';
-        var toast   = document.getElementById('wpu-toast');
-        var toastTimer;
-
-        function showToast(msg, isErr) {
-            if (!toast) return;
-            toast.textContent = msg;
-            toast.classList.toggle('err', !!isErr);
-            toast.classList.add('show');
-            clearTimeout(toastTimer);
-            toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1800);
-        }
 
         // Auto-dismiss page-load toasts.
         <?php if ($has_saved) : ?>
-        showToast('Skill saved!', false);
+        wpuToast('Skill saved!', false);
         <?php elseif ($has_deleted) : ?>
-        showToast('Skill deleted.', false);
+        wpuToast('Skill deleted.', false);
         <?php endif; ?>
 
         // AJAX toggles for user skill Prompt / Agentic flags.
@@ -496,16 +404,16 @@ SKILL;
                         sw.title = input.checked
                             ? (flag === 'prompt' ? 'Prompt enabled' : 'Agentic enabled')
                             : (flag === 'prompt' ? 'Prompt disabled' : 'Agentic disabled');
-                        showToast(flag + (input.checked ? ' enabled' : ' disabled'), false);
+                        wpuToast(flag + (input.checked ? ' enabled' : ' disabled'), false);
                     } else {
                         input.checked = !input.checked; // revert
-                        showToast('Could not save — try again', true);
+                        wpuToast('Could not save — try again', true);
                     }
                 })
                 .catch(function () {
                     sw.classList.remove('wpu-saving');
                     input.checked = !input.checked; // revert
-                    showToast('Network error — not saved', true);
+                    wpuToast('Network error — not saved', true);
                 });
             });
         });

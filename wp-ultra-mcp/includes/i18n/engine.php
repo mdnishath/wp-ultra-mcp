@@ -316,6 +316,13 @@ function wpultra_i18n_copy_meta(int $post_id, int $new_id): void {
 function wpultra_i18n_duplicate_to_language(int $post_id, string $target_lang, bool $overwrite) {
     $plugin = wpultra_i18n_active_plugin();
     if ($plugin === '') {
+        // TRP/Weglot translate IN PLACE (no duplicate posts) — point at the right tool.
+        if (function_exists('wpultra_i18n_trp_active') && wpultra_i18n_trp_active()) {
+            return wpultra_err('multilingual_unsupported_model', 'TranslatePress translates pages in place — it has no duplicate-post model, so duplicate-to-language does not apply. Use translation-set-content with trp_strings to write dictionary translations instead.');
+        }
+        if (function_exists('wpultra_i18n_weglot_active') && wpultra_i18n_weglot_active()) {
+            return wpultra_err('multilingual_unsupported_model', 'Weglot translates pages in place via its cloud API — it has no duplicate-post model, so duplicate-to-language does not apply. Manage translations in the Weglot dashboard.');
+        }
         return wpultra_err('multilingual_unavailable', 'No multilingual plugin (WPML or Polylang) is active. Install/activate one first.');
     }
 

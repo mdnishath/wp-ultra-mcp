@@ -36,7 +36,7 @@ wp_register_ability('wpultra/graphql-persisted-queries', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => true],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => true],
     ],
 ]);
 
@@ -67,9 +67,7 @@ function wpultra_graphql_pq_cb(array $input) {
     }
 
     if ($action === 'lock') {
-        if (($input['confirm'] ?? false) !== true) {
-            return wpultra_err('unconfirmed', 'lock refuses EVERY query that is not an allowlisted persisted document — the frontend must only use queryIds. Re-run with confirm:true.');
-        }
+        if ($e = wpultra_require_confirm($input, 'lock refuses EVERY query that is not an allowlisted persisted document — the frontend must only use queryIds. Re-run with confirm:true.', 'unconfirmed')) { return $e; }
         wpultra_headless_pq_set_lock(true);
         return wpultra_ok(['lock' => wpultra_headless_pq_lock_state(), 'note' => 'Locked: only grant:allow documents execute now.']);
     }

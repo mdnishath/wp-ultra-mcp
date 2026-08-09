@@ -15,13 +15,7 @@ wp_register_ability('wpultra/bricks-get-content', [
         'required'             => ['post_id'],
         'additionalProperties' => false,
     ],
-    'output_schema' => [
-        'type'       => 'object',
-        'properties' => [
-            'success' => ['type' => 'boolean'],
-        ],
-        'required' => ['success'],
-    ],
+    'output_schema' => wpultra_manager_output_schema(['post_id' => ['type' => 'integer']]),
     'execute_callback'    => 'wpultra_bricks_get_content',
     'permission_callback' => 'wpultra_permission_callback',
     'meta' => [

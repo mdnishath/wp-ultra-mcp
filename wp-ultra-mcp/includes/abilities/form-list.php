@@ -8,9 +8,9 @@ wp_register_ability('wpultra/form-list', [
     'category'    => 'forms',
     'input_schema'  => [
         'type'       => 'object',
-        'properties' => [
-            'plugin' => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent']],
-        ],
+        'properties' => array_merge([
+            'plugin' => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent', 'ninja']],
+        ], wpultra_pagination_schema()),
         'additionalProperties' => false,
     ],
     'output_schema' => [
@@ -40,5 +40,6 @@ function wpultra_form_list(array $input) {
         $fn = "wpultra_forms_{$key}_list";
         if (function_exists($fn)) { $forms = array_merge($forms, (array) $fn()); }
     }
-    return wpultra_ok(['forms' => $forms]);
+    [$page, $meta] = wpultra_paginate($forms, $input, 500);
+    return wpultra_ok(['forms' => $page, 'total' => $meta['total'], 'returned' => $meta['returned']]);
 }

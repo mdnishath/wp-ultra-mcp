@@ -34,7 +34,7 @@ wp_register_ability('wpultra/optimize-cache', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => true],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => true],
     ],
 ]);
 
@@ -46,9 +46,7 @@ function wpultra_optimize_cache_cb(array $input) {
         return wpultra_ok(['action' => 'status', 'status' => wpultra_optimize_cache_status()]);
     }
 
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'Cache configure writes .htaccess rules and toggles options. Re-run with confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Cache configure writes .htaccess rules and toggles options. Re-run with confirm: true.', 'unconfirmed')) { return $e; }
 
     $enable = $action === 'enable';
     $result = wpultra_optimize_cache_configure($enable, [

@@ -4,3 +4,5 @@ dist/
 *.log
 .superpowers/
 *.zip
+docs/*.xlsx
+.claude/settings.local.json

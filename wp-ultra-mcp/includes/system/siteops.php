@@ -572,10 +572,18 @@ function wpultra_siteops_split_sql(string $dump): array {
 
 function wpultra_siteops_snapshot_dir(): string {
     $base = defined('WP_CONTENT_DIR') ? WP_CONTENT_DIR : (rtrim(ABSPATH, '/\\') . '/wp-content');
-    return rtrim($base, '/\\') . '/uploads/wpultra-snapshots';
+    $dir  = rtrim($base, '/\\') . '/uploads/wpultra-snapshots';
+    // Suffix a per-site random token: DB dumps contain wp_users (hashes, salts),
+    // and on nginx the deny files below are ignored — an unguessable path is the
+    // only server-independent protection. Old unsuffixed dirs migrate via rename.
+    $token = function_exists('wpultra_secret_dir_token') ? wpultra_secret_dir_token() : '';
+    if ($token === '') { return $dir; }
+    $secret = $dir . '-' . $token;
+    if (is_dir($dir) && !is_dir($secret)) { @rename($dir, $secret); }
+    return $secret;
 }
 
-/** Write index.php + .htaccess deny into the snapshot dir. */
+/** Harden a dump dir against direct web access: index.php + .htaccess (Apache 2.2/2.4) + web.config (IIS). */
 function wpultra_siteops_protect_dir(string $dir): void {
     if (!is_dir($dir)) {
         if (function_exists('wp_mkdir_p')) { wp_mkdir_p($dir); } else { @mkdir($dir, 0755, true); }
@@ -583,7 +591,24 @@ function wpultra_siteops_protect_dir(string $dir): void {
     $idx = $dir . '/index.php';
     if (!is_file($idx)) { @file_put_contents($idx, "<?php // Silence is golden.\n"); }
     $ht = $dir . '/.htaccess';
-    if (!is_file($ht)) { @file_put_contents($ht, "Deny from all\n"); }
+    $rules = "# Deny direct web access to DB/file dumps (Apache 2.2 + 2.4).\n"
+        . "<IfModule mod_authz_core.c>\n  Require all denied\n</IfModule>\n"
+        . "<IfModule !mod_authz_core.c>\n  Order allow,deny\n  Deny from all\n</IfModule>\n";
+    // Rewrite the legacy bare "Deny from all" file: Apache 2.4 without
+    // mod_access_compat ignores 2.2 directives, leaving the dir wide open.
+    if (!is_file($ht) || strpos((string) @file_get_contents($ht), 'mod_authz_core') === false) {
+        @file_put_contents($ht, $rules);
+    }
+    $wc = $dir . '/web.config';
+    if (!is_file($wc)) {
+        @file_put_contents(
+            $wc,
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            . "<configuration>\n  <system.webServer>\n"
+            . "    <authorization>\n      <deny users=\"*\" />\n    </authorization>\n"
+            . "  </system.webServer>\n</configuration>\n"
+        );
+    }
 }
 
 /** PURE: sanitize a snapshot name to a safe filename stem. */
@@ -662,6 +687,16 @@ function wpultra_siteops_dump_tables(string $path, array $tables) {
     if ($tables === []) {
         $like = $wpdb->esc_like($wpdb->prefix) . '%';
         $tables = $wpdb->get_col($wpdb->prepare('SHOW TABLES LIKE %s', $like));
+    } else {
+        // Caller-supplied names must be real tables: identifiers can't be
+        // %s-prepared, and a stray backtick would break out of the quoting
+        // below. Any existing table (prefixed or not) remains dumpable.
+        $tables  = array_map('strval', $tables);
+        $existing = array_map('strval', (array) $wpdb->get_col('SHOW TABLES'));
+        $unknown  = array_diff($tables, $existing);
+        if ($unknown !== []) {
+            return wpultra_err('unknown_table', 'Not found in SHOW TABLES: ' . implode(', ', $unknown));
+        }
     }
     if (empty($tables)) { return wpultra_err('no_tables', 'No tables matched for snapshot.'); }
 
@@ -670,21 +705,21 @@ function wpultra_siteops_dump_tables(string $path, array $tables) {
 
     gzwrite($gz, "-- WP-Ultra-MCP snapshot " . gmdate('c') . "\nSET FOREIGN_KEY_CHECKS=0;\n");
     foreach ($tables as $table) {
-        $table = (string) $table;
-        gzwrite($gz, "\nDROP TABLE IF EXISTS `$table`;\n");
-        $create = $wpdb->get_row("SHOW CREATE TABLE `$table`", ARRAY_N);
+        $t = '`' . str_replace('`', '``', (string) $table) . '`';
+        gzwrite($gz, "\nDROP TABLE IF EXISTS $t;\n");
+        $create = $wpdb->get_row("SHOW CREATE TABLE $t", ARRAY_N);
         if (is_array($create) && isset($create[1])) { gzwrite($gz, $create[1] . ";\n"); }
 
         $offset = 0; $batch = 500;
         while (true) {
-            $rows = $wpdb->get_results("SELECT * FROM `$table` LIMIT $batch OFFSET $offset", ARRAY_A);
+            $rows = $wpdb->get_results("SELECT * FROM $t LIMIT $batch OFFSET $offset", ARRAY_A);
             if (!is_array($rows) || $rows === []) { break; }
             foreach ($rows as $row) {
                 $vals = [];
                 foreach ($row as $v) {
                     $vals[] = $v === null ? 'NULL' : "'" . $wpdb->_real_escape((string) $v) . "'";
                 }
-                gzwrite($gz, "INSERT INTO `$table` VALUES (" . implode(',', $vals) . ");\n");
+                gzwrite($gz, "INSERT INTO $t VALUES (" . implode(',', $vals) . ");\n");
             }
             $offset += $batch;
             if (count($rows) < $batch) { break; }

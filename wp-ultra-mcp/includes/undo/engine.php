@@ -34,7 +34,22 @@ function wpultra_undo_supported_types(): array {
  * gates on this superset instead.
  */
 function wpultra_undo_extended_types(): array {
-    return array_merge(wpultra_undo_supported_types(), ['file', 'active_plugins', 'active_theme']);
+    return array_merge(wpultra_undo_supported_types(), ['file', 'active_plugins', 'active_theme', 'post']);
+}
+
+/**
+ * F1.1: builder content lives in postmeta, which WP revisions do NOT cover — so
+ * an Elementor/Bricks edit (or an update-post) is otherwise irreversible through
+ * undo. These are the meta keys captured/restored alongside the core post fields.
+ */
+function wpultra_undo_post_meta_keys(): array {
+    return [
+        // Elementor
+        '_elementor_data', '_elementor_page_settings', '_elementor_edit_mode',
+        '_elementor_version', '_elementor_template_type',
+        // Bricks
+        '_bricks_page_content_2', '_bricks_page_header_2', '_bricks_page_footer_2', '_bricks_page_settings',
+    ];
 }
 
 /** Pure: next id = (max existing id) + 1. */
@@ -123,6 +138,37 @@ function wpultra_undo_capture(string $type, string $target, $before, string $lab
     }
 }
 
+/**
+ * F1.1: snapshot a post's before-state (core fields + builder postmeta) prior to
+ * a content mutation. Convenience wrapper over wpultra_undo_capture(). Returns
+ * the entry id (0 on skip). Never throws — capture must not break the write.
+ */
+function wpultra_undo_capture_post(int $post_id, string $label = ''): int {
+    try {
+        if ($post_id <= 0 || !function_exists('get_post')) { return 0; }
+        $post = get_post($post_id);
+        if (!$post) { return 0; }
+        $meta = [];
+        foreach (wpultra_undo_post_meta_keys() as $k) {
+            $v = get_post_meta($post_id, $k, true);
+            if ($v !== '' && $v !== false) { $meta[$k] = $v; }
+        }
+        $before = [
+            'fields' => [
+                'post_title'   => (string) $post->post_title,
+                'post_content' => (string) $post->post_content,
+                'post_excerpt' => (string) $post->post_excerpt,
+                'post_status'  => (string) $post->post_status,
+            ],
+            'meta' => $meta,
+        ];
+        return wpultra_undo_capture('post', (string) $post_id, $before, $label !== '' ? $label : "post:$post_id");
+    } catch (\Throwable $e) {
+        if (function_exists('wpultra_log_throwable')) { wpultra_log_throwable($e, 'undo-capture-post'); }
+        return 0;
+    }
+}
+
 /* ------------------------------------------------------------------ *
  * Restore dispatch.
  * ------------------------------------------------------------------ */
@@ -142,6 +188,7 @@ function wpultra_undo_restore(int $id) {
         case 'file':           $res = wpultra_undo_restore_file($entry);           break;
         case 'active_plugins': $res = wpultra_undo_restore_active_plugins($entry); break;
         case 'active_theme':   $res = wpultra_undo_restore_active_theme($entry);   break;
+        case 'post':           $res = wpultra_undo_restore_post($entry);           break;
         default:           return wpultra_err('unsupported_type', "Cannot restore snapshot type '$type'.");
     }
     if (is_wp_error($res)) { return $res; }
@@ -252,6 +299,43 @@ function wpultra_undo_restore_active_plugins(array $entry) {
     $plugins = array_values(array_map('strval', $before));
     if (function_exists('update_option')) { update_option('active_plugins', $plugins); }
     return ['option' => 'active_plugins', 'action' => 'reverted', 'count' => count($plugins)];
+}
+
+/**
+ * F1.1: restore a post's captured fields + builder postmeta. Reverts the core
+ * fields via wp_update_post and re-writes each captured meta key (re-slashed to
+ * survive the write path, matching how the builders store their data). Clears
+ * Elementor's per-post CSS cache so the reverted data re-renders.
+ * @return array|WP_Error
+ */
+function wpultra_undo_restore_post(array $entry) {
+    $post_id = (int) ($entry['target'] ?? 0);
+    if ($post_id <= 0 || !function_exists('wp_update_post')) { return wpultra_err('bad_snapshot', 'post snapshot has no valid target.'); }
+    if (!get_post($post_id)) { return wpultra_err('post_gone', "Post $post_id no longer exists — cannot revert it."); }
+
+    $before = (array) ($entry['before'] ?? []);
+    $fields = (array) ($before['fields'] ?? []);
+    $update = ['ID' => $post_id];
+    foreach (['post_title', 'post_content', 'post_excerpt', 'post_status'] as $f) {
+        if (array_key_exists($f, $fields)) {
+            // Content/title/excerpt go through wp_slash so backslashes survive.
+            $update[$f] = in_array($f, ['post_status'], true) ? (string) $fields[$f] : wp_slash((string) $fields[$f]);
+        }
+    }
+    $res = wp_update_post($update, true);
+    if (is_wp_error($res)) { return $res; }
+
+    $restored_meta = [];
+    foreach ((array) ($before['meta'] ?? []) as $k => $v) {
+        // Re-slash so JSON/serialized builder payloads round-trip through the meta API.
+        update_post_meta($post_id, (string) $k, wp_slash($v));
+        $restored_meta[] = (string) $k;
+    }
+    // Nudge Elementor to rebuild the post's CSS from the reverted data.
+    if (in_array('_elementor_data', $restored_meta, true)) {
+        if (function_exists('delete_post_meta')) { delete_post_meta($post_id, '_elementor_css'); }
+    }
+    return ['post_id' => $post_id, 'action' => 'reverted', 'meta_keys' => $restored_meta];
 }
 
 /**

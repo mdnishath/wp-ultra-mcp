@@ -67,9 +67,7 @@ function wpultra_backup_schedule_execute(array $input) {
             ]);
 
         case 'run-now':
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('run_unconfirmed', 'run-now creates a real backup (and may push it off-site). Re-run with confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'run-now creates a real backup (and may push it off-site). Re-run with confirm: true.', 'run_unconfirmed')) { return $e; }
             if (!function_exists('wpultra_bksched_run_scheduled')) {
                 return wpultra_err('bksched_engine_unavailable', 'The scheduled-run handler is not available.');
             }
@@ -82,9 +80,7 @@ function wpultra_backup_schedule_execute(array $input) {
             ]);
 
         case 'test-destination':
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('test_unconfirmed', 'test-destination uploads a tiny object to your destination to verify credentials. Re-run with confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'test-destination uploads a tiny object to your destination to verify credentials. Re-run with confirm: true.', 'test_unconfirmed')) { return $e; }
             $cfg = wpultra_bksched_get_config();
             $res = wpultra_bksched_test_destination($cfg);
             // Never leak secrets — the engine result is already secret-free.

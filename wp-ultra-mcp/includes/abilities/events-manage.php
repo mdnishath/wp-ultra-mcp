@@ -102,7 +102,7 @@ wp_register_ability('wpultra/events-manage', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 
@@ -157,9 +157,7 @@ function wpultra_events_manage_cb(array $input) {
                 return wpultra_err('missing_ticket_type_id', 'ticket_type_id is required.');
             }
             // Booking writes (increments sold, mints a ticket, may create a Woo order) — gate on confirm.
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', 'Booking a ticket is a write. Re-run with confirm:true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Booking a ticket is a write. Re-run with confirm:true.', 'unconfirmed')) { return $e; }
             $res = wpultra_event_register([
                 'event_id'       => $event_id,
                 'ticket_type_id' => (string) $input['ticket_type_id'],

@@ -4,12 +4,12 @@ if (!defined('ABSPATH')) { exit(); }
 
 wp_register_ability('wpultra/form-create', [
     'label'       => __('Create Form', 'wp-ultra-mcp'),
-    'description' => __('Creates a new form in the chosen plugin (`plugin` required: cf7|wpforms|gravity|fluent) from a unified `fields[]` list. Each field: type (text|email|textarea|select|checkbox|radio|number|date|file), label, required, options[] (for select/checkbox/radio). Each adapter maps the unified fields to its native format. Returns the new form id + shortcode.', 'wp-ultra-mcp'),
+    'description' => __('Creates a new form in the chosen plugin (`plugin` required: cf7|wpforms|gravity|fluent|ninja) from a unified `fields[]` list. Each field: type (text|email|textarea|select|checkbox|radio|number|date|file), label, required, options[] (for select/checkbox/radio). Each adapter maps the unified fields to its native format. Returns the new form id + shortcode.', 'wp-ultra-mcp'),
     'category'    => 'forms',
     'input_schema'  => [
         'type'       => 'object',
         'properties' => [
-            'plugin' => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent']],
+            'plugin' => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent', 'ninja']],
             'title'  => ['type' => 'string'],
             'fields' => [
                 'type'  => 'array',
@@ -56,7 +56,7 @@ function wpultra_form_create(array $input) {
     if ($fields === []) { return wpultra_err('missing_fields', 'fields[] must contain at least one field.'); }
 
     $explicit = (string) ($input['plugin'] ?? '');
-    if ($explicit === '') { return wpultra_err('missing_plugin', 'plugin is required (cf7|wpforms|gravity|fluent).'); }
+    if ($explicit === '') { return wpultra_err('missing_plugin', 'plugin is required (cf7|wpforms|gravity|fluent|ninja).'); }
     $driver = wpultra_forms_driver($explicit);
     if (is_wp_error($driver)) { return $driver; }
 

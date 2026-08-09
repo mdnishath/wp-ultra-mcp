@@ -17,6 +17,58 @@ it('within-directory detects containment and escape', function () {
     assert_eq(false, wpultra_path_is_within_directory('/etc/passwd', '/var/www/wp'), 'escape');
 });
 
+it('within-directory is case-insensitive for Windows-style paths only', function () {
+    // realpath() can report C:\ while ABSPATH says c:/ — same dir on NTFS.
+    assert_true(wpultra_path_is_within_directory('C:\\xampp\\htdocs\\wp\\x.php', 'c:/xampp/htdocs/wp'), 'drive case');
+    assert_true(wpultra_path_is_within_directory('C:/Xampp/Htdocs/WP', 'c:/xampp/htdocs/wp'), 'segment case');
+    assert_eq(false, wpultra_path_is_within_directory('C:/xampp/other', 'c:/xampp/htdocs/wp'), 'win sibling');
+    assert_true(wpultra_path_is_within_directory('//srv/share/wp/x.php', '//SRV/share/wp'), 'unc case');
+    // POSIX paths stay case-SENSITIVE (ext4 etc. really are).
+    assert_eq(false, wpultra_path_is_within_directory('/var/www/WP/x.php', '/var/www/wp'), 'posix stays sensitive');
+});
+
+it('require_confirm gates on confirm:true', function () {
+    assert_eq(null, wpultra_require_confirm(['confirm' => true], 'Deleting X is permanent.'));
+    $e = wpultra_require_confirm(['confirm' => false], 'Deleting X is permanent.');
+    assert_wp_error($e);
+    assert_eq('confirm_required', $e->get_error_code());
+    // Missing key = not confirmed.
+    assert_wp_error(wpultra_require_confirm([], 'Deleting X is permanent.'));
+    // Truthy-but-not-true (e.g. "1") must NOT satisfy the gate.
+    assert_wp_error(wpultra_require_confirm(['confirm' => '1'], 'X'));
+    assert_wp_error(wpultra_require_confirm(['confirm' => 1], 'X'));
+});
+
+it('require_confirm preserves custom code and appends hint only when absent', function () {
+    $e = wpultra_require_confirm(['confirm' => false], 'Bulk payout.', 'unconfirmed');
+    assert_eq('unconfirmed', $e->get_error_code());
+    assert_contains('Re-run with confirm: true.', $e->get_error_message()); // appended
+    $e2 = wpultra_require_confirm(['confirm' => false], 'Already says confirm: true here.');
+    assert_eq('Already says confirm: true here.', $e2->get_error_message()); // not doubled
+});
+
+it('paginate: no params returns whole list up to default, with meta', function () {
+    $items = range(1, 10);
+    [$page, $meta] = wpultra_paginate($items, [], 500);
+    assert_eq($items, $page);
+    assert_eq(10, $meta['total']);
+    assert_eq(10, $meta['returned']);
+});
+
+it('paginate: limit + offset slice correctly', function () {
+    $items = range(1, 10);
+    [$page, $meta] = wpultra_paginate($items, ['limit' => 3, 'offset' => 4]);
+    assert_eq([5, 6, 7], $page);
+    assert_eq(10, $meta['total']);
+    assert_eq(3, $meta['returned']);
+    // offset past the end returns empty but keeps total.
+    [$p2] = wpultra_paginate($items, ['limit' => 5, 'offset' => 50]);
+    assert_eq([], $p2);
+    // zero/negative limit falls back to the default page size.
+    [$p3] = wpultra_paginate($items, ['limit' => 0], 4);
+    assert_eq([1, 2, 3, 4], $p3);
+});
+
 it('identifier validation', function () {
     assert_true(wpultra_is_valid_identifier('wp_posts'), 'ok');
     assert_eq(false, wpultra_is_valid_identifier('posts; DROP'), 'inject');

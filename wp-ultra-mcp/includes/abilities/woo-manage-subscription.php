@@ -23,7 +23,7 @@ wp_register_ability('wpultra/woo-manage-subscription', [
     'output_schema' => ['type' => 'object', 'properties' => ['success' => ['type' => 'boolean']], 'required' => ['success']],
     'execute_callback'    => 'wpultra_woo_manage_subscription_cb',
     'permission_callback' => 'wpultra_permission_callback',
-    'meta' => ['show_in_rest' => true, 'mcp' => ['public' => true, 'type' => 'tool'], 'annotations' => ['readonly' => false, 'destructive' => false, 'idempotent' => false]],
+    'meta' => ['show_in_rest' => true, 'mcp' => ['public' => true, 'type' => 'tool'], 'annotations' => ['readonly' => false, 'destructive' => true, 'idempotent' => false]],
 ]);
 
 function wpultra_woo_manage_subscription_cb(array $input) {

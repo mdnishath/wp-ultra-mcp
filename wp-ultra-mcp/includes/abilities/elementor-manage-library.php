@@ -113,9 +113,7 @@ function wpultra_elementor_manage_library_cb(array $input) {
     }
 
     if ($action === 'delete') {
-        if (($input['confirm'] ?? false) !== true) {
-            return wpultra_err('confirm_required', 'Deleting a template requires confirm: true.');
-        }
+        if ($e = wpultra_require_confirm($input, 'Deleting a template requires confirm: true.', 'confirm_required')) { return $e; }
         $ok = (bool) wp_delete_post($tid, true);
         if ($ok) { wpultra_epro_flush_conditions(); }
         wpultra_audit_log('elementor-manage-library', "deleted template $tid", $ok);

@@ -13,6 +13,8 @@ function wpultra_gb_save(int $post_id, array $blocks) {
     if ($post_type !== false && in_array($post_type, wpultra_reserved_post_types(), true)) {
         return new WP_Error('reserved_post_type', "Post $post_id is a plugin-internal post type; edit it via its dedicated ability.");
     }
+    // F1.1: snapshot the post's before-state so this block edit is undoable.
+    if (function_exists('wpultra_undo_capture_post')) { wpultra_undo_capture_post($post_id, 'gutenberg ' . $post_id); }
     // serialize_block_attributes() emits \u00xx escapes; wp_update_post unslashes, so slash
     // first or every block attribute containing & < > " (e.g. URLs with query strings) corrupts.
     $content = serialize_blocks($blocks);

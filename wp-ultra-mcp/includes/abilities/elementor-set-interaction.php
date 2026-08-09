@@ -19,13 +19,7 @@ wp_register_ability('wpultra/elementor-set-interaction', [
         'required'             => ['post_id', 'element_id'],
         'additionalProperties' => false,
     ],
-    'output_schema' => [
-        'type'       => 'object',
-        'properties' => [
-            'success' => ['type' => 'boolean'],
-        ],
-        'required' => ['success'],
-    ],
+    'output_schema' => wpultra_manager_output_schema(['post_id' => ['type' => 'integer']]),
     'execute_callback'    => 'wpultra_elementor_set_interaction',
     'permission_callback' => 'wpultra_permission_callback',
     'meta' => [

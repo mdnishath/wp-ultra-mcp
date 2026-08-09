@@ -309,9 +309,7 @@ function wpultra_lead_action_delete(array $input) {
     if (is_wp_error($r)) { return $r; }
     [$id, $meta] = $r;
 
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('delete_unconfirmed', "Deleting lead $id is permanent. Re-run with confirm: true.");
-    }
+    if ($e = wpultra_require_confirm($input, "Deleting lead $id is permanent. Re-run with confirm: true.", 'delete_unconfirmed')) { return $e; }
     $res = wp_delete_post($id, true);
     $ok  = (bool) $res;
     wpultra_audit_log('lead-manage', "delete id=$id email=" . (string) ($meta['email'] ?? ''), $ok);

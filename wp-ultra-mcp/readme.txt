@@ -1,9 +1,9 @@
 === WP-Ultra-MCP ===
 Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
-Requires at least: 6.6
+Requires at least: 6.9
 Requires PHP: 8.0
-Stable tag: 0.30.1
+Stable tag: 0.31.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -42,12 +42,27 @@ Install, enable AI control, generate an application password, and paste the conf
 No. All Wave 1 abilities work without Elementor. The Wave 2 elementor-* abilities require Elementor (free or Pro) with the `e_atomic_elements` experiment enabled.
 
 = Is it safe to leave AI control enabled permanently? =
-AI control is disabled by default. Enable it only when you need it. The SQL ability automatically classifies queries as destructive and requires `confirm: true` before executing them. Queries are always considered destructive if they contain `DROP`, `TRUNCATE`, or `ALTER`. `DELETE` and `UPDATE` are treated as destructive only when they are missing a `WHERE` clause. `INSERT` is never gated.
+AI control is disabled by default. Enable it only when you need it. The SQL ability classifies queries with an allow-list: only genuinely read-only verbs (`SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN`) and plain additive `INSERT` run without confirmation. Everything else requires `confirm: true` — `DELETE` and `UPDATE` always (even with a `WHERE` clause, since `WHERE 1=1` is a trivial bypass), all DDL (`DROP`/`TRUNCATE`/`ALTER`/`RENAME`/`CREATE`), privilege changes, CTEs (`WITH …` can wrap a `DELETE`), and any unrecognised verb. Two look-safe cases are also gated: `SELECT … INTO OUTFILE`/`LOAD_FILE` (disk access) and `INSERT … ON DUPLICATE KEY UPDATE` (an `UPDATE` in disguise). Leading SQL comments cannot hide the verb from the classifier.
 
 = Does it work with any MCP client? =
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
+= Which endpoints are public (no login)? =
+Three REST endpoints accept unauthenticated requests, because they receive beacons from page-cached front-end HTML that cannot carry a nonce: `wpultra/v1/chat` (the AI chatbot, only when configured), `wpultra/v1/track` (marketing beacon), and `wpultra/v1/jserror` (front-end JS error logger). All are rate-limited per IP, sanitize their input, never mutate content, and never leak internal error text. If you don't use a feature, you can switch its endpoint off entirely — set the option `wpultra_public_endpoints_disabled` to an array of keys (`chat`, `track`, `jserror`); disabled endpoints are not registered at all and return 404. The headless read routes (`wpultra/headless/v1/*`) have their own per-route switches in the headless config.
+
 == Changelog ==
+
+= 0.31.0 =
+* Roadmap-5 complete (45/45): hardening, consistency, and reach. Ability count 305 → 311.
+* SECURITY: snapshot/backup directory hardened for nginx/IIS (web.config + index.php + per-site random directory token, not .htaccess alone); access gate now fails CLOSED with a self-test assertion that the `wp_before_execute_ability` hook actually fires; never-delegatable list extended to `system` + `users` (plugin-install-from-zip, user/role minting, migration/staging/option-set can no longer be granted to non-admin roles); `delete-plugin`/`update-plugin`/`delete-theme`/`update-theme` are confirm-gated.
+* SECURITY: snapshot dumper escapes table identifiers and validates against SHOW TABLES; `render-page` verifies SSL for external URLs; `execute-php` audit entries store hash+length instead of source code; public REST endpoints (`chat`/`track`/`jserror`) got per-endpoint kill switches.
+* FIX: WP 6.6–6.8 no longer dies silently — requirement bumped to 6.9 with an explicit admin notice when the Abilities API is missing; updater no longer stalls admin requests on a cold cache (network work moved to the write filter); Ability Hub default recipe now validates; admin pages share one enqueued stylesheet (activity/stats pages were unstyled); Windows path comparison is case-normalized.
+* CONSISTENCY: central audit hook guarantees every non-readonly ability execution is logged exactly once (51 previously-silent write abilities now covered); shared `wpultra_require_confirm()` helper across 87 files; `destructive` annotations normalized under one rule with a self-test invariant (confirm-gated ⇒ destructive); pagination on all unbounded list abilities (read-debug-log tails N lines); real output schemas on the 16 manager abilities; single ability manifest with a files ≡ disk ≡ category-map self-test; throwable logging (`wpultra_log_throwable`) replaces ~30 silent catch blocks; `uninstall.php` with opt-in data deletion + unconditional cron cleanup on deactivation; i18n loader + text domain wired.
+* PERFORMANCE: audit/stats writes are buffered per request and flushed once on shutdown — a 20-ability playbook chain now does 2 option writes instead of 40, and the concurrent-request lost-update window collapses to a single write.
+* ARCHITECTURE: the 16 top-level boot hooks collapsed into three ordered dispatchers (`wpultra_runtime_boot_early` @5 firewall-first, `wpultra_runtime_boot` @20, `wpultra_runtime_init` @1) with boot order explicit in one place; the updater deliberately runs outside the enabled-flag gate so auto-updates work even when AI control is off.
+* NEW: post/builder-content undo (`update-post`, Elementor/Bricks/Gutenberg mutations are now reversible via undo-restore); `core-update` (WordPress core, confirm-gated); theme install/update/delete completing `manage-plugin-theme`; `manage-widgets` (classic sidebars/widgets); `manage-theme-mods` (Customizer values with secret denylist); `manage-transients` (list with sizes, delete, expired sweep); `manage-app-passwords` (list/revoke — credential hygiene); `register-block-pattern`.
+* NEW: third-party adapters — Ninja Forms as a fifth forms driver (list/entries/create via NF's own model factory); LMS adapters for LearnDash/LifterLMS/Tutor LMS on `lms-manage` (detect-plugins, list-courses, get-course, enroll, progress via each plugin's own API); membership adapters for MemberPress/Paid Memberships Pro on `membership-manage` (list-levels, member-status, assign/remove via `pmpro_changeMembershipLevel` / `MeprTransaction`); TranslatePress + Weglot coverage on the i18n surface (`translation-status` third_party block, `translation-set-content` trp_strings dictionary writes, honest model-mismatch errors from duplicate-to-language).
+* TOOLING: portable test runner, GitHub Actions CI (test suite + php -l on PHP 8.0–8.3), PHPCS/PHPStan with baselines, security-boundary integration tests, SECURITY.md with the explicit trust model, CHANGELOG.md.
 
 = 0.30.1 =
 * FIX: unattended auto-updates never fired. The updater's `update_plugins` transient filters were registered behind an `is_admin()` gate, but WP-Cron requests are not admin requests (`wp-cron.php` never defines `WP_ADMIN`) — so when cron ran `wp_update_plugins()` it rebuilt and stored the transient WITHOUT the GitHub release, and `WP_Automatic_Updater` saw nothing to update. The wp-admin "update available" notice and one-click update always worked (admin requests do register the read filter), which masked the bug. The updater now also loads on cron and WP-CLI; front-end requests remain excluded so a cold cache can never trigger a remote call on a page view.

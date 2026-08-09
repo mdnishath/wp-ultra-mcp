@@ -23,6 +23,9 @@ function wpultra_el_read(int $post_id, array $opts = []) {
 
 function wpultra_el_write(int $post_id, array $elements) {
     if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
+    // F1.1: snapshot the page's before-state so any Elementor mutation is undoable
+    // (builder data lives in postmeta, which WP revisions don't cover).
+    if (function_exists('wpultra_undo_capture_post')) { wpultra_undo_capture_post($post_id, 'elementor ' . $post_id); }
     // Atomic-safe: write meta directly (Document::save strips atomic widgets).
     // Guard the encode: a false return (bad UTF-8 / INF-NAN) would wipe _elementor_data to ''.
     $json = wp_json_encode($elements);

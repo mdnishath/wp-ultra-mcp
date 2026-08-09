@@ -20,11 +20,7 @@ wp_register_ability('wpultra/woo-manage-product-category', [
         'required'   => ['action'],
         'additionalProperties' => false,
     ],
-    'output_schema' => [
-        'type'       => 'object',
-        'properties' => ['success' => ['type' => 'boolean']],
-        'required'   => ['success'],
-    ],
+    'output_schema' => wpultra_manager_output_schema([]),
     'execute_callback'    => 'wpultra_woo_manage_term_cb',
     'permission_callback' => 'wpultra_permission_callback',
     'meta' => [

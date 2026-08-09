@@ -7,7 +7,10 @@ add_action('admin_post_wpultra_clear_audit', function () {
     if (!current_user_can('manage_options') || !check_admin_referer('wpultra_clear_audit')) {
         wp_die('forbidden');
     }
-    update_option('wpultra_audit', []);
+    // Keep non-autoloaded (matches wpultra_audit_write): the ring can hold 200
+    // entries and is only read on this page — autoloading it would load the
+    // whole blob on every request.
+    update_option('wpultra_audit', [], false);
     wp_safe_redirect(admin_url('admin.php?page=wpultra-activity'));
     exit;
 });

@@ -50,6 +50,22 @@ function wpultra_self_test(array $input) {
     $checks[] = ['name' => 'mcp_enabled', 'ok' => wpultra_is_enabled(), 'detail' => 'AI control switch + domain lock'];
     $checks[] = ['name' => 'adapter_loaded', 'ok' => wpultra_mcp_adapter_available(), 'detail' => 'bundled MCP adapter class present'];
 
+    // 1b. Access-gate wiring: non-admin grants are enforced by wp_before_execute_ability;
+    //    if that hook isn't registered AND verifiably fired by core, grants are dead
+    //    (the baseline callback fails closed, so this is a lockout — not a bypass).
+    if (function_exists('wpultra_access_execute_hook_fires') && function_exists('wpultra_access_policy')) {
+        $grants = wpultra_access_has_any_grant(array_keys((array) (wpultra_access_policy()['roles'] ?? [])), wpultra_access_policy());
+        $hooked = function_exists('has_action') && has_action('wp_before_execute_ability', 'wpultra_access_gate') !== false;
+        $fires  = wpultra_access_execute_hook_fires();
+        $wired  = $hooked && $fires;
+        $checks[] = [
+            'name'   => 'access_gate_wired',
+            'ok'     => $wired || !$grants,
+            'detail' => $wired ? 'gate registered + hook verified' : ($hooked ? 'gate registered but wp_before_execute_ability not verifiable in WP_Ability' : 'gate not registered'),
+        ];
+        if (!$wired && $grants) { $hints[] = 'Role grants exist but the enforcement hook is unverified — non-admin access is denied (fail closed) until the Abilities API fires wp_before_execute_ability.'; }
+    }
+
     // 2. Ability file <-> category integrity (every file maps to exactly one known category).
     $orphans = [];
     foreach (wpultra_ability_files() as $f) {
@@ -57,6 +73,20 @@ function wpultra_self_test(array $input) {
     }
     $checks[] = ['name' => 'ability_category_map', 'ok' => $orphans === [], 'detail' => $orphans ? ('uncategorized: ' . implode(', ', $orphans)) : 'all ability files categorized'];
     if ($orphans) { $hints[] = 'Add ' . implode(', ', $orphans) . ' to wpultra_ability_category_map().'; }
+
+    // 2b. Manifest ≡ disk: every listed slug has a file, and every file on disk is
+    //     listed. A drift here silently drops an ability or fatals on a missing require.
+    $listed = wpultra_ability_files();
+    $on_disk = [];
+    foreach ((array) glob(WPULTRA_DIR . 'includes/abilities/*.php') as $p) { $on_disk[] = basename($p, '.php'); }
+    $missing_file = array_values(array_diff($listed, $on_disk));   // listed but no file
+    $unlisted     = array_values(array_diff($on_disk, $listed));   // file but not listed
+    $manifest_ok  = $missing_file === [] && $unlisted === [];
+    $checks[] = ['name' => 'ability_manifest', 'ok' => $manifest_ok, 'detail' => $manifest_ok
+        ? (count($listed) . ' abilities: manifest matches disk')
+        : trim(($missing_file ? 'missing files: ' . implode(', ', $missing_file) . '. ' : '') . ($unlisted ? 'unlisted files: ' . implode(', ', $unlisted) : ''))];
+    if ($missing_file) { $hints[] = 'wpultra_ability_files() lists ' . implode(', ', $missing_file) . ' but no such file exists (require will fatal).'; }
+    if ($unlisted) { $hints[] = 'These ability files are on disk but not in wpultra_ability_files() (they never register): ' . implode(', ', $unlisted); }
 
     // 3. Fields adapter matrix — catches router/adapter name drift (a whole provider going dead).
     if (!in_array('fields', $disabled, true) && function_exists('wpultra_fields_active_names')) {
@@ -98,6 +128,7 @@ function wpultra_self_test(array $input) {
     $summary = wpultra_selftest_summarize($checks);
 
     // 7. Per-ability failure stats — the AI's own recent failure patterns.
+    if (function_exists('wpultra_audit_flush')) { wpultra_audit_flush(); } // include same-request buffered tallies
     $rawStats = get_option('wpultra_ability_stats', []);
     $stats = wpultra_stats_rank(is_array($rawStats) ? $rawStats : [], 10);
     foreach ($stats as $s) {

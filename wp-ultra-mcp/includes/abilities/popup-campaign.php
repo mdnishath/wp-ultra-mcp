@@ -134,9 +134,7 @@ function wpultra_popup_campaign_cb(array $input) {
 
         case 'delete': {
             if ($id <= 0) { return wpultra_err('missing_id', 'id is required for delete.'); }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', 'Deleting a popup campaign is permanent (stats included). Re-run with confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Deleting a popup campaign is permanent (stats included). Re-run with confirm: true.', 'unconfirmed')) { return $e; }
             $res = wpultra_popup_delete($id);
             if (is_wp_error($res)) {
                 wpultra_audit_log('popup-campaign', "delete id=$id failed: " . $res->get_error_message(), false);

@@ -222,13 +222,15 @@ function wpultra_staging_clone_tables(string $new_prefix) {
         $suffix = substr($live, strlen($live_prefix));
         $new = $new_prefix . $suffix;
 
-        $wpdb->query("DROP TABLE IF EXISTS `$new`");
-        $ok = $wpdb->query("CREATE TABLE `$new` LIKE `$live`");
+        $newq  = '`' . str_replace('`', '``', $new) . '`';
+        $liveq = '`' . str_replace('`', '``', $live) . '`';
+        $wpdb->query("DROP TABLE IF EXISTS $newq");
+        $ok = $wpdb->query("CREATE TABLE $newq LIKE $liveq");
         if ($ok === false) {
             return wpultra_err('staging_create_table_failed', "CREATE TABLE `$new` LIKE `$live` failed: " . $wpdb->last_error);
         }
         // INSERT ... SELECT copies all rows in one server-side statement.
-        $wpdb->query("INSERT INTO `$new` SELECT * FROM `$live`");
+        $wpdb->query("INSERT INTO $newq SELECT * FROM $liveq");
         $created[] = $new;
     }
     return ['tables' => $created];

@@ -40,9 +40,7 @@ function wpultra_bricks_set_content(array $input) {
     $elements = $input['elements'] ?? null;
     if (is_string($elements)) { $elements = json_decode($elements, true); }
     if (!is_array($elements)) { return wpultra_err('bad_elements', 'elements must be an array (or JSON string).'); }
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('confirm_required', 'Pass confirm:true to overwrite the Bricks content of this post.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Pass confirm:true to overwrite the Bricks content of this post.', 'confirm_required')) { return $e; }
     $report = wpultra_bricks_validate_tree($elements);
     if (!$report['ok']) {
         return wpultra_err('tree_invalid', count($report['errors']) . ' element(s) failed validation.', ['errors' => $report['errors']]);

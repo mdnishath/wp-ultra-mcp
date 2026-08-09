@@ -335,8 +335,21 @@ function wpultra_devtools_render_page(array $input) {
     }
     if (!function_exists('wp_remote_get')) { return wpultra_err('wp_unavailable', 'wp_remote_get() is unavailable.'); }
 
+    // Reject malformed/SSRF-y URLs. wp_http_validate_url() allows the site's own
+    // host even on an internal IP, so self-probes (the main use) are unaffected.
+    if (function_exists('wp_http_validate_url') && !wp_http_validate_url($url)) {
+        return wpultra_err('bad_url', "URL failed validation: $url");
+    }
+    // Self-signed certs are routine on local/staging, so the site's OWN host keeps
+    // sslverify off (a self-probe has no MITM surface). External URLs verify SSL.
+    $parse     = function_exists('wp_parse_url') ? 'wp_parse_url' : 'parse_url';
+    $self_host = function_exists('home_url') ? (string) $parse(home_url(), PHP_URL_HOST) : '';
+    $url_host  = (string) $parse($url, PHP_URL_HOST);
+    $sslverify = !($self_host !== '' && strcasecmp($url_host, $self_host) === 0);
+    if (function_exists('apply_filters')) { $sslverify = (bool) apply_filters('wpultra_render_page_sslverify', $sslverify, $url); }
+
     $start = microtime(true);
-    $response = wp_remote_get($url, ['timeout' => 20, 'sslverify' => false, 'redirection' => 5]);
+    $response = wp_remote_get($url, ['timeout' => 20, 'sslverify' => $sslverify, 'redirection' => 5]);
     $load_ms = round((microtime(true) - $start) * 1000, 1);
 
     if (is_wp_error($response)) { return $response; }

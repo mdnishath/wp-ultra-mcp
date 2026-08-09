@@ -34,9 +34,7 @@ wp_register_ability('wpultra/delete-atomic-widget', [
 ]);
 
 function wpultra_delete_atomic_widget_cb(array $input) {
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('confirm_required', 'Deleting a widget requires confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Deleting a widget requires confirm: true.', 'confirm_required')) { return $e; }
     $name = (string) ($input['name'] ?? '');
     if (!wpultra_widget_valid_name($name)) { return wpultra_err('bad_name', 'Invalid widget name.'); }
     $deleted = wpultra_widget_delete_files($name);

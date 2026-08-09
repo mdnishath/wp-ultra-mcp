@@ -10,7 +10,7 @@ wp_register_ability('wpultra/form-get-entries', [
         'type'       => 'object',
         'properties' => [
             'form_id'  => ['type' => 'integer'],
-            'plugin'   => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent']],
+            'plugin'   => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent', 'ninja']],
             'per_page' => ['type' => 'integer', 'default' => 20],
             'page'     => ['type' => 'integer', 'default' => 1],
             'search'   => ['type' => 'string'],

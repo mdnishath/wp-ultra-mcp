@@ -6,7 +6,7 @@ require __DIR__ . '/../wp-ultra-mcp/includes/access/engine.php';
 
 $POLICY = [
     'roles' => [
-        'editor'        => ['abilities' => ['site-snapshot'], 'categories' => ['content', 'seo']],
+        'editor'        => ['abilities' => ['form-list'], 'categories' => ['content', 'seo']],
         'shop_manager'  => ['abilities' => [], 'categories' => ['woocommerce']],
     ],
     'limits' => ['default' => 0, 'abilities' => ['execute-php' => 5], 'categories' => ['code-execution' => 10]],
@@ -18,7 +18,7 @@ it('admins may run anything regardless of policy', function () use ($POLICY) {
 });
 
 it('non-admin role grants match by ability OR category', function () use ($POLICY) {
-    assert_true(wpultra_access_role_can(['editor'], 'site-snapshot', 'system', $POLICY, false));  // by ability
+    assert_true(wpultra_access_role_can(['editor'], 'form-list', 'forms', $POLICY, false));       // by ability
     assert_true(wpultra_access_role_can(['editor'], 'create-post', 'content', $POLICY, false));   // by category
     assert_true(wpultra_access_role_can(['shop_manager'], 'woo-get-order', 'woocommerce', $POLICY, false));
     assert_true(!wpultra_access_role_can(['editor'], 'execute-php', 'code-execution', $POLICY, false)); // not granted
@@ -73,6 +73,26 @@ it('RCE-class abilities/categories are never delegatable to a non-admin', functi
     assert_true(wpultra_access_is_rce_class('execute-php', ''));
     assert_true(wpultra_access_is_rce_class('anything', 'filesystem'));
     assert_true(!wpultra_access_is_rce_class('create-post', 'content'));
+});
+
+it('privilege-escalation abilities/categories are never delegatable either', function () {
+    // install-plugin from a zip URL = arbitrary PHP; manage-user/roles-manage = mint an admin.
+    $bad = ['roles' => ['subscriber' => [
+        'abilities'  => ['manage-plugin-theme', 'manage-user', 'roles-manage', 'site-migrate', 'staging-clone', 'option-set'],
+        'categories' => ['system', 'users'],
+    ]]];
+    assert_true(!wpultra_access_role_can(['subscriber'], 'manage-plugin-theme', 'system', $bad, false));
+    assert_true(!wpultra_access_role_can(['subscriber'], 'manage-user', 'users', $bad, false));
+    assert_true(!wpultra_access_role_can(['subscriber'], 'roles-manage', 'users', $bad, false));
+    assert_true(!wpultra_access_role_can(['subscriber'], 'option-set', 'system', $bad, false));
+    // Category grant on system/users gives nothing, even for a mild system ability.
+    assert_true(!wpultra_access_role_can(['subscriber'], 'php-env-info', 'system', $bad, false));
+    // Ability-name backstop holds even if the category map drifts to ''.
+    assert_true(wpultra_access_is_rce_class('manage-plugin-theme', ''));
+    assert_true(wpultra_access_is_rce_class('manage-user', ''));
+    assert_true(wpultra_access_is_rce_class('site-migrate', ''));
+    // Admins are unaffected.
+    assert_true(wpultra_access_role_can(['subscriber'], 'manage-plugin-theme', 'system', $bad, true));
 });
 
 run_tests();

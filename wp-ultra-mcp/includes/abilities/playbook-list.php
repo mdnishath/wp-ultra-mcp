@@ -8,7 +8,7 @@ wp_register_ability('wpultra/playbook-list', [
     'category'    => 'playbooks',
     'input_schema'  => [
         'type'       => 'object',
-        'properties' => ['slug' => ['type' => 'string']],
+        'properties' => array_merge(['slug' => ['type' => 'string']], wpultra_pagination_schema()),
         'additionalProperties' => false,
     ],
     'output_schema' => [
@@ -35,5 +35,6 @@ function wpultra_playbook_list_cb(array $input) {
         if ($doc === null) { return wpultra_err('not_found', "No saved playbook '{$input['slug']}'."); }
         return wpultra_ok(['document' => $doc]);
     }
-    return wpultra_ok(['playbooks' => wpultra_playbook_list()]);
+    [$page, $meta] = wpultra_paginate(wpultra_playbook_list(), $input, 200);
+    return wpultra_ok(['playbooks' => $page, 'total' => $meta['total'], 'returned' => $meta['returned']]);
 }

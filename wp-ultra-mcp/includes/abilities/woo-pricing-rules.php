@@ -205,9 +205,7 @@ function wpultra_woo_pricing_rules_cb(array $input) {
             if ($id === '' || !isset($rules[$id])) {
                 return wpultra_err('rule_not_found', "No pricing rule with id '$id'. Use {action:'list'} to see rules.");
             }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('pricing_delete_unconfirmed', "Deleting rule '$id' is destructive. Re-run with confirm:true.");
-            }
+            if ($e = wpultra_require_confirm($input, "Deleting rule '$id' is destructive. Re-run with confirm:true.", 'pricing_delete_unconfirmed')) { return $e; }
             unset($rules[$id]);
             wpultra_pricing_save_rules($rules);
             wpultra_audit_log('woo-pricing-rules', "delete $id", true);

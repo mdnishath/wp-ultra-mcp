@@ -37,9 +37,7 @@ wp_register_ability('wpultra/media-delete', [
 function wpultra_media_delete_ability(array $input) {
     $id = (int) ($input['id'] ?? 0);
     if ($id <= 0) { return wpultra_err('missing_id', 'id is required.'); }
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('confirm_required', 'Deleting media requires confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Deleting media requires confirm: true.', 'confirm_required')) { return $e; }
     $force = ($input['force'] ?? false) === true;
     $res = wpultra_media_delete($id, $force);
     if (is_wp_error($res)) { wpultra_audit_log('media-delete', "id=$id", false); return $res; }

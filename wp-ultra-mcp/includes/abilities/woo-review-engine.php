@@ -75,7 +75,7 @@ wp_register_ability('wpultra/woo-review-engine', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 
@@ -95,9 +95,7 @@ function wpultra_woo_review_engine_cb(array $input) {
 
         case 'send-requests': {
             // Sends real email to customers — require explicit confirmation.
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('send_requests_unconfirmed', 'send-requests emails real customers. Re-run with confirm:true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'send-requests emails real customers. Re-run with confirm:true.', 'send_requests_unconfirmed')) { return $e; }
             $res = wpultra_rvx_send_requests((int) ($input['days'] ?? 7));
             if (is_wp_error($res)) {
                 wpultra_audit_log('woo-review-engine', 'send-requests failed: ' . $res->get_error_message(), false);

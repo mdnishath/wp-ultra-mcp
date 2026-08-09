@@ -20,6 +20,7 @@ if (!defined('ABSPATH')) { exit(); }
 
 function wpultra_track_register_routes(): void {
     if (!function_exists('register_rest_route')) { return; }
+    if (function_exists('wpultra_public_endpoint_enabled') && !wpultra_public_endpoint_enabled('track')) { return; }
     register_rest_route('wpultra/v1', '/track', [
         'methods'             => 'POST',
         'permission_callback' => '__return_true',

@@ -158,12 +158,9 @@ function wpultra_updater_apply() {
     ];
 }
 
-/** Filter: inject our GitHub release into WP core's update_plugins transient. */
-function wpultra_updater_inject_transient($transient) {
+/** Apply a known release to WP core's update_plugins transient object. */
+function wpultra_updater_apply_release_to_transient($transient, array $release) {
     if (!is_object($transient)) { return $transient; }
-    // Never trigger a remote call on frequent admin loads unless the cache exists or expired naturally.
-    $release = wpultra_updater_fetch_latest(false);
-    if (is_wp_error($release)) { return $transient; }
     $current  = defined('WPULTRA_VERSION') ? WPULTRA_VERSION : '0';
     $basename = plugin_basename(WPULTRA_FILE);
     if (wpultra_updater_is_newer($current, $release['version'])) {
@@ -173,4 +170,29 @@ function wpultra_updater_inject_transient($transient) {
         unset($transient->response[$basename]);
     }
     return $transient;
+}
+
+/**
+ * Write-filter (pre_set_site_transient_update_plugins): WP is rebuilding its
+ * update data (twice-daily cron / Updates screen / wp_update_plugins()), so a
+ * remote check belongs here — it rides the native cadence and the result is
+ * transient-cached for 6h.
+ */
+function wpultra_updater_inject_transient($transient) {
+    if (!is_object($transient)) { return $transient; }
+    $release = wpultra_updater_fetch_latest(false);
+    if (is_wp_error($release)) { return $transient; }
+    return wpultra_updater_apply_release_to_transient($transient, $release);
+}
+
+/**
+ * Read-filter (site_transient_update_plugins): runs on every
+ * get_site_transient() call, i.e. many times per admin request — it must NEVER
+ * do network I/O (a cold cache used to stall admin loads up to 30s here).
+ * Cache-only; the write filter above and the self-update ability populate it.
+ */
+function wpultra_updater_inject_transient_cached($transient) {
+    $release = get_transient(WPULTRA_UPDATER_TRANSIENT);
+    if (!is_array($release) || empty($release['version'])) { return $transient; }
+    return wpultra_updater_apply_release_to_transient($transient, $release);
 }

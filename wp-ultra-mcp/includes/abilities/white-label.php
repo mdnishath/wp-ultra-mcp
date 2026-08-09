@@ -62,7 +62,7 @@ wp_register_ability('wpultra/white-label', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => true],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => true],
     ],
 ]);
 
@@ -118,9 +118,7 @@ function wpultra_white_label_ability(array $input) {
             ]);
 
         case 'reset':
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', 'Reset clears all white-label branding and returns the plugin to WP Ultra MCP defaults. On a live client site this un-brands every admin screen. Re-run with confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Reset clears all white-label branding and returns the plugin to WP Ultra MCP defaults. On a live client site this un-brands every admin screen. Re-run with confirm: true.', 'unconfirmed')) { return $e; }
             if (function_exists('delete_option')) {
                 delete_option(WPULTRA_WHITELABEL_OPTION);
             }

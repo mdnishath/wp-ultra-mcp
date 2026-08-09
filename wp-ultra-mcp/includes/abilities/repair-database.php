@@ -59,9 +59,7 @@ function wpultra_repair_database_cb(array $input) {
             return wpultra_ok(wpultra_dbrepair_run_check());
 
         case 'repair':
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('confirm_required', 'Repairing tables is destructive. Re-run with confirm:true. A DB snapshot is taken automatically first.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Repairing tables is destructive. Re-run with confirm:true. A DB snapshot is taken automatically first.', 'confirm_required')) { return $e; }
             $all = ($input['all'] ?? false) === true;
             $res = wpultra_dbrepair_run_repair($all);
             if (is_wp_error($res)) { return $res; }
@@ -73,9 +71,7 @@ function wpultra_repair_database_cb(array $input) {
             return wpultra_ok($res);
 
         case 'schema-repair':
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('confirm_required', 'Running the core-schema repair is destructive. Re-run with confirm:true. A DB snapshot is taken automatically first.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Running the core-schema repair is destructive. Re-run with confirm:true. A DB snapshot is taken automatically first.', 'confirm_required')) { return $e; }
             $res = wpultra_dbrepair_run_schema_repair();
             if (is_wp_error($res)) { return $res; }
             return wpultra_ok($res);

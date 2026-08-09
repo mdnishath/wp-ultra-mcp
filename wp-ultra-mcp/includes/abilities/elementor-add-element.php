@@ -34,7 +34,7 @@ wp_register_ability('wpultra/elementor-add-element', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
     ],
 ]);
 

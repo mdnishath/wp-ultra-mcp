@@ -130,10 +130,17 @@ function wpultra_backup_shape(array $stat): array {
  * WP-facing helpers
  * ============================================================ */
 
-/** Base dir that holds every backup: uploads/wpultra-backups. */
+/** Base dir that holds every backup: uploads/wpultra-backups-<token>. */
 function wpultra_backup_base_dir(): string {
     $base = defined('WP_CONTENT_DIR') ? WP_CONTENT_DIR : (rtrim(ABSPATH, '/\\') . '/wp-content');
-    return rtrim($base, '/\\') . '/uploads/wpultra-backups';
+    $dir  = rtrim($base, '/\\') . '/uploads/wpultra-backups';
+    // Same rationale as wpultra_siteops_snapshot_dir(): deny files don't cover
+    // nginx, so the path itself must be unguessable. Old dirs migrate via rename.
+    $token = function_exists('wpultra_secret_dir_token') ? wpultra_secret_dir_token() : '';
+    if ($token === '') { return $dir; }
+    $secret = $dir . '-' . $token;
+    if (is_dir($dir) && !is_dir($secret)) { @rename($dir, $secret); }
+    return $secret;
 }
 
 /** WP_CONTENT_DIR (or the conventional fallback). */
@@ -158,7 +165,24 @@ function wpultra_backup_protect_dir(string $dir): void {
     $idx = $dir . '/index.php';
     if (!is_file($idx)) { @file_put_contents($idx, "<?php // Silence is golden.\n"); }
     $ht = $dir . '/.htaccess';
-    if (!is_file($ht)) { @file_put_contents($ht, "Deny from all\n"); }
+    if (!is_file($ht) || strpos((string) @file_get_contents($ht), 'mod_authz_core') === false) {
+        @file_put_contents(
+            $ht,
+            "# Deny direct web access to backups (Apache 2.2 + 2.4).\n"
+            . "<IfModule mod_authz_core.c>\n  Require all denied\n</IfModule>\n"
+            . "<IfModule !mod_authz_core.c>\n  Order allow,deny\n  Deny from all\n</IfModule>\n"
+        );
+    }
+    $wc = $dir . '/web.config';
+    if (!is_file($wc)) {
+        @file_put_contents(
+            $wc,
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            . "<configuration>\n  <system.webServer>\n"
+            . "    <authorization>\n      <deny users=\"*\" />\n    </authorization>\n"
+            . "  </system.webServer>\n</configuration>\n"
+        );
+    }
 }
 
 /** Hard cap on how many files we will zip; beyond this we bail with advice. */

@@ -169,6 +169,7 @@ function wpultra_jserrors_within_limit(): bool {
 
 function wpultra_jserrors_register_routes(): void {
     if (!function_exists('register_rest_route')) { return; }
+    if (function_exists('wpultra_public_endpoint_enabled') && !wpultra_public_endpoint_enabled('jserror')) { return; }
     register_rest_route('wpultra/v1', '/jserror', [
         'methods'             => 'POST',
         'permission_callback' => '__return_true', // public beacon — cached pages can't auth

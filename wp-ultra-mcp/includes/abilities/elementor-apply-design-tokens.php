@@ -8,23 +8,7 @@ wp_register_ability('wpultra/elementor-apply-design-tokens', [
     'category'    => 'elementor',
     'input_schema'  => [
         'type'       => 'object',
-        'properties' => [
-            'colors' => ['type' => 'array', 'items' => [
-                'type' => 'object',
-                'properties' => ['role' => ['type' => 'string'], 'title' => ['type' => 'string'], 'hex' => ['type' => 'string']],
-                'required' => ['title', 'hex'], 'additionalProperties' => false,
-            ]],
-            'fonts' => ['type' => 'array', 'items' => [
-                'type' => 'object',
-                'properties' => ['role' => ['type' => 'string'], 'title' => ['type' => 'string'], 'family' => ['type' => 'string']],
-                'required' => ['title', 'family'], 'additionalProperties' => false,
-            ]],
-            'sizes' => ['type' => 'array', 'items' => [
-                'type' => 'object',
-                'properties' => ['role' => ['type' => 'string'], 'title' => ['type' => 'string'], 'size' => ['type' => 'number'], 'unit' => ['type' => 'string']],
-                'required' => ['title', 'size'], 'additionalProperties' => false,
-            ]],
-        ],
+        'properties' => wpultra_design_brief_schema(),
         'additionalProperties' => false,
     ],
     'output_schema' => [
@@ -56,6 +40,9 @@ function wpultra_elementor_apply_design_tokens(array $input) {
     if ($brief['colors'] === null && $brief['fonts'] === null && $brief['sizes'] === null) {
         return wpultra_err('empty_brief', 'Provide at least one of colors, fonts, or sizes.');
     }
+    // Parity with the bricks/gutenberg siblings: applying tokens writes the
+    // Elementor kit (global variables), so gate it behind confirm:true.
+    if ($e = wpultra_require_confirm($input, 'Applying design tokens writes Elementor global variables — re-run with confirm:true.', 'confirm_required')) { return $e; }
     $built = wpultra_el_build_token_plan($brief);
     if (!empty($built['errors'])) {
         return wpultra_err('bad_brief', 'Token brief has errors: ' . implode('; ', $built['errors']), ['errors' => $built['errors']]);

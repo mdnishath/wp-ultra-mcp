@@ -39,7 +39,7 @@ function wpultra_ability_files(): array {
         // gutenberg write abilities (Wave 4a)
         'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
         // gutenberg patterns (Wave 4b)
-        'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
+        'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block', 'register-block-pattern',
         // elementor blueprints (Phase B2)
         'elementor-list-blueprints', 'elementor-insert-blueprint',
         // woocommerce (Wave 6, Plan 1)
@@ -70,7 +70,7 @@ function wpultra_ability_files(): array {
         // fields (Wave 5, Plan 2)
         'field-list-groups', 'field-get-group', 'acf-define-field-group', 'metabox-define-field-group', 'pods-define-fields',
         // media, users, system, content undo (Wave 8: power features)
-        'media-upload', 'manage-user', 'manage-plugin-theme', 'content-restore',
+        'media-upload', 'manage-user', 'manage-plugin-theme', 'content-restore', 'manage-app-passwords',
         // content core (Wave 8, Tier 1)
         'list-posts', 'get-post', 'search-content', 'duplicate-post',
         'manage-term', 'register-cpt', 'register-taxonomy', 'manage-menu',
@@ -78,7 +78,7 @@ function wpultra_ability_files(): array {
         'manage-comment', 'option-get', 'option-set', 'list-users', 'site-snapshot',
         // site ops + FSE (Wave 9)
         'export-content', 'import-content', 'manage-cron', 'search-replace',
-        'maintenance-mode', 'site-health', 'db-snapshot',
+        'maintenance-mode', 'site-health', 'db-snapshot', 'manage-transients', 'manage-theme-mods', 'core-update', 'manage-widgets',
         'theme-json-get', 'theme-json-set', 'manage-template', 'custom-css',
         // forms + audits (Wave 10)
         'form-status', 'form-list', 'form-get-entries', 'form-create',
@@ -177,14 +177,14 @@ function wpultra_ability_category_map(): array {
             'content-plan', 'content-generate', 'optimize-images',
             'content-freshness', 'feed-import', 'manage-fonts',
         ],
-        'users'          => ['manage-user', 'list-users', 'roles-manage'],
+        'users'          => ['manage-user', 'list-users', 'roles-manage', 'manage-app-passwords'],
         'system'         => [
             'manage-plugin-theme', 'option-get', 'option-set', 'site-snapshot',
             'export-content', 'import-content', 'manage-cron', 'maintenance-mode',
             'send-email', 'purge-cache', 'self-update',
             'site-backup', 'staging-clone', 'multisite-manage', 'manage-server-rules',
             'optimize-database', 'optimize-cache', 'backup-schedule',
-            'site-migrate', 'white-label',
+            'site-migrate', 'white-label', 'manage-transients', 'manage-theme-mods', 'core-update', 'manage-widgets',
         ],
         'fse'            => ['theme-json-get', 'theme-json-set', 'manage-template', 'custom-css'],
         'forms'          => ['form-status', 'form-list', 'form-get-entries', 'form-create'],
@@ -225,7 +225,7 @@ function wpultra_ability_category_map(): array {
         'gutenberg' => [
             'gutenberg-get-content', 'gutenberg-list-blocks', 'gutenberg-get-block-schema',
             'gutenberg-insert-block', 'gutenberg-update-block', 'gutenberg-delete-block', 'gutenberg-move-block',
-            'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block',
+            'gutenberg-list-patterns', 'gutenberg-insert-pattern', 'gutenberg-manage-reusable-block', 'register-block-pattern',
             'gutenberg-apply-design-tokens',
         ],
         'woocommerce' => ['woo-store-status', 'woo-list-products', 'woo-get-product', 'woo-upsert-product', 'woo-delete-product', 'woo-manage-variation', 'woo-manage-product-category', 'woo-manage-attribute', 'woo-list-orders', 'woo-get-order', 'woo-create-order', 'woo-update-order', 'woo-refund-order', 'woo-list-customers', 'woo-get-customer', 'woo-upsert-customer', 'woo-manage-coupon', 'woo-get-settings', 'woo-update-settings', 'woo-manage-review', 'woo-get-reports', 'woo-insert-product-block', 'woo-manage-shipping-zone', 'woo-manage-tax-rate', 'woo-manage-payment-gateway', 'woo-export-products', 'woo-import-products', 'woo-manage-subscription', 'woo-manage-booking', 'woo-insights', 'woo-manage-email', 'woo-bulk-edit', 'woo-pricing-rules', 'woo-fulfillment', 'woo-review-engine', 'woo-wishlist', 'woo-loyalty', 'woo-currency'],
@@ -255,41 +255,43 @@ function wpultra_category_enabled(string $cat): bool {
 function wpultra_register_categories(): void {
     if (!function_exists('wp_register_ability_category')) { return; }
     $cats = [
-        'filesystem' => 'Filesystem read/write within the site.',
-        'code-execution' => 'Run WP-CLI and PHP.',
-        'database' => 'Direct parameterized SQL.',
-        'diagnostics' => 'Logs and self-healing.',
-        'elementor' => 'Elementor v4 schema-driven layout engine.',
-        'gutenberg' => 'Gutenberg block content.',
-        'woocommerce' => 'WooCommerce store: products, orders, customers, settings.',
-        'seo' => 'SEO: on-page meta, internal links, technical + local SEO (Yoast/Rank Math/native).',
-        'fields' => 'Custom fields & content model via ACF, Meta Box, or Pods.',
-        'fse' => 'Block-theme design: theme.json global styles, templates, custom CSS.',
-        'forms' => 'Forms via CF7, WPForms, Gravity Forms, or Fluent Forms.',
-        'bricks' => 'Bricks builder page content.',
-        'builders' => 'Divi / Beaver Builder / Oxygen page-builder content.',
-        'jetengine' => 'JetEngine: CPTs, taxonomies, meta boxes, relations, listings.',
-        'multilingual' => 'Translations via WPML or Polylang.',
-        'jobs' => 'Background job runner for long operations (bulk, audits, search-replace).',
-        'undo' => 'Universal undo — snapshots before option/CSS/theme.json/term changes.',
-        'playbooks' => 'Multi-step playbooks that chain many abilities into one run.',
-        'triggers' => 'Event triggers — webhook / auto-playbook / log on WordPress events.',
-        'access' => 'Access control — per-role ability grants and per-minute rate limits.',
-        'newsletter' => 'Newsletter subscribers via MailPoet or Mailchimp for WP.',
-        'marketing' => 'Growth tools — email campaigns, A/B tests, leads CRM, popups, affiliate tracking.',
-        'ai' => 'AI-native — RAG chatbot, agent loop, visual diff, NL analytics, design-from-brief.',
-        'compliance' => 'Compliance — GDPR cookie consent, data export/erase, privacy tools.',
-        'verticals' => 'Business verticals — booking, membership, LMS, events, directory, donations.',
-        'headless' => 'Headless WordPress — WPGraphQL backend, schema introspection, frontend scaffold, preview, revalidation.',
-        'skills' => 'Reusable AI skill documents.',
-        'memory'  => 'Persistent cross-session memory.',
-        'content' => 'WordPress posts, pages, CPTs, media library, and revision restore.',
-        'users'   => 'WordPress user accounts, roles, and meta.',
-        'system'  => 'Plugin and theme install/activate/update.',
-        'custom'  => 'User-defined declarative abilities.',
+        'filesystem' => __('Filesystem read/write within the site.', 'wp-ultra-mcp'),
+        'code-execution' => __('Run WP-CLI and PHP.', 'wp-ultra-mcp'),
+        'database' => __('Direct parameterized SQL.', 'wp-ultra-mcp'),
+        'diagnostics' => __('Logs and self-healing.', 'wp-ultra-mcp'),
+        'elementor' => __('Elementor v4 schema-driven layout engine.', 'wp-ultra-mcp'),
+        'gutenberg' => __('Gutenberg block content.', 'wp-ultra-mcp'),
+        'woocommerce' => __('WooCommerce store: products, orders, customers, settings.', 'wp-ultra-mcp'),
+        'seo' => __('SEO: on-page meta, internal links, technical + local SEO (Yoast/Rank Math/native).', 'wp-ultra-mcp'),
+        'fields' => __('Custom fields & content model via ACF, Meta Box, or Pods.', 'wp-ultra-mcp'),
+        'fse' => __('Block-theme design: theme.json global styles, templates, custom CSS.', 'wp-ultra-mcp'),
+        'forms' => __('Forms via CF7, WPForms, Gravity Forms, or Fluent Forms.', 'wp-ultra-mcp'),
+        'bricks' => __('Bricks builder page content.', 'wp-ultra-mcp'),
+        'builders' => __('Divi / Beaver Builder / Oxygen page-builder content.', 'wp-ultra-mcp'),
+        'jetengine' => __('JetEngine: CPTs, taxonomies, meta boxes, relations, listings.', 'wp-ultra-mcp'),
+        'multilingual' => __('Translations via WPML or Polylang.', 'wp-ultra-mcp'),
+        'jobs' => __('Background job runner for long operations (bulk, audits, search-replace).', 'wp-ultra-mcp'),
+        'undo' => __('Universal undo — snapshots before option/CSS/theme.json/term changes.', 'wp-ultra-mcp'),
+        'playbooks' => __('Multi-step playbooks that chain many abilities into one run.', 'wp-ultra-mcp'),
+        'triggers' => __('Event triggers — webhook / auto-playbook / log on WordPress events.', 'wp-ultra-mcp'),
+        'access' => __('Access control — per-role ability grants and per-minute rate limits.', 'wp-ultra-mcp'),
+        'newsletter' => __('Newsletter subscribers via MailPoet or Mailchimp for WP.', 'wp-ultra-mcp'),
+        'marketing' => __('Growth tools — email campaigns, A/B tests, leads CRM, popups, affiliate tracking.', 'wp-ultra-mcp'),
+        'ai' => __('AI-native — RAG chatbot, agent loop, visual diff, NL analytics, design-from-brief.', 'wp-ultra-mcp'),
+        'compliance' => __('Compliance — GDPR cookie consent, data export/erase, privacy tools.', 'wp-ultra-mcp'),
+        'verticals' => __('Business verticals — booking, membership, LMS, events, directory, donations.', 'wp-ultra-mcp'),
+        'headless' => __('Headless WordPress — WPGraphQL backend, schema introspection, frontend scaffold, preview, revalidation.', 'wp-ultra-mcp'),
+        'skills' => __('Reusable AI skill documents.', 'wp-ultra-mcp'),
+        'memory'  => __('Persistent cross-session memory.', 'wp-ultra-mcp'),
+        'content' => __('WordPress posts, pages, CPTs, media library, and revision restore.', 'wp-ultra-mcp'),
+        'users'   => __('WordPress user accounts, roles, and meta.', 'wp-ultra-mcp'),
+        'system'  => __('Plugin and theme install/activate/update.', 'wp-ultra-mcp'),
+        'custom'  => __('User-defined declarative abilities.', 'wp-ultra-mcp'),
     ];
     foreach ($cats as $slug => $desc) {
-        wp_register_ability_category($slug, ['label' => $slug, 'description' => __($desc, 'wp-ultra-mcp')]);
+        // Descriptions are already translated (each literal in $cats is wrapped
+        // in __() at definition, so `wp i18n make-pot` extracts them there).
+        wp_register_ability_category($slug, ['label' => $slug, 'description' => $desc]);
     }
 }
 
@@ -308,6 +310,14 @@ function wpultra_load_abilities(): void {
     if (!in_array('access', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/access/engine.php')) {
         require_once WPULTRA_DIR . 'includes/access/engine.php';
         wpultra_access_register_gate();
+    }
+    // Central audit: guarantee every non-readonly ability execution is logged
+    // once (covers writes that never call wpultra_audit_log themselves). Rides
+    // the same core hooks as the access gate; shutdown catches failed calls.
+    if (function_exists('add_action')) {
+        add_action('wp_before_execute_ability', 'wpultra_audit_central_before', 5, 2);
+        add_action('wp_after_execute_ability', 'wpultra_audit_central_after', 5, 3);
+        add_action('shutdown', 'wpultra_audit_central_shutdown', 5);
     }
     // Load the Elementor engine (only if the elementor category is enabled) so ability
     // callbacks can reference its functions.
@@ -352,7 +362,7 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/users/engine.php';
     }
     if (!in_array('system', $disabled, true)) {
-        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools', 'system/updater', 'system/backup', 'system/staging', 'system/network', 'system/rules', 'system/optimize', 'system/backup-schedule', 'system/migration', 'system/whitelabel'] as $sf2) {
+        foreach (['system/engine', 'system/options', 'system/snapshot', 'system/siteops', 'system/devtools', 'system/updater', 'system/backup', 'system/staging', 'system/network', 'system/rules', 'system/optimize', 'system/backup-schedule', 'system/migration', 'system/whitelabel', 'system/transients', 'system/thememods', 'system/coreupdate', 'system/widgets'] as $sf2) {
             $sp2 = WPULTRA_DIR . 'includes/' . $sf2 . '.php';
             if (is_readable($sp2)) { require_once $sp2; }
         }
@@ -387,7 +397,7 @@ function wpultra_load_abilities(): void {
         require_once WPULTRA_DIR . 'includes/fse/tokens.php';
     }
     if (!in_array('forms', $disabled, true)) {
-        foreach (['setup', 'adapters/cf7', 'adapters/wpforms', 'adapters/gravity', 'adapters/fluent'] as $fmf) {
+        foreach (['setup', 'adapters/cf7', 'adapters/wpforms', 'adapters/gravity', 'adapters/fluent', 'adapters/ninja'] as $fmf) {
             $fmp = WPULTRA_DIR . 'includes/forms/' . $fmf . '.php';
             if (is_readable($fmp)) { require_once $fmp; }
         }
@@ -412,6 +422,7 @@ function wpultra_load_abilities(): void {
     }
     if (!in_array('multilingual', $disabled, true) && is_readable(WPULTRA_DIR . 'includes/i18n/engine.php')) {
         require_once WPULTRA_DIR . 'includes/i18n/engine.php';
+        if (is_readable(WPULTRA_DIR . 'includes/i18n/adapters.php')) { require_once WPULTRA_DIR . 'includes/i18n/adapters.php'; }
         if (is_readable(WPULTRA_DIR . 'includes/i18n/autotranslate.php')) { require_once WPULTRA_DIR . 'includes/i18n/autotranslate.php'; }
     }
     if (!in_array('marketing', $disabled, true)) {
@@ -421,7 +432,7 @@ function wpultra_load_abilities(): void {
         }
     }
     if (!in_array('verticals', $disabled, true)) {
-        foreach (['booking', 'membership', 'lms', 'events', 'directory', 'donations'] as $vf) {
+        foreach (['booking', 'membership', 'membership-adapters', 'lms', 'lms-adapters', 'events', 'directory', 'donations'] as $vf) {
             $vp = WPULTRA_DIR . 'includes/verticals/' . $vf . '.php';
             if (is_readable($vp)) { require_once $vp; }
         }
@@ -544,21 +555,21 @@ function wpultra_load_ops_runtime(): void {
     $disabled = wpultra_disabled_categories();
     if (!in_array('compliance', $disabled, true)) {
         $gp = WPULTRA_DIR . 'includes/compliance/gdpr.php';
-        if (is_readable($gp)) { require_once $gp; if (function_exists('wpultra_gdpr_boot')) { try { wpultra_gdpr_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($gp)) { require_once $gp; if (function_exists('wpultra_gdpr_boot')) { try { wpultra_gdpr_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
     }
     if (!in_array('diagnostics', $disabled, true)) {
         $rp = WPULTRA_DIR . 'includes/system/reports.php';
-        if (is_readable($rp)) { require_once $rp; if (function_exists('wpultra_reports_boot')) { try { wpultra_reports_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($rp)) { require_once $rp; if (function_exists('wpultra_reports_boot')) { try { wpultra_reports_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
     }
     if (!in_array('system', $disabled, true)) {
         foreach (['whitelabel' => 'wpultra_wlabel_boot', 'migration' => 'wpultra_migrate_boot'] as $file => $boot) {
             $fp = WPULTRA_DIR . 'includes/system/' . $file . '.php';
-            if (is_readable($fp)) { require_once $fp; if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) {} } }
+            if (is_readable($fp)) { require_once $fp; if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
         }
     }
     if (!in_array('users', $disabled, true)) {
         $rl = WPULTRA_DIR . 'includes/system/roles.php';
-        if (is_readable($rl)) { require_once $rl; if (function_exists('wpultra_roles_boot')) { try { wpultra_roles_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($rl)) { require_once $rl; if (function_exists('wpultra_roles_boot')) { try { wpultra_roles_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
     }
 }
 
@@ -579,14 +590,14 @@ function wpultra_load_ai_runtime(): void {
             if (is_readable($aip)) { require_once $aip; }
         }
         foreach (['wpultra_kb_boot', 'wpultra_agent_boot', 'wpultra_vdiff_boot', 'wpultra_nlq_boot', 'wpultra_dfb_boot'] as $boot) {
-            if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) { /* an AI hook must never take the site down */ } }
+            if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); /* an AI hook must never take the site down */ } }
         }
         // The RAG chatbot's public chat endpoint (widget beacons from cached pages can't auth).
         if (function_exists('wpultra_kb_register_routes')) { add_action('rest_api_init', 'wpultra_kb_register_routes'); }
     }
     if (!in_array('seo', $disabled, true)) {
         $sp = WPULTRA_DIR . 'includes/ai/seopilot.php';
-        if (is_readable($sp)) { require_once $sp; if (function_exists('wpultra_seopilot_boot')) { try { wpultra_seopilot_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($sp)) { require_once $sp; if (function_exists('wpultra_seopilot_boot')) { try { wpultra_seopilot_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
     }
 }
 
@@ -609,19 +620,19 @@ function wpultra_load_safety_runtime(): void {
         // Firewall boots FIRST — registers an init-prio-1 evaluator that may
         // block-and-die the request when mode is log/block; that is the point.
         if (function_exists('wpultra_firewall_boot')) {
-            try { wpultra_firewall_boot(); } catch (\Throwable $e) { /* firewall fails OPEN — never take the site down */ }
+            try { wpultra_firewall_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); /* firewall fails OPEN — never take the site down */ }
         }
         if (function_exists('wpultra_health_boot')) {
-            try { wpultra_health_boot(); } catch (\Throwable $e) {}
+            try { wpultra_health_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); }
         }
     }
     if (!in_array('seo', $disabled, true)) {
         $lf = WPULTRA_DIR . 'includes/system/linkfix.php';
-        if (is_readable($lf)) { require_once $lf; if (function_exists('wpultra_linkfix_boot')) { try { wpultra_linkfix_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($lf)) { require_once $lf; if (function_exists('wpultra_linkfix_boot')) { try { wpultra_linkfix_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
     }
     if (!in_array('system', $disabled, true)) {
         $bs = WPULTRA_DIR . 'includes/system/backup-schedule.php';
-        if (is_readable($bs)) { require_once $bs; if (function_exists('wpultra_bksched_boot')) { try { wpultra_bksched_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($bs)) { require_once $bs; if (function_exists('wpultra_bksched_boot')) { try { wpultra_bksched_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
     }
 }
 
@@ -639,7 +650,7 @@ function wpultra_load_woopower_runtime(): void {
     }
     foreach (['wpultra_pricing_boot', 'wpultra_fulfill_boot', 'wpultra_reviews_engine_boot', 'wpultra_wishlist_boot', 'wpultra_loyalty_boot', 'wpultra_currency_boot'] as $boot) {
         if (function_exists($boot)) {
-            try { $boot(); } catch (\Throwable $e) { /* a broken store hook must never take the site down */ }
+            try { $boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); /* a broken store hook must never take the site down */ }
         }
     }
 }
@@ -660,7 +671,7 @@ function wpultra_load_verticals_runtime(): void {
         if (is_readable($vp)) { require_once $vp; }
     }
     foreach (['wpultra_booking_boot', 'wpultra_member_boot', 'wpultra_lms_boot', 'wpultra_event_boot', 'wpultra_dir_boot', 'wpultra_donate_boot'] as $boot) {
-        if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) { /* a broken vertical must never take the site down */ } }
+        if (function_exists($boot)) { try { $boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); /* a broken vertical must never take the site down */ } }
     }
 }
 
@@ -678,14 +689,14 @@ function wpultra_load_contentreach_runtime(): void {
             $ap = WPULTRA_DIR . 'includes/' . $af . '.php';
             if (is_readable($ap)) { require_once $ap; }
         }
-        if (function_exists('wpultra_atrans_boot')) { try { wpultra_atrans_boot(); } catch (\Throwable $e) {} }
+        if (function_exists('wpultra_atrans_boot')) { try { wpultra_atrans_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } }
     }
     if (!in_array('content', $disabled, true)) {
         $fp = WPULTRA_DIR . 'includes/content/feed-import.php';
-        if (is_readable($fp)) { require_once $fp; if (function_exists('wpultra_feed_boot')) { try { wpultra_feed_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($fp)) { require_once $fp; if (function_exists('wpultra_feed_boot')) { try { wpultra_feed_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
         // manage-fonts (PP2-A): register the wp_head @font-face style block for custom fonts.
         $fop = WPULTRA_DIR . 'includes/system/fonts.php';
-        if (is_readable($fop)) { require_once $fop; if (function_exists('wpultra_fonts_boot')) { try { wpultra_fonts_boot(); } catch (\Throwable $e) {} } }
+        if (is_readable($fop)) { require_once $fop; if (function_exists('wpultra_fonts_boot')) { try { wpultra_fonts_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); } } }
     }
 }
 
@@ -707,7 +718,7 @@ function wpultra_load_marketing_runtime(): void {
     if (is_readable($ss)) { require_once $ss; }
     foreach (['wpultra_campaigns_boot', 'wpultra_ab_boot', 'wpultra_leads_boot', 'wpultra_popups_boot', 'wpultra_affiliates_boot', 'wpultra_social_boot'] as $boot) {
         if (function_exists($boot)) {
-            try { $boot(); } catch (\Throwable $e) { /* a broken marketing hook must never take the site down */ }
+            try { $boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); /* a broken marketing hook must never take the site down */ }
         }
     }
     if (function_exists('wpultra_track_register_routes')) {
@@ -814,8 +825,10 @@ function wpultra_load_updater(): void {
     $up = WPULTRA_DIR . 'includes/system/updater.php';
     if (is_readable($up)) { require_once $up; }
     if (function_exists('wpultra_updater_inject_transient')) {
+        // Write filter may fetch (rides WP's own update-check cadence); the read
+        // filter fires on every get_site_transient() and must stay cache-only.
         add_filter('pre_set_site_transient_update_plugins', 'wpultra_updater_inject_transient');
-        add_filter('site_transient_update_plugins', 'wpultra_updater_inject_transient');
+        add_filter('site_transient_update_plugins', 'wpultra_updater_inject_transient_cached');
     }
 }
 
@@ -832,7 +845,7 @@ function wpultra_load_headless_runtime(): void {
         if (is_readable($hp)) { require_once $hp; }
     }
     if (function_exists('wpultra_headless_boot')) {
-        try { wpultra_headless_boot(); } catch (\Throwable $e) { /* a headless hook must never take the site down */ }
+        try { wpultra_headless_boot(); } catch (\Throwable $e) { wpultra_log_throwable($e, 'boot'); /* a headless hook must never take the site down */ }
     }
 }
 
@@ -847,6 +860,70 @@ function wpultra_load_structure_frontend(): void {
     if (is_readable($sp)) { require_once $sp; }
     if (function_exists('wpultra_structure_register_persisted')) {
         wpultra_structure_register_persisted();
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Runtime boot dispatchers (C1.14) — the plugin's three top-level hooks.
+ * One ordered map replaces the former 16 individual add_action lines in
+ * wp-ultra-mcp.php: state (enabled flag + disabled categories) resolves once
+ * per dispatcher, a disabled site skips every loader with a single check, and
+ * the boot order is explicit in one place instead of spread across priorities.
+ * Loaders keep their internal guards as defense-in-depth (each is cheap — the
+ * options are cached by WP after the dispatcher's first read).
+ * ------------------------------------------------------------------ */
+
+/**
+ * plugins_loaded @5 — safety alone, before other plugins' default-priority
+ * work, so the firewall can evaluate (and possibly block) the request first.
+ */
+function wpultra_runtime_boot_early(): void {
+    if (!wpultra_is_enabled()) { return; }
+    wpultra_load_safety_runtime();
+}
+
+/**
+ * plugins_loaded @20 — MCP boot, then every always-on runtime in the same
+ * relative order the former per-loader priorities (21..31) enforced.
+ */
+function wpultra_runtime_boot(): void {
+    wpultra_boot(); // guarded internally (adapter availability + enabled flag)
+    if (!wpultra_is_enabled()) { return; }
+    wpultra_disabled_categories(); // resolve once; WP caches the option for the loaders below
+    $loaders = [
+        'wpultra_load_jobs_runtime',         // 21 — async job runner + cron tick
+        'wpultra_load_triggers_runtime',     // 22 — event triggers/webhooks
+        'wpultra_load_widgets_runtime',      // 23 — AI-generated atomic widgets
+        'wpultra_load_monitors_runtime',     // 24 — login/fatal/404/IndexNow monitors
+        'wpultra_load_marketing_runtime',    // 25 — campaigns, A/B, popups, /track
+        'wpultra_load_woopower_runtime',     // 26 — pricing, wishlist, loyalty, currency
+        'wpultra_load_ai_runtime',           // 27 — chatbot, agent loop, SEO autopilot
+        'wpultra_load_ops_runtime',          // 28 — GDPR, reports, white-label, roles
+        'wpultra_load_contentreach_runtime', // 29 — autotranslate + feed-import crons
+        'wpultra_load_verticals_runtime',    // 30 — booking/membership/LMS/events CPTs
+        'wpultra_load_headless_runtime',     // 31 — WPGraphQL JWT + CORS
+    ];
+    foreach ($loaders as $loader) {
+        if (function_exists($loader)) { $loader(); }
+    }
+}
+
+/**
+ * init @1 — translations plus the frontend loaders whose hooks must exist on
+ * regular page views (the ability engine-loop only runs on REST calls). Same
+ * order the former individual registrations ran in.
+ */
+function wpultra_runtime_init(): void {
+    // Distributed via GitHub (not w.org), so the just-in-time loader has nothing
+    // to fetch — an explicit load is required for the ~640 __() strings.
+    load_plugin_textdomain('wp-ultra-mcp', false, dirname(plugin_basename(WPULTRA_FILE)) . '/languages');
+    // The updater deliberately ignores the enabled flag: auto-updates must keep
+    // working even when the site owner has the MCP toggle off (the v0.30.1 bug
+    // class — a gated updater strands old installs).
+    wpultra_load_updater();
+    if (!wpultra_is_enabled()) { return; }
+    foreach (['wpultra_load_seo_frontend', 'wpultra_load_fields_frontend', 'wpultra_load_structure_frontend'] as $loader) {
+        if (function_exists($loader)) { $loader(); }
     }
 }
 
@@ -891,6 +968,16 @@ function wpultra_boot(): void {
         return;
     }
 
+    // The Abilities API is core only since WP 6.9. Without it, wp_abilities_api_init
+    // never fires and all abilities silently fail to register — the MCP endpoint
+    // would answer with an empty tool list and no explanation. Say so instead.
+    if (!function_exists('wp_register_ability')) {
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-error"><p>WP-Ultra-MCP: the WordPress Abilities API is missing — this plugin requires WordPress 6.9 or newer. No abilities can register until WordPress is updated.</p></div>';
+        });
+        return;
+    }
+
     // Brand the adapter's default server as "wpultra".
     add_filter('mcp_adapter_default_server_config', function ($config) {
         if (is_array($config)) {
@@ -902,6 +989,18 @@ function wpultra_boot(): void {
     });
 
     if (!wpultra_is_enabled()) { return; }
+
+    // Register user-defined block patterns on every request (front-end + editor)
+    // so they show in the inserter, not only after an MCP call. Loads the engine
+    // lazily and only when gutenberg is enabled and patterns actually exist.
+    if (!in_array('gutenberg', wpultra_disabled_categories(), true)) {
+        add_action('init', function () {
+            if (function_exists('get_option') && !get_option('wpultra_block_patterns')) { return; }
+            $pf = WPULTRA_DIR . 'includes/gutenberg/patterns.php';
+            if (is_readable($pf)) { require_once $pf; }
+            if (function_exists('wpultra_register_custom_block_patterns')) { wpultra_register_custom_block_patterns(); }
+        }, 20);
+    }
 
     // Close the MCP endpoint to non-admins (admins + explicitly-granted roles only).
     wpultra_mcp_harden_transport();

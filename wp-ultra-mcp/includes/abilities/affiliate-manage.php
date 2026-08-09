@@ -238,9 +238,7 @@ function wpultra_aff_action_list(array $input) {
 
 /** @return array|WP_Error */
 function wpultra_aff_action_delete(array $input) {
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'Deleting an affiliate is destructive. Re-run with confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Deleting an affiliate is destructive. Re-run with confirm: true.', 'unconfirmed')) { return $e; }
     $aff = wpultra_aff_resolve_target($input);
     if (is_wp_error($aff)) { return $aff; }
     $id    = $aff['id'];

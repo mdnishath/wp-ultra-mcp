@@ -135,6 +135,7 @@ function wpultra_login_log_save(array $log): void {
  * Filters: action (prefix), user_id, ok_only, failed_only, since, limit (<=200).
  */
 function wpultra_activity_read(array $filters = []): array {
+    if (function_exists('wpultra_audit_flush')) { wpultra_audit_flush(); } // include same-request buffered entries
     $log = function_exists('get_option') ? get_option('wpultra_audit', []) : [];
     if (!is_array($log)) { $log = []; }
     $log = array_reverse($log); // stored oldest-last by wpultra_audit_log(); we want newest-first

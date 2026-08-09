@@ -11,24 +11,7 @@ wp_register_ability('wpultra/gutenberg-apply-design-tokens', [
     'category'    => 'gutenberg',
     'input_schema'  => [
         'type'       => 'object',
-        'properties' => [
-            'colors' => ['type' => 'array', 'items' => [
-                'type' => 'object',
-                'properties' => ['role' => ['type' => 'string'], 'title' => ['type' => 'string'], 'hex' => ['type' => 'string']],
-                'required' => ['title', 'hex'], 'additionalProperties' => false,
-            ]],
-            'fonts' => ['type' => 'array', 'items' => [
-                'type' => 'object',
-                'properties' => ['role' => ['type' => 'string'], 'title' => ['type' => 'string'], 'family' => ['type' => 'string']],
-                'required' => ['title', 'family'], 'additionalProperties' => false,
-            ]],
-            'sizes' => ['type' => 'array', 'items' => [
-                'type' => 'object',
-                'properties' => ['role' => ['type' => 'string'], 'title' => ['type' => 'string'], 'size' => ['type' => 'number'], 'unit' => ['type' => 'string']],
-                'required' => ['title', 'size'], 'additionalProperties' => false,
-            ]],
-            'confirm' => ['type' => 'boolean'],
-        ],
+        'properties' => wpultra_design_brief_schema(),
         'additionalProperties' => false,
     ],
     'output_schema' => [
@@ -60,9 +43,7 @@ function wpultra_gutenberg_apply_design_tokens_cb(array $input) {
     if ($brief['colors'] === null && $brief['fonts'] === null && $brief['sizes'] === null) {
         return wpultra_err('empty_brief', 'Provide at least one of colors, fonts, or sizes.');
     }
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('confirm_required', 'Applying design tokens writes theme.json (global styles) — re-run with confirm:true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Applying design tokens writes theme.json (global styles) — re-run with confirm:true.', 'confirm_required')) { return $e; }
     if (!function_exists('wpultra_gutenberg_apply_tokens')) {
         return wpultra_err('fse_unavailable', 'Gutenberg token engine unavailable.');
     }

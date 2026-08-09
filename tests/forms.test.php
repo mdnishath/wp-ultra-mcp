@@ -11,6 +11,7 @@ require __DIR__ . '/../wp-ultra-mcp/includes/forms/adapters/cf7.php';
 require __DIR__ . '/../wp-ultra-mcp/includes/forms/adapters/wpforms.php';
 require __DIR__ . '/../wp-ultra-mcp/includes/forms/adapters/gravity.php';
 require __DIR__ . '/../wp-ultra-mcp/includes/forms/adapters/fluent.php';
+require __DIR__ . '/../wp-ultra-mcp/includes/forms/adapters/ninja.php';
 
 // A representative unified fields[] fixture reused across adapters.
 function forms_fixture(): array {
@@ -53,11 +54,12 @@ it('driver resolution errors when nothing is installed', function () {
     assert_eq('forms_unavailable', $err->get_error_code());
 });
 
-it('detection never fatals with no plugins present and returns all four keys null', function () {
+it('detection never fatals with no plugins present and returns all five keys null', function () {
     $d = wpultra_forms_detect();
-    assert_eq(['cf7', 'wpforms', 'gravity', 'fluent'], array_keys($d));
+    assert_eq(['cf7', 'wpforms', 'gravity', 'fluent', 'ninja'], array_keys($d));
     assert_eq(null, $d['cf7']);
     assert_eq(null, $d['fluent']);
+    assert_eq(null, $d['ninja']);
 });
 
 /* ---------------- CF7 markup builder (the test file's core) ---------------- */
@@ -245,6 +247,59 @@ it('fluent entry flattener decodes response JSON and flattens nested groups', fu
     assert_eq('Carol, Smith', $flat['fields']['names']);
 });
 
+/* ---------------- Ninja field builder + entry flattener ---------------- */
+
+it('ninja field builder maps types, slugs keys, and appends a submit button', function () {
+    $fields = wpultra_forms_ninja_fields(forms_fixture());
+    assert_eq('textbox', $fields[0]['type']);
+    assert_eq('email', $fields[1]['type']);
+    assert_eq('textarea', $fields[2]['type']);
+    assert_eq('listselect', $fields[3]['type']);
+    assert_eq('your_name_1', $fields[0]['key']);
+    assert_eq(1, $fields[0]['required']);
+    assert_eq(0, $fields[2]['required']);
+    $last = end($fields);
+    assert_eq('submit', $last['type']); // NF forms need an explicit submit field
+});
+
+it('ninja select field carries ordered label/value options', function () {
+    $fields = wpultra_forms_ninja_fields(forms_fixture());
+    $opts = $fields[3]['options'];
+    assert_eq('Sales', $opts[0]['label']);
+    assert_eq('Other', $opts[2]['value']);
+    assert_eq(0, $opts[0]['order']);
+    assert_eq(2, $opts[2]['order']);
+});
+
+it('ninja key derivation slugifies with underscores and appends the index', function () {
+    assert_eq('your_name_1', wpultra_forms_ninja_key('Your Name!!', 1));
+    assert_eq('field_3', wpultra_forms_ninja_key('###', 3)); // empty slug -> field
+});
+
+it('ninja entry flattener maps _field_<id> meta through the field-key map', function () {
+    $flat = wpultra_forms_ninja_flatten_entry(42, '2026-08-01 10:00:00', [
+        '_form_id'  => '3',            // non-field meta skipped
+        '_field_11' => 'Bob',
+        '_field_12' => 'bob@x.co',
+        '_field_99' => 'orphan value', // unmapped field falls back to field_<id>
+    ], [
+        11 => ['key' => 'your_name_1', 'label' => 'Your Name'],
+        12 => ['key' => 'email_address_2', 'label' => 'Email Address'],
+    ]);
+    assert_eq(42, $flat['id']);
+    assert_eq('Bob', $flat['fields']['your_name_1']);
+    assert_eq('bob@x.co', $flat['fields']['email_address_2']);
+    assert_eq('orphan value', $flat['fields']['field_99']);
+    assert_true(!isset($flat['fields']['_form_id']));
+});
+
+it('ninja entry flattener joins JSON multi-value fields to a comma list', function () {
+    $flat = wpultra_forms_ninja_flatten_entry(7, '2026-08-01', [
+        '_field_5' => json_encode(['Mon', 'Tue']),
+    ], [5 => ['key' => 'days_1', 'label' => 'Days']]);
+    assert_eq('Mon, Tue', $flat['fields']['days_1']);
+});
+
 /* ---------------- shared entry search matcher ---------------- */
 
 it('entry matcher is case-insensitive across field values', function () {
@@ -258,10 +313,13 @@ it('entry matcher is case-insensitive across field values', function () {
 /* ---------------- status shaping (pure over detection) ---------------- */
 
 it('plugin label + entries_supported degrade correctly with nothing installed', function () {
-    $detected = ['cf7' => null, 'wpforms' => null, 'gravity' => null, 'fluent' => null];
+    $detected = ['cf7' => null, 'wpforms' => null, 'gravity' => null, 'fluent' => null, 'ninja' => null];
     assert_eq('Contact Form 7', wpultra_forms_plugin_label('cf7'));
+    assert_eq('Ninja Forms', wpultra_forms_plugin_label('ninja'));
     assert_true(!wpultra_forms_entries_supported('cf7', $detected)); // no Flamingo
     assert_true(!wpultra_forms_entries_supported('gravity', $detected));
+    assert_true(!wpultra_forms_entries_supported('ninja', $detected));
+    assert_true(wpultra_forms_entries_supported('ninja', ['ninja' => '3.8']));
 });
 
 run_tests();

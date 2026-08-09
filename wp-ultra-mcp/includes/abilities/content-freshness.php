@@ -64,7 +64,7 @@ wp_register_ability('wpultra/content-freshness', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 

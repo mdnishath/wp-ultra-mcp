@@ -7,13 +7,13 @@ if (!defined('ABSPATH')) { exit(); }
  *
  * Mirrors includes/fields/ : every adapter degrades gracefully when its plugin is
  * absent (function/class probes only, never fatal). Per-adapter pure mapper/flattener
- * functions live in includes/forms/adapters/{cf7,wpforms,gravity,fluent}.php.
+ * functions live in includes/forms/adapters/{cf7,wpforms,gravity,fluent,ninja}.php.
  */
 
 /**
  * Detect each supported form plugin and its version.
  * Value is the version string when installed, or null when absent.
- * @return array<string,?string>  keys: cf7, wpforms, gravity, fluent
+ * @return array<string,?string>  keys: cf7, wpforms, gravity, fluent, ninja
  */
 function wpultra_forms_detect(): array {
     $out = [
@@ -21,6 +21,7 @@ function wpultra_forms_detect(): array {
         'wpforms' => null,
         'gravity' => null,
         'fluent'  => null,
+        'ninja'   => null,
     ];
     // Contact Form 7
     if (defined('WPCF7_VERSION')) {
@@ -46,6 +47,12 @@ function wpultra_forms_detect(): array {
     } elseif (defined('FLUENTFORM') || function_exists('wpFluentForm')) {
         $out['fluent'] = '';
     }
+    // Ninja Forms (v3)
+    if (class_exists('Ninja_Forms')) {
+        $out['ninja'] = defined('Ninja_Forms::VERSION') ? (string) constant('Ninja_Forms::VERSION') : '';
+    } elseif (function_exists('Ninja_Forms')) {
+        $out['ninja'] = '';
+    }
     return $out;
 }
 
@@ -59,12 +66,12 @@ function wpultra_forms_flamingo_active(): bool {
  * @return array<int,string>
  */
 function wpultra_forms_order(): array {
-    return ['cf7', 'wpforms', 'gravity', 'fluent'];
+    return ['cf7', 'wpforms', 'gravity', 'fluent', 'ninja'];
 }
 
 /** All plugin keys this domain knows about. Pure. */
 function wpultra_forms_known_plugins(): array {
-    return ['cf7', 'wpforms', 'gravity', 'fluent'];
+    return ['cf7', 'wpforms', 'gravity', 'fluent', 'ninja'];
 }
 
 /**
@@ -80,7 +87,7 @@ function wpultra_forms_driver(string $explicit = '', ?array $detected = null) {
     if ($detected === null) { $detected = wpultra_forms_detect(); }
     if ($explicit !== '') {
         if (!in_array($explicit, wpultra_forms_known_plugins(), true)) {
-            return wpultra_forms_err('forms_unknown_plugin', "Unknown form plugin '{$explicit}'. Known: cf7, wpforms, gravity, fluent.");
+            return wpultra_forms_err('forms_unknown_plugin', "Unknown form plugin '{$explicit}'. Known: cf7, wpforms, gravity, fluent, ninja.");
         }
         if (($detected[$explicit] ?? null) === null) {
             return wpultra_forms_err('forms_unavailable', "Form plugin '{$explicit}' is not active on this site.");
@@ -90,7 +97,7 @@ function wpultra_forms_driver(string $explicit = '', ?array $detected = null) {
     foreach (wpultra_forms_order() as $key) {
         if (($detected[$key] ?? null) !== null) { return $key; }
     }
-    return wpultra_forms_err('forms_unavailable', 'No supported form plugin (Contact Form 7, WPForms, Gravity Forms, Fluent Forms) is active.');
+    return wpultra_forms_err('forms_unavailable', 'No supported form plugin (Contact Form 7, WPForms, Gravity Forms, Fluent Forms, Ninja Forms) is active.');
 }
 
 /**
@@ -134,6 +141,7 @@ function wpultra_forms_plugin_label(string $key): string {
         'wpforms' => 'WPForms',
         'gravity' => 'Gravity Forms',
         'fluent'  => 'Fluent Forms',
+        'ninja'   => 'Ninja Forms',
         default   => $key,
     };
 }
@@ -154,6 +162,8 @@ function wpultra_forms_entries_supported(string $key, array $detected): bool {
             return ($detected['gravity'] ?? null) !== null;
         case 'fluent':
             return ($detected['fluent'] ?? null) !== null;
+        case 'ninja':
+            return ($detected['ninja'] ?? null) !== null;
     }
     return false;
 }

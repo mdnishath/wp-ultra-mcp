@@ -36,9 +36,7 @@ wp_register_ability('wpultra/pagebuilder-set-content', [
 ]);
 
 function wpultra_pagebuilder_set_content_cb(array $input) {
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('confirm_required', 'Replacing a builder layout requires confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Replacing a builder layout requires confirm: true.', 'confirm_required')) { return $e; }
     $r = wpultra_pagebuilder_resolve($input);
     if (is_wp_error($r)) { return $r; }
     [$driver] = $r;

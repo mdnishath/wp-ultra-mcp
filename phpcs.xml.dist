@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<ruleset name="WP-Ultra-MCP">
+    <description>Coding standards for the WP-Ultra-MCP plugin.</description>
+
+    <!-- Scan the plugin source only. -->
+    <file>wp-ultra-mcp</file>
+
+    <!-- Vendored deps and build output are not ours to lint. -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/languages/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <!-- Target the plugin's minimum runtime. -->
+    <config name="minimum_supported_wp_version" value="6.9"/>
+    <config name="testVersion" value="8.0-"/>
+
+    <!--
+        WordPress-Extra is the intended standard (install via:
+        composer require --dev wp-coding-standards/wpcs). It is advisory in CI
+        (continue-on-error) — introduce fixes incrementally rather than all at
+        once. If WPCS isn't installed, PHPCS falls back to the generic rules
+        that ship with it.
+    -->
+    <rule ref="WordPress-Extra">
+        <!-- The plugin deliberately uses short-array syntax and modern PHP. -->
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <!-- Yoda conditions are not enforced in this codebase's style. -->
+        <exclude name="WordPress.PHP.YodaConditions"/>
+        <!-- File-name rules don't fit the one-ability-per-file convention. -->
+        <exclude name="WordPress.Files.FileName"/>
+    </rule>
+</ruleset>

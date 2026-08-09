@@ -23,11 +23,7 @@ wp_register_ability('wpultra/woo-manage-variation', [
         'required'   => ['action', 'parent_id'],
         'additionalProperties' => false,
     ],
-    'output_schema' => [
-        'type'       => 'object',
-        'properties' => ['success' => ['type' => 'boolean']],
-        'required'   => ['success'],
-    ],
+    'output_schema' => wpultra_manager_output_schema([]),
     'execute_callback'    => 'wpultra_woo_manage_variation_cb',
     'permission_callback' => 'wpultra_permission_callback',
     'meta' => [

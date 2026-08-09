@@ -36,7 +36,7 @@ wp_register_ability('wpultra/self-update', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => true],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => true],
     ],
 ]);
 

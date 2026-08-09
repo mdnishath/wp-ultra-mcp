@@ -33,9 +33,9 @@ it('wpultra_undo_supported_types is unchanged by the BF2.6 extension', function 
     assert_eq(['option', 'custom_css', 'theme_json', 'term'], wpultra_undo_supported_types());
 });
 
-it('wpultra_undo_extended_types adds the three new BF2.6 types on top of the original four', function () {
+it('wpultra_undo_extended_types adds the BF2.6 types + the F1.1 post type on top of the original four', function () {
     assert_eq(
-        ['option', 'custom_css', 'theme_json', 'term', 'file', 'active_plugins', 'active_theme'],
+        ['option', 'custom_css', 'theme_json', 'term', 'file', 'active_plugins', 'active_theme', 'post'],
         wpultra_undo_extended_types()
     );
 });

@@ -85,7 +85,7 @@ wp_register_ability('wpultra/social-scheduler', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 
@@ -324,9 +324,7 @@ function wpultra_social_ability_cancel(array $input) {
 function wpultra_social_ability_send_now(array $input) {
     $id = (string) ($input['id'] ?? '');
     if ($id === '') { return wpultra_err('missing_id', 'id is required for send-now.'); }
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'send-now posts publicly via your automation immediately. Re-run with confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'send-now posts publicly via your automation immediately. Re-run with confirm: true.', 'unconfirmed')) { return $e; }
     $item = wpultra_social_find($id);
     if ($item === null) { return wpultra_err('not_found', "Item '$id' not found."); }
     if (!in_array(($item['status'] ?? ''), ['scheduled', 'failed'], true)) {

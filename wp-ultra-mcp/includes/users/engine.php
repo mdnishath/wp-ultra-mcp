@@ -127,3 +127,63 @@ function wpultra_user_delete(int $id, int $reassign_to) {
     if (!$ok) { return wpultra_err('delete_failed', "Could not delete user $id."); }
     return ['id' => $id, 'deleted' => true];
 }
+
+/* ------------------------------------------------------------------ *
+ * Application-password lifecycle (list / revoke). Creation stays in the
+ * Connect page + headless-auth so a fresh secret is revealed exactly once.
+ * ------------------------------------------------------------------ */
+
+/** Resolve the target user id (explicit user_id for admins, else the acting user). */
+function wpultra_apppw_target_user(array $input): int {
+    $uid = (int) ($input['user_id'] ?? 0);
+    return $uid > 0 ? $uid : (function_exists('get_current_user_id') ? (int) get_current_user_id() : 0);
+}
+
+/** @return array|WP_Error list of a user's application passwords (no hashes). */
+function wpultra_apppw_list(int $user_id) {
+    if (!class_exists('WP_Application_Passwords')) { return wpultra_err('unavailable', 'Application Passwords API is unavailable.'); }
+    if (!get_userdata($user_id)) { return wpultra_err('not_found', "No user with id $user_id."); }
+    $items = WP_Application_Passwords::get_user_application_passwords($user_id);
+    $out = [];
+    foreach ((array) $items as $p) {
+        $out[] = [
+            'uuid'      => (string) ($p['uuid'] ?? ''),
+            'name'      => (string) ($p['name'] ?? ''),
+            'created'   => !empty($p['created']) ? gmdate('c', (int) $p['created']) : null,
+            'last_used' => !empty($p['last_used']) ? gmdate('c', (int) $p['last_used']) : null,
+            'last_ip'   => (string) ($p['last_ip'] ?? ''),
+        ];
+    }
+    return ['user_id' => $user_id, 'application_passwords' => $out, 'count' => count($out)];
+}
+
+/** @return array|WP_Error revoke one application password by uuid. */
+function wpultra_apppw_revoke(int $user_id, string $uuid) {
+    if (!class_exists('WP_Application_Passwords')) { return wpultra_err('unavailable', 'Application Passwords API is unavailable.'); }
+    if ($uuid === '') { return wpultra_err('missing_uuid', 'uuid is required (get it from the list action).'); }
+    if (!get_userdata($user_id)) { return wpultra_err('not_found', "No user with id $user_id."); }
+    $res = WP_Application_Passwords::delete_application_password($user_id, $uuid);
+    if (is_wp_error($res)) { return $res; }
+    if (!$res) { return wpultra_err('revoke_failed', "No application password with uuid '$uuid' for user $user_id."); }
+    return ['user_id' => $user_id, 'uuid' => $uuid, 'revoked' => true];
+}
+
+/** Ability dispatcher. @return array|WP_Error */
+function wpultra_manage_app_passwords(array $input) {
+    $action = (string) ($input['action'] ?? 'list');
+    $user_id = wpultra_apppw_target_user($input);
+    if ($user_id <= 0) { return wpultra_err('no_user', 'Could not resolve a target user.'); }
+    switch ($action) {
+        case 'list':
+            $res = wpultra_apppw_list($user_id);
+            return is_wp_error($res) ? $res : wpultra_ok($res);
+        case 'revoke':
+            if ($e = wpultra_require_confirm($input, 'Revoking an application password immediately disconnects any client using it.')) { return $e; }
+            $res = wpultra_apppw_revoke($user_id, (string) ($input['uuid'] ?? ''));
+            if (is_wp_error($res)) { return $res; }
+            wpultra_audit_log('manage-app-passwords', "revoke {$input['uuid']} for user $user_id", true);
+            return wpultra_ok($res);
+        default:
+            return wpultra_err('bad_action', "Unknown action '$action'.");
+    }
+}

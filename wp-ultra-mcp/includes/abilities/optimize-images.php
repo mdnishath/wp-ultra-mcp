@@ -42,9 +42,7 @@ wp_register_ability('wpultra/optimize-images', [
 
 /** @return array|WP_Error */
 function wpultra_optimize_images_cb(array $input) {
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'Optimizing images overwrites the original files. Re-run with confirm:true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Optimizing images overwrites the original files. Re-run with confirm:true.', 'unconfirmed')) { return $e; }
 
     $result = wpultra_optimize_images([
         'max_width'    => (int) ($input['max_width'] ?? 1920),

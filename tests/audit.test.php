@@ -12,10 +12,14 @@ if (!function_exists('get_current_user_id')) { function get_current_user_id() { 
 
 require __DIR__ . '/../wp-ultra-mcp/includes/helpers.php';
 
+// C1.10: writes buffer in-request and persist on wpultra_audit_flush() (shutdown in production).
+
 it('audit log appends entries with action, user, and ok flag', function () {
     $GLOBALS['__opts'] = [];
+    $GLOBALS['__wpultra_audit_buffer'] = [];
     wpultra_audit_log('execute-php', 'return 1;', true);
     wpultra_audit_log('delete-file', '/var/www/x.txt', false);
+    wpultra_audit_flush();
     $log = get_option('wpultra_audit', []);
     assert_eq(2, count($log), 'two entries');
     assert_eq('execute-php', $log[0]['action']);
@@ -27,7 +31,13 @@ it('audit log appends entries with action, user, and ok flag', function () {
 it('audit log is capped to a ring buffer (newest kept)', function () {
     // apply_filters is stubbed by the harness to return its value unchanged, so the cap is 200.
     $GLOBALS['__opts'] = [];
-    for ($i = 0; $i < 260; $i++) { wpultra_audit_log('execute-php', "call-$i", true); }
+    $GLOBALS['__wpultra_audit_buffer'] = [];
+    // Flush every 10 writes so the ring-trim runs against persisted state too.
+    for ($i = 0; $i < 260; $i++) {
+        wpultra_audit_log('execute-php', "call-$i", true);
+        if ($i % 10 === 9) { wpultra_audit_flush(); }
+    }
+    wpultra_audit_flush();
     $log = get_option('wpultra_audit', []);
     assert_eq(200, count($log), 'capped at 200');
     assert_eq('call-259', $log[count($log) - 1]['summary'], 'newest retained');

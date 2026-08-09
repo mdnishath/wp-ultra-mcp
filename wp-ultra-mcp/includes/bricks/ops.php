@@ -348,6 +348,9 @@ function wpultra_bricks_mutate(int $post_id, callable $op) {
     }
     $consistent = wpultra_bricks_consistency($result);
     if ($consistent !== true) { return wpultra_err('bricks_inconsistent', (string) $consistent); }
+    // F1.1: snapshot before the write (after validation, so a rejected op doesn't
+    // create a no-op undo entry). Bricks content is postmeta → no WP revision.
+    if (function_exists('wpultra_undo_capture_post')) { wpultra_undo_capture_post($post_id, 'bricks ' . $post_id); }
     $w = wpultra_bricks_write($post_id, $result);
     if (is_wp_error($w)) { return $w; }
     return ['count' => count($result), 'elements' => wpultra_bricks_build_tree($result)];

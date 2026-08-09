@@ -38,7 +38,10 @@ wp_register_ability('wpultra/bricks-add-element', [
 ]);
 
 function wpultra_bricks_add_element_cb(array $input) {
-    $post_id = (int) $input['post_id'];
+    // Match the elementor/gutenberg guard: reject an invalid post_id up front
+    // with a clear error instead of leaning on the mutate engine to fail late.
+    $post_id = (int) ($input['post_id'] ?? 0);
+    if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
     $new_id = '';
     $res = wpultra_bricks_mutate($post_id, function (array $elements) use ($input, &$new_id) {
         $new_id = wpultra_bricks_new_id(array_keys(wpultra_bricks_index($elements)));

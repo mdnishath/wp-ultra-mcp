@@ -35,10 +35,9 @@ wp_register_ability('wpultra/bricks-delete-element', [
 ]);
 
 function wpultra_bricks_delete_element_cb(array $input) {
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('confirm_required', 'Deleting an element subtree requires confirm: true.');
-    }
-    $post_id = (int) $input['post_id'];
+    if ($e = wpultra_require_confirm($input, 'Deleting an element subtree requires confirm: true.', 'confirm_required')) { return $e; }
+    $post_id = (int) ($input['post_id'] ?? 0);
+    if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
     $res = wpultra_bricks_mutate($post_id, fn(array $elements) => wpultra_bricks_op_delete($elements, (string) $input['element_id']));
     if (is_wp_error($res)) { return $res; }
     wpultra_audit_log('bricks-delete-element', "post $post_id -= {$input['element_id']} (+subtree)", true);

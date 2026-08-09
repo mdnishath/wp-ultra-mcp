@@ -8,6 +8,10 @@ if (!defined('ABSPATH')) { exit(); }
 if (!function_exists('wpultra_member_can_access') && defined('WPULTRA_DIR') && is_readable(WPULTRA_DIR . 'includes/verticals/membership.php')) {
     require_once WPULTRA_DIR . 'includes/verticals/membership.php';
 }
+// Third-party membership drivers (MemberPress / PMPro) — same defensive load.
+if (!function_exists('wpultra_memx_driver') && defined('WPULTRA_DIR') && is_readable(WPULTRA_DIR . 'includes/verticals/membership-adapters.php')) {
+    require_once WPULTRA_DIR . 'includes/verticals/membership-adapters.php';
+}
 
 wp_register_ability('wpultra/membership-manage', [
     'label'       => __('Membership / Paywall Manager', 'wp-ultra-mcp'),
@@ -25,7 +29,8 @@ wp_register_ability('wpultra/membership-manage', [
         . 'member-status {user_id} -> a user\'s level, join date, expiry and effective status (active|expired|cancelled|none). '
         . 'check-access {user_id, post_id} -> DRY RUN the access decision for a user against a post: returns {matched_rule, allowed, reason (no_membership|expired|wrong_level|dripping|ok), unlock_at?} — the trust-builder that shows EXACTLY why access is granted or denied. '
         . 'dashboard {user_id} -> a member\'s level, expiry, status, and the lists of accessible vs. locked rules. '
-        . 'delete-level {id, confirm:true} / delete-rule {id, confirm:true} -> remove a level or rule (confirm-gated).'
+        . 'delete-level {id, confirm:true} / delete-rule {id, confirm:true} -> remove a level or rule (confirm-gated). '
+        . 'THIRD-PARTY ADAPTERS: detect-plugins {} -> which of MemberPress / Paid Memberships Pro are installed. Passing plugin (memberpress|pmpro) redirects list-levels, member-status, assign-member, and remove-member to that plugin via its own API (level_id is then the plugin\'s numeric level/product id) — e.g. {action:"assign-member", plugin:"pmpro", user_id:5, level_id:"2"}. Omit plugin (or pass "builtin") for the built-in paywall.'
         . ' Examples: {action:"manage-level", name:"Gold", price:9.99, period:"month"} then {action:"manage-rule", match:{categories:[12]}, require_level:"lvl-abc123", drip_days:7, teaser_words:60} = "posts in category 12 are Gold-only and drip 7 days after joining, showing a 60-word teaser to everyone else". {action:"check-access", user_id:5, post_id:42} = "would user 5 see post 42, and why?".',
         'wp-ultra-mcp'
     ),
@@ -37,8 +42,9 @@ wp_register_ability('wpultra/membership-manage', [
                 'manage-level', 'list-levels', 'delete-level',
                 'manage-rule', 'list-rules', 'delete-rule',
                 'assign-member', 'remove-member', 'member-status',
-                'check-access', 'dashboard',
+                'check-access', 'dashboard', 'detect-plugins',
             ]],
+            'plugin'  => ['type' => 'string', 'enum' => ['builtin', 'memberpress', 'pmpro']],
             // level fields
             'id'          => ['type' => 'string'],
             'name'        => ['type' => 'string'],
@@ -87,7 +93,7 @@ wp_register_ability('wpultra/membership-manage', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 
@@ -97,6 +103,42 @@ function wpultra_membership_manage_cb(array $input) {
     }
 
     $action = (string) ($input['action'] ?? '');
+    $plugin = (string) ($input['plugin'] ?? '');
+    if ($plugin === 'builtin') { $plugin = ''; }
+
+    // Third-party dispatch (MemberPress / PMPro). Everything else stays on the
+    // built-in level/rule paywall.
+    if ($action === 'detect-plugins') {
+        if (!function_exists('wpultra_memx_status')) { return wpultra_err('membership_engine_missing', 'The membership adapter engine (includes/verticals/membership-adapters.php) is not loaded.'); }
+        return wpultra_ok(['plugins' => wpultra_memx_status()]);
+    }
+    if ($plugin !== '') {
+        if (!function_exists('wpultra_memx_driver')) { return wpultra_err('membership_engine_missing', 'The membership adapter engine (includes/verticals/membership-adapters.php) is not loaded.'); }
+        $driver = wpultra_memx_driver($plugin);
+        if (is_wp_error($driver)) { return $driver; }
+        switch ($action) {
+            case 'list-levels':
+                $res = wpultra_memx_list_levels($driver);
+                return is_wp_error($res) ? $res : wpultra_ok(['levels' => $res]);
+            case 'member-status':
+                $res = wpultra_memx_member_status($driver, (int) ($input['user_id'] ?? 0));
+                return is_wp_error($res) ? $res : wpultra_ok(['member' => $res]);
+            case 'assign-member':
+                $res = wpultra_memx_assign($driver, (int) ($input['user_id'] ?? 0), (string) ($input['level_id'] ?? ''), (int) ($input['expires'] ?? 0));
+                if (is_wp_error($res)) { wpultra_audit_log('membership-manage', "assign ($driver) failed: " . $res->get_error_message(), false); return $res; }
+                wpultra_audit_log('membership-manage', "assign ($driver) user #{$res['user_id']} level #{$res['level_id']}", true);
+                return wpultra_ok(['member' => $res]);
+            case 'remove-member':
+                $gate = wpultra_require_confirm($input, 'Revoking a membership cuts off the member\'s paid access immediately.');
+                if (is_wp_error($gate)) { return $gate; }
+                $res = wpultra_memx_remove($driver, (int) ($input['user_id'] ?? 0), (string) ($input['level_id'] ?? ''));
+                if (is_wp_error($res)) { wpultra_audit_log('membership-manage', "remove ($driver) failed: " . $res->get_error_message(), false); return $res; }
+                wpultra_audit_log('membership-manage', "remove ($driver) user #{$res['user_id']}", true);
+                return wpultra_ok(['member' => $res]);
+            default:
+                return wpultra_err('unsupported_action', "Action '$action' is builtin-only. Third-party membership plugins support: list-levels, member-status, assign-member, remove-member (level/rule authoring stays in each plugin's own UI).");
+        }
+    }
 
     switch ($action) {
 
@@ -123,9 +165,7 @@ function wpultra_membership_manage_cb(array $input) {
         case 'delete-level': {
             $id = (string) ($input['id'] ?? '');
             if ($id === '') { return wpultra_err('missing_id', 'id is required.'); }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', "Deleting level '$id' is destructive. Re-run with confirm:true.");
-            }
+            if ($e = wpultra_require_confirm($input, "Deleting level '$id' is destructive. Re-run with confirm:true.", 'unconfirmed')) { return $e; }
             $ok = wpultra_member_delete_level($id);
             wpultra_audit_log('membership-manage', "delete level $id", $ok);
             return wpultra_ok(['deleted' => $ok, 'levels' => array_values(wpultra_member_get_levels())]);
@@ -148,9 +188,7 @@ function wpultra_membership_manage_cb(array $input) {
         case 'delete-rule': {
             $id = (string) ($input['id'] ?? '');
             if ($id === '') { return wpultra_err('missing_id', 'id is required.'); }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', "Deleting rule '$id' is destructive. Re-run with confirm:true.");
-            }
+            if ($e = wpultra_require_confirm($input, "Deleting rule '$id' is destructive. Re-run with confirm:true.", 'unconfirmed')) { return $e; }
             $ok = wpultra_member_delete_rule($id);
             wpultra_audit_log('membership-manage', "delete rule $id", $ok);
             return wpultra_ok(['deleted' => $ok, 'rules' => wpultra_member_get_rules()]);
@@ -172,9 +210,7 @@ function wpultra_membership_manage_cb(array $input) {
         case 'remove-member': {
             $user_id = (int) ($input['user_id'] ?? 0);
             if ($user_id <= 0) { return wpultra_err('missing_user', 'user_id is required.'); }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', "Removing user $user_id's membership is destructive. Re-run with confirm:true.");
-            }
+            if ($e = wpultra_require_confirm($input, "Removing user $user_id's membership is destructive. Re-run with confirm:true.", 'unconfirmed')) { return $e; }
             $ok = wpultra_member_remove($user_id);
             wpultra_audit_log('membership-manage', "remove member $user_id", $ok);
             return wpultra_ok(['removed' => $ok]);

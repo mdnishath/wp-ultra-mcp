@@ -80,9 +80,7 @@ function wpultra_manage_menu(array $input) {
 
         case 'delete-menu':
             if (empty($input['menu'])) { return wpultra_err('missing_menu', 'menu is required.'); }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('confirm_required', 'Deleting a menu requires confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Deleting a menu requires confirm: true.', 'confirm_required')) { return $e; }
             $result = wpultra_structure_menu_delete($input['menu']);
             if (is_wp_error($result)) { wpultra_audit_log('manage-menu', 'delete-menu failed', false); return $result; }
             wpultra_audit_log('manage-menu', "deleted menu {$result['menu_id']}");
@@ -109,9 +107,7 @@ function wpultra_manage_menu(array $input) {
         case 'remove-item':
             $item_id = (int) ($input['item_id'] ?? 0);
             if ($item_id <= 0) { return wpultra_err('missing_item_id', 'item_id is required.'); }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('confirm_required', 'Removing a menu item requires confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Removing a menu item requires confirm: true.', 'confirm_required')) { return $e; }
             $result = wpultra_structure_menu_remove_item($item_id);
             if (is_wp_error($result)) { wpultra_audit_log('manage-menu', "remove-item failed for $item_id", false); return $result; }
             wpultra_audit_log('manage-menu', "removed menu item $item_id");

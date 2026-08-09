@@ -2,6 +2,16 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) { exit(); }
 
+// Shared design system for every WP-Ultra-MCP screen. The hook suffix is
+// 'toplevel_page_wpultra' or '<menu>_page_wpultra-*', so a substring match
+// covers all current and future subpages. Page-specific overrides stay inline
+// in the templates and win because body <style> blocks come after this sheet.
+add_action('admin_enqueue_scripts', function ($hook) {
+    if (strpos((string) $hook, 'wpultra') === false) { return; }
+    wp_enqueue_style('wpultra-admin', WPULTRA_URL . 'assets/admin.css', [], WPULTRA_VERSION);
+    wp_enqueue_script('wpultra-admin', WPULTRA_URL . 'assets/admin.js', [], WPULTRA_VERSION, false);
+});
+
 add_action('admin_menu', function () {
     add_menu_page('WP-Ultra-MCP', 'WP-Ultra-MCP', 'manage_options', 'wpultra', 'wpultra_connect_render', 'dashicons-rest-api', 80);
     add_submenu_page('wpultra', 'Abilities', 'Abilities', 'manage_options', 'wpultra-abilities', 'wpultra_abilities_render');
@@ -57,6 +67,17 @@ add_action('wp_ajax_wpultra_toggle_enabled', function () {
         update_option('wpultra_enabled', '0');
     }
     wp_send_json_success(['enabled' => $on]);
+});
+
+// Opt-in: wipe all WP-Ultra-MCP data (options, CPT posts, sandbox/snapshot/backup
+// dirs) when the plugin is deleted. Read by uninstall.php. Default off.
+add_action('wp_ajax_wpultra_toggle_wipe', function () {
+    if (!current_user_can('manage_options') || !check_ajax_referer('wpultra_toggle_enabled', 'nonce', false)) {
+        wp_send_json_error(['message' => 'forbidden'], 403);
+    }
+    $on = ((string) ($_POST['on'] ?? '')) === '1';
+    update_option('wpultra_delete_data_on_uninstall', $on ? '1' : '0');
+    wp_send_json_success(['wipe' => $on]);
 });
 
 /**
@@ -144,6 +165,7 @@ function wpultra_connect_clients(string $endpoint, string $username): array {
 
 function wpultra_connect_render(): void {
     $enabled = get_option('wpultra_enabled') === '1';
+    $wipe = get_option('wpultra_delete_data_on_uninstall') === '1';
     $endpoint = rest_url('mcp/wpultra');
     $user = wp_get_current_user();
     $pw = get_transient('wpultra_app_password_' . get_current_user_id());
@@ -263,74 +285,31 @@ function wpultra_connect_render(): void {
             <?php $first = false; endforeach; ?>
         </div>
 
+        <!-- Data retention -->
+        <div class="wpu-card wpu-pad">
+            <div class="wpu-step"><span class="dashicons dashicons-trash" style="color:#b3261e;"></span> Data on uninstall</div>
+            <div class="wpu-enable-row">
+                <label class="wpu-switch" title="<?php echo $wipe ? 'Will delete data' : 'Will keep data'; ?>">
+                    <input type="checkbox" id="wpu-wipe-toggle" <?php checked($wipe); ?>>
+                    <span class="wpu-track"><span class="wpu-knob"></span></span>
+                </label>
+                <span id="wpu-wipe-label"><?php echo $wipe ? 'Delete all plugin data when the plugin is deleted' : 'Keep plugin data when the plugin is deleted'; ?></span>
+            </div>
+            <p class="wpu-muted" style="margin-top:8px;">When on, deleting the plugin removes every setting, saved memory/skill/custom ability, access policy, and the sandbox/snapshot/backup folders. Cron events and transients are always cleaned up regardless.</p>
+        </div>
+
         <span id="wpu-toast" class="wpu-toast">Copied</span>
     </div>
 
     <style>
-        .wpu-wrap { max-width: 920px; }
-        .wpu-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:8px 0 20px; flex-wrap:wrap; }
-        .wpu-title { display:flex; align-items:center; gap:10px; font-size:23px; margin:0; }
-        .wpu-title .dashicons { color:#6d4afe; font-size:26px; width:26px; height:26px; }
-        .wpu-sub { margin:6px 0 0; color:#646970; font-size:13px; }
-        .wpu-pill { background:#fff; border:1px solid #e2e4e9; border-radius:999px; padding:7px 16px; font-size:13px; color:#50575e; box-shadow:0 1px 2px rgba(0,0,0,.04); }
-        .wpu-pill-on strong { color:#1a9d5a; } .wpu-pill-off strong { color:#c23b3b; }
-
-        .wpu-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; margin:0 0 18px; overflow:hidden;
-            box-shadow:0 6px 20px rgba(18,20,40,.06), 0 1px 3px rgba(18,20,40,.05); }
-        .wpu-pad { padding:18px 22px; }
-        .wpu-step { display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; color:#1d2327; margin:0 0 14px; }
-        .wpu-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
-            background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; font-size:13px; }
-        .wpu-ok { font-size:14px; } .wpu-ok code, .wpu-muted code { background:#f0f0f4; color:#6d4afe; border-radius:6px; padding:2px 8px; }
-        .wpu-muted { color:#787c82; font-size:12.5px; margin-top:3px; }
-
-        .wpu-enable-row { display:flex; align-items:center; gap:14px; }
-        .wpu-switch { position:relative; display:inline-block; flex:0 0 auto; cursor:pointer; }
-        .wpu-switch input { position:absolute; opacity:0; width:0; height:0; }
-        .wpu-track { display:block; width:46px; height:26px; border-radius:999px; background:#cfd2da; transition:background .25s ease; box-shadow:inset 0 1px 3px rgba(0,0,0,.18); }
-        .wpu-knob { position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.28); transition:transform .25s cubic-bezier(.4,0,.2,1); }
-        .wpu-switch input:checked + .wpu-track { background:linear-gradient(135deg,#7b5cff,#5b34f2); }
-        .wpu-switch input:checked + .wpu-track .wpu-knob { transform:translateX(20px); }
-        .wpu-switch.wpu-saving .wpu-track { opacity:.6; }
-
-        .wpu-reveal { background:#fff8e5; border:1px solid #f5d97a; border-radius:10px; padding:12px 14px; }
-        .wpu-reveal-warn { color:#8a6d00; font-size:12.5px; margin-bottom:8px; }
-        .wpu-reveal-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-        .wpu-pw { font-size:15px; letter-spacing:1px; background:#1d2327; color:#fff; border-radius:8px; padding:8px 14px; }
-
-        .wpu-pwtable { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
-        .wpu-pwtable th { text-align:left; color:#787c82; font-weight:600; padding:8px 10px; border-bottom:1px solid #eceef2; }
-        .wpu-pwtable td { padding:9px 10px; border-bottom:1px solid #f1f2f5; }
-        .button-link-delete { color:#b3261e; }
-
-        .wpu-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 16px; }
-        .wpu-tab { background:#f3f3f7; border:1px solid #e2e4e9; border-radius:10px; padding:8px 16px; cursor:pointer; font-size:13px; font-weight:600; color:#50575e; transition:all .15s ease; }
-        .wpu-tab:hover { background:#ecebff; }
-        .wpu-tab.active { background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; border-color:transparent; box-shadow:0 4px 12px rgba(91,52,242,.28); }
-        .wpu-pane { display:none; }
-        .wpu-pane.active { display:block; }
-        .wpu-where { display:flex; align-items:flex-start; gap:6px; color:#3c434a; font-size:12.5px; background:#f7f7fb; border-radius:8px; padding:9px 12px; }
-        .wpu-where .dashicons { color:#6d4afe; }
-
-        .wpu-codewrap { position:relative; margin:12px 0; }
-        .wpu-copybtn { position:absolute; top:10px; right:10px; z-index:2; }
-        .wpu-code { background:#1e1e2e; color:#e6e6f0; padding:16px; border-radius:12px; overflow:auto; font-size:12.5px; line-height:1.55;
-            box-shadow:inset 0 1px 4px rgba(0,0,0,.4); margin:0; white-space:pre; }
-        .wpu-steps { margin:10px 0 0 4px; color:#3c434a; font-size:13px; }
-        .wpu-steps li { margin:5px 0; }
-
-        .wpu-toast { position:fixed; right:28px; bottom:28px; background:#1d2327; color:#fff; padding:11px 18px; border-radius:10px;
-            font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0; transform:translateY(10px); pointer-events:none;
-            transition:opacity .2s ease, transform .2s ease; z-index:9999; }
-        .wpu-toast.show { opacity:1; transform:translateY(0); }
+        /* Page-specific: helper text sits tighter under its row here. */
+        .wpu-muted { margin-top: 3px; }
     </style>
 
     <script>
     (function () {
         var ajaxurl = window.ajaxurl || '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
         var enableNonce = '<?php echo esc_js($toggle_nonce); ?>';
-        var toast = document.getElementById('wpu-toast'), tt;
-        function showToast(m) { toast.textContent = m; toast.classList.add('show'); clearTimeout(tt); tt = setTimeout(function(){ toast.classList.remove('show'); }, 1400); }
 
         var enableToggle = document.getElementById('wpu-enable-toggle');
         if (enableToggle) {
@@ -352,13 +331,39 @@ function wpultra_connect_render(): void {
                             pill.classList.toggle('wpu-pill-on', on);
                             pill.classList.toggle('wpu-pill-off', !on);
                             pill.querySelector('strong').textContent = on ? 'ON' : 'OFF';
-                            showToast(on ? 'AI control enabled' : 'AI control disabled');
+                            wpuToast(on ? 'AI control enabled' : 'AI control disabled');
                         } else {
                             enableToggle.checked = !on;
-                            showToast('Could not change — try again');
+                            wpuToast('Could not change — try again');
                         }
                     })
-                    .catch(function () { sw.classList.remove('wpu-saving'); enableToggle.checked = !on; showToast('Network error'); });
+                    .catch(function () { sw.classList.remove('wpu-saving'); enableToggle.checked = !on; wpuToast('Network error'); });
+            });
+        }
+
+        var wipeToggle = document.getElementById('wpu-wipe-toggle');
+        if (wipeToggle) {
+            wipeToggle.addEventListener('change', function () {
+                var on = wipeToggle.checked;
+                var sw = wipeToggle.closest('.wpu-switch');
+                sw.classList.add('wpu-saving');
+                var body = new URLSearchParams();
+                body.append('action', 'wpultra_toggle_wipe');
+                body.append('nonce', enableNonce);
+                body.append('on', on ? '1' : '0');
+                fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        sw.classList.remove('wpu-saving');
+                        if (res && res.success) {
+                            document.getElementById('wpu-wipe-label').textContent = on ? 'Delete all plugin data when the plugin is deleted' : 'Keep plugin data when the plugin is deleted';
+                            wpuToast(on ? 'Data will be deleted on uninstall' : 'Data will be kept on uninstall');
+                        } else {
+                            wipeToggle.checked = !on;
+                            wpuToast('Could not change — try again');
+                        }
+                    })
+                    .catch(function () { sw.classList.remove('wpu-saving'); wipeToggle.checked = !on; wpuToast('Network error'); });
             });
         }
 
@@ -378,7 +383,7 @@ function wpultra_connect_render(): void {
                 function fallbackCopy() {
                     var r = document.createRange(); r.selectNode(el);
                     var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
-                    try { document.execCommand('copy'); showToast('Copied'); } catch (e) { showToast('Press Ctrl+C to copy'); }
+                    try { document.execCommand('copy'); wpuToast('Copied'); } catch (e) { wpuToast('Press Ctrl+C to copy'); }
                     sel.removeAllRanges();
                 }
                 // navigator.clipboard is only defined in secure contexts (https, or localhost).
@@ -386,7 +391,7 @@ function wpultra_connect_render(): void {
                 // synchronously *before* the promise chain — .catch() never sees it and the
                 // execCommand fallback never runs. Guard for its existence first.
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(function () { showToast('Copied to clipboard'); }).catch(fallbackCopy);
+                    navigator.clipboard.writeText(text).then(function () { wpuToast('Copied to clipboard'); }).catch(fallbackCopy);
                 } else {
                     fallbackCopy();
                 }

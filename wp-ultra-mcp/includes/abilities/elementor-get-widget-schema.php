@@ -14,13 +14,7 @@ wp_register_ability('wpultra/elementor-get-widget-schema', [
         'required'             => ['widget_type'],
         'additionalProperties' => false,
     ],
-    'output_schema' => [
-        'type'       => 'object',
-        'properties' => [
-            'success' => ['type' => 'boolean'],
-        ],
-        'required' => ['success'],
-    ],
+    'output_schema' => wpultra_manager_output_schema([]),
     'execute_callback'    => 'wpultra_elementor_get_widget_schema',
     'permission_callback' => 'wpultra_permission_callback',
     'meta' => [

@@ -57,8 +57,21 @@ wp_register_ability('wpultra/roles-manage', [
     ],
     'output_schema' => [
         'type'       => 'object',
+        // Per-action fields (all optional; a given action returns a subset).
         'properties' => [
-            'success' => ['type' => 'boolean'],
+            'success'   => ['type' => 'boolean'],
+            'roles'     => ['type' => 'array'],
+            'catalog'   => ['type' => ['array', 'object']],
+            'grouped'   => ['type' => ['array', 'object']],
+            'caps'      => ['type' => 'array'],
+            'cap'       => ['type' => 'string'],
+            'cap_count' => ['type' => 'integer'],
+            'slug'      => ['type' => 'string'],
+            'name'      => ['type' => 'string'],
+            'had_users' => ['type' => 'integer'],
+            'granted'   => ['type' => 'boolean'],
+            'deleted'   => ['type' => 'boolean'],
+            'diff'      => ['type' => ['array', 'object']],
         ],
         'required' => ['success'],
     ],

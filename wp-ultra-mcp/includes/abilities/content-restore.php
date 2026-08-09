@@ -17,7 +17,13 @@ wp_register_ability('wpultra/content-restore', [
     ],
     'output_schema' => [
         'type'       => 'object',
-        'properties' => ['success' => ['type' => 'boolean']],
+        'properties' => [
+            'success'       => ['type' => 'boolean'],
+            'post_id'       => ['type' => 'integer'],
+            'revisions'     => ['type' => 'array'],
+            'count'         => ['type' => 'integer'],
+            'restored_from' => ['type' => 'integer'],
+        ],
         'required'   => ['success'],
     ],
     'execute_callback'    => 'wpultra_content_restore',

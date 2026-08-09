@@ -32,19 +32,30 @@ const WPULTRA_ACCESS_OPTION = 'wpultra_access_policy';
 
 /**
  * Pure: the set of abilities/categories that must NEVER be delegated to a
- * non-admin role. These run arbitrary PHP, arbitrary SQL, or arbitrary
- * filesystem writes — i.e. full RCE — so granting them to (say) `subscriber`
- * on a site with open registration would be a one-step privilege-escalation to
- * code execution. An admin can still run them directly; they just can't hand
- * them to a lower-privilege role. Enforced both at grant time (manage-access)
- * and defensively at execution time (wpultra_access_role_can).
+ * non-admin role. Two classes, same outcome:
+ *   - RCE-equivalent: arbitrary PHP / SQL / filesystem writes, plus
+ *     `manage-plugin-theme` (install-plugin takes a zip URL = arbitrary PHP)
+ *     and `site-migrate`/`staging-clone`/`option-set` (rewrite the site/DB).
+ *   - Privilege-escalation: `manage-user`/`roles-manage`/`multisite-manage`
+ *     can mint a new administrator — one step from any grant to full admin.
+ * Granting any of these to (say) `subscriber` on a site with open registration
+ * would be a one-step privilege escalation. An admin can still run them
+ * directly; they just can't hand them to a lower-privilege role. Enforced both
+ * at grant time (manage-access) and defensively at execution time
+ * (wpultra_access_role_can). The ability names are listed even where their
+ * whole category is also blocked: the name check still holds if the category
+ * map ever drifts and wpultra_file_category() returns '' for one of them.
  *
  * @return array{abilities:string[],categories:string[]}
  */
 function wpultra_access_never_delegatable(): array {
     return [
-        'abilities'  => ['execute-php', 'run-wp-cli', 'execute-wp-query', 'write-file', 'edit-file', 'delete-file'],
-        'categories' => ['code-execution', 'database', 'filesystem'],
+        'abilities'  => [
+            'execute-php', 'run-wp-cli', 'execute-wp-query', 'write-file', 'edit-file', 'delete-file',
+            'manage-plugin-theme', 'site-migrate', 'staging-clone', 'option-set',
+            'manage-user', 'roles-manage', 'multisite-manage',
+        ],
+        'categories' => ['code-execution', 'database', 'filesystem', 'system', 'users'],
     ];
 }
 
@@ -149,12 +160,47 @@ function wpultra_access_current_is_admin(): bool {
 }
 
 /**
+ * Verify that the ability pipeline actually fires `wp_before_execute_ability`,
+ * the action the entire per-ability role gate + rate limiter hangs on. Without
+ * this check the grant system is fail-OPEN: the baseline permission callback
+ * admits any granted role, and all fine-grained denial lives in the gate — if
+ * a future Abilities API renames the hook, the gate silently never runs and a
+ * granted subscriber reaches every ability. Proof, in order of strength:
+ * runtime (the action already fired this request), else static (the hook name
+ * appears in WP_Ability's source). Memoized per request.
+ */
+function wpultra_access_execute_hook_fires(): bool {
+    static $verified = null;
+    if ($verified !== null) { return $verified; }
+    if (function_exists('did_action') && did_action('wp_before_execute_ability') > 0) {
+        return $verified = true;
+    }
+    $verified = false;
+    try {
+        if (class_exists('WP_Ability')) {
+            $file = (new \ReflectionClass('WP_Ability'))->getFileName();
+            if (is_string($file) && is_readable($file)) {
+                $verified = strpos((string) file_get_contents($file), 'wp_before_execute_ability') !== false;
+            }
+        }
+    } catch (\Throwable $e) {
+        $verified = false;
+    }
+    return $verified;
+}
+
+/**
  * Relaxed baseline permission: enabled AND (admin OR the user's role holds at
  * least one grant). Wired from wpultra_permission_callback. Falls back to
  * admin-only whenever no grants exist, so default behaviour is unchanged.
+ *
+ * Grants are honored ONLY when the enforcement hook is verified to fire —
+ * otherwise deny (fail closed) rather than admit a role the per-ability gate
+ * could never restrict or rate-limit. Admins are unaffected either way.
  */
 function wpultra_access_baseline_user(): bool {
     if (wpultra_access_current_is_admin()) { return true; }
+    if (!wpultra_access_execute_hook_fires()) { return false; }
     return wpultra_access_has_any_grant(wpultra_access_current_roles(), wpultra_access_policy());
 }
 

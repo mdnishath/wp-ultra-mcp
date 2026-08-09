@@ -197,9 +197,7 @@ function wpultra_email_campaign_get(array $input, string $action) {
 function wpultra_email_campaign_delete(array $input) {
     $c = wpultra_email_campaign_require($input);
     if (is_wp_error($c)) { return $c; }
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'Deleting a campaign is permanent. Re-run with confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'Deleting a campaign is permanent. Re-run with confirm: true.', 'unconfirmed')) { return $e; }
     $status = $c['meta']['status'];
     if (!in_array($status, ['draft', 'sent', 'cancelled'], true)) {
         return wpultra_err('not_deletable', "Cannot delete a campaign while it is $status. Cancel it first.");
@@ -238,9 +236,7 @@ function wpultra_email_campaign_test_send(array $input) {
 function wpultra_email_campaign_send_now(array $input) {
     $c = wpultra_email_campaign_require($input);
     if (is_wp_error($c)) { return $c; }
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'send-now emails real recipients immediately. Re-run with confirm: true (tip: do a test-send first).');
-    }
+    if ($e = wpultra_require_confirm($input, 'send-now emails real recipients immediately. Re-run with confirm: true (tip: do a test-send first).', 'unconfirmed')) { return $e; }
     $status = $c['meta']['status'];
     if (!in_array($status, ['draft', 'scheduled', 'cancelled'], true)) {
         return wpultra_err('bad_status', "Cannot start sending from status '$status'.");
@@ -267,9 +263,7 @@ function wpultra_email_campaign_send_now(array $input) {
 function wpultra_email_campaign_schedule(array $input) {
     $c = wpultra_email_campaign_require($input);
     if (is_wp_error($c)) { return $c; }
-    if (($input['confirm'] ?? false) !== true) {
-        return wpultra_err('unconfirmed', 'schedule will email real recipients at the given time. Re-run with confirm: true.');
-    }
+    if ($e = wpultra_require_confirm($input, 'schedule will email real recipients at the given time. Re-run with confirm: true.', 'unconfirmed')) { return $e; }
     $status = $c['meta']['status'];
     if (!in_array($status, ['draft', 'scheduled', 'cancelled'], true)) {
         return wpultra_err('bad_status', "Cannot schedule from status '$status'.");

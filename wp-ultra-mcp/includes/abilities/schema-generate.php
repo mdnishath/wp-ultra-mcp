@@ -67,7 +67,7 @@ wp_register_ability('wpultra/schema-generate', [
     ],
     'execute_callback'    => 'wpultra_schema_generate_cb',
     'permission_callback' => 'wpultra_permission_callback',
-    'meta' => ['show_in_rest' => true, 'mcp' => ['public' => true, 'type' => 'tool'], 'annotations' => ['readonly' => false, 'destructive' => false, 'idempotent' => false]],
+    'meta' => ['show_in_rest' => true, 'mcp' => ['public' => true, 'type' => 'tool'], 'annotations' => ['readonly' => false, 'destructive' => true, 'idempotent' => false]],
 ]);
 
 function wpultra_schema_generate_cb(array $input) {

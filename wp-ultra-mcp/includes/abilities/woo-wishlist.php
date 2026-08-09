@@ -70,7 +70,7 @@ wp_register_ability('wpultra/woo-wishlist', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 
@@ -250,9 +250,7 @@ function wpultra_woo_wishlist_cb(array $input) {
 
             case 'notify-now': {
                 if ($product_id <= 0) { return wpultra_err('missing_product_id', 'notify-now requires product_id.'); }
-                if (($input['confirm'] ?? false) !== true) {
-                    return wpultra_err('notify_unconfirmed', 'notify-now sends real emails to every pending subscriber. Re-run with confirm:true.');
-                }
+                if ($e = wpultra_require_confirm($input, 'notify-now sends real emails to every pending subscriber. Re-run with confirm:true.', 'notify_unconfirmed')) { return $e; }
                 if (function_exists('wc_get_product') && !wc_get_product($product_id)) {
                     return wpultra_err('product_not_found', "Product #$product_id does not exist.");
                 }

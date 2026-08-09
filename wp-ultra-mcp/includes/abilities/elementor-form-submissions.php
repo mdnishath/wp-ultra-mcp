@@ -87,9 +87,7 @@ function wpultra_elementor_form_submissions_cb(array $input) {
     }
 
     if ($action === 'delete') {
-        if (($input['confirm'] ?? false) !== true) {
-            return wpultra_err('confirm_required', 'Deleting a submission requires confirm: true.');
-        }
+        if ($e = wpultra_require_confirm($input, 'Deleting a submission requires confirm: true.', 'confirm_required')) { return $e; }
         $wpdb->delete($tv, ['submission_id' => $sid]);
         $ok = $wpdb->delete($t, ['id' => $sid]) !== false;
         wpultra_audit_log('elementor-form-submissions', "deleted submission $sid", $ok);

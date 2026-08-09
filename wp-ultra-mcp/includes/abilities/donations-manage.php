@@ -78,7 +78,20 @@ wp_register_ability('wpultra/donations-manage', [
     'output_schema' => [
         'type'       => 'object',
         'properties' => [
-            'success' => ['type' => 'boolean'],
+            'success'     => ['type' => 'boolean'],
+            'campaigns'   => ['type' => 'array'],
+            'campaign'    => ['type' => ['array', 'object']],
+            'campaign_id' => ['type' => 'integer'],
+            'donations'   => ['type' => 'array'],
+            'donation'    => ['type' => ['array', 'object']],
+            'donation_id' => ['type' => 'integer'],
+            'count'       => ['type' => 'integer'],
+            'donor_count' => ['type' => 'integer'],
+            'ids'         => ['type' => 'array'],
+            'recorded'    => ['type' => 'boolean'],
+            'goal_amount' => wpultra_schema_any(),
+            'raised'      => wpultra_schema_any(),
+            'progress'    => wpultra_schema_any(),
         ],
         'required' => ['success'],
     ],
@@ -153,9 +166,7 @@ function wpultra_donations_manage_cb(array $input) {
         }
 
         case 'record-donation': {
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('donation_unconfirmed', 'Recording a donation is a real write. Re-run with confirm:true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Recording a donation is a real write. Re-run with confirm:true.', 'donation_unconfirmed')) { return $e; }
             $res = wpultra_donate_record([
                 'campaign_id' => (int) ($input['campaign_id'] ?? 0),
                 'donor'       => (array) ($input['donor'] ?? []),

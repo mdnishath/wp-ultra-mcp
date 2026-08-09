@@ -72,9 +72,7 @@ function wpultra_manage_term(array $input) {
         case 'delete':
             $term_id = (int) ($input['term_id'] ?? 0);
             if ($term_id <= 0) { return wpultra_err('missing_term_id', 'term_id is required to delete a term.'); }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('confirm_required', 'Deleting a term requires confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'Deleting a term requires confirm: true.', 'confirm_required')) { return $e; }
             $result = wpultra_structure_term_delete($taxonomy, $term_id);
             if (is_wp_error($result)) { wpultra_audit_log('manage-term', "delete failed for term $term_id", false); return $result; }
             wpultra_audit_log('manage-term', "deleted term $term_id from $taxonomy");

@@ -4,24 +4,21 @@ if (!defined('ABSPATH')) { exit(); }
 
 wp_register_ability('wpultra/manage-plugin-theme', [
     'label'       => __('Manage Plugins & Themes', 'wp-ultra-mcp'),
-    'description' => __('Install, activate, deactivate, update, or delete plugins and themes. actions: `list-plugins`, `activate-plugin`, `deactivate-plugin`, `install-plugin` (source = wp.org slug or zip URL), `update-plugin`, `delete-plugin`, `list-themes`, `activate-theme`. Plugin ref = folder/file.php. WP-Ultra-MCP itself is protected from deactivation/deletion.', 'wp-ultra-mcp'),
+    'description' => __('Install, activate, deactivate, update, or delete plugins and themes. actions: `list-plugins`, `activate-plugin`, `deactivate-plugin`, `install-plugin` (source = wp.org slug or zip URL), `update-plugin`, `delete-plugin`, `list-themes`, `activate-theme`, `install-theme` (source = slug or zip URL), `update-theme`, `delete-theme`. Plugin ref = folder/file.php; theme ref = stylesheet. `delete-plugin`, `update-plugin`, `delete-theme`, `update-theme` are irreversible and require confirm: true. WP-Ultra-MCP itself is protected; the active theme (and its parent) cannot be deleted.', 'wp-ultra-mcp'),
     'category'    => 'system',
     'input_schema'  => [
         'type'       => 'object',
         'properties' => [
-            'action'     => ['type' => 'string', 'enum' => ['list-plugins', 'activate-plugin', 'deactivate-plugin', 'install-plugin', 'update-plugin', 'delete-plugin', 'list-themes', 'activate-theme']],
+            'action'     => ['type' => 'string', 'enum' => ['list-plugins', 'activate-plugin', 'deactivate-plugin', 'install-plugin', 'update-plugin', 'delete-plugin', 'list-themes', 'activate-theme', 'install-theme', 'update-theme', 'delete-theme']],
             'plugin'     => ['type' => 'string'],
             'source'     => ['type' => 'string'],
             'stylesheet' => ['type' => 'string'],
+            'confirm'    => ['type' => 'boolean', 'description' => 'Required true for delete-plugin and update-plugin.'],
         ],
         'required'             => ['action'],
         'additionalProperties' => false,
     ],
-    'output_schema' => [
-        'type'       => 'object',
-        'properties' => ['success' => ['type' => 'boolean']],
-        'required'   => ['success'],
-    ],
+    'output_schema' => wpultra_manager_output_schema(['action' => ['type' => 'string']]),
     'execute_callback'    => 'wpultra_manage_plugin_theme',
     'permission_callback' => 'wpultra_permission_callback',
     'meta' => [
@@ -45,6 +42,12 @@ function wpultra_manage_plugin_theme(array $input) {
 function wpultra_manage_plugin_theme_run(array $input) {
     $action = (string) ($input['action'] ?? '');
     $plugin = (string) ($input['plugin'] ?? '');
+    // delete-plugin removes code + often data unrecoverably; update-plugin
+    // overwrites the installed version with no way back. All gate on confirm.
+    if (in_array($action, ['delete-plugin', 'update-plugin', 'delete-theme', 'update-theme'], true) && ($input['confirm'] ?? false) !== true) {
+        return wpultra_err('confirm_required', "'$action' is irreversible. Re-run with confirm: true.");
+    }
+    $stylesheet = (string) ($input['stylesheet'] ?? '');
     switch ($action) {
         case 'list-plugins':       $res = wpultra_system_list_plugins(); break;
         case 'activate-plugin':    $res = wpultra_system_activate_plugin($plugin); break;
@@ -53,7 +56,10 @@ function wpultra_manage_plugin_theme_run(array $input) {
         case 'update-plugin':      $res = wpultra_system_update_plugin($plugin); break;
         case 'delete-plugin':      $res = wpultra_system_delete_plugin($plugin); break;
         case 'list-themes':        $res = wpultra_system_list_themes(); break;
-        case 'activate-theme':     $res = wpultra_system_activate_theme((string) ($input['stylesheet'] ?? '')); break;
+        case 'activate-theme':     $res = wpultra_system_activate_theme($stylesheet); break;
+        case 'install-theme':      $res = wpultra_system_install_theme((string) ($input['source'] ?? '')); break;
+        case 'update-theme':       $res = wpultra_system_update_theme($stylesheet); break;
+        case 'delete-theme':       $res = wpultra_system_delete_theme($stylesheet); break;
         default:                   return wpultra_err('bad_action', "Unknown action '$action'.");
     }
     if (is_wp_error($res)) { return $res; }

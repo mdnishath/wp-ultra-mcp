@@ -1,2 +1,190 @@
-.wrap pre { max-width: 900px; }
-.wrap h2 { margin-top: 1.5em; }
+/**
+ * WP-Ultra-MCP shared admin design system.
+ * Enqueued on every page=wpultra* screen (see wpultra_admin_enqueue_assets).
+ * Page-specific overrides (widths, compact switch variants) stay inline in the
+ * page templates and win because body <style> blocks come after this sheet.
+ */
+
+/* ---- Layout: header, pills ---- */
+.wpu-wrap { max-width: 920px; }
+.wpu-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:8px 0 20px; flex-wrap:wrap; }
+.wpu-title { display:flex; align-items:center; gap:10px; font-size:23px; margin:0; }
+.wpu-title .dashicons { color:#6d4afe; font-size:26px; width:26px; height:26px; }
+.wpu-sub { margin:6px 0 0; color:#646970; font-size:13px; }
+.wpu-counter { display:flex; gap:8px; }
+.wpu-pill { background:#fff; border:1px solid #e2e4e9; border-radius:999px; padding:7px 16px; font-size:13px; color:#50575e; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.wpu-pill strong { font-size:14px; }
+.wpu-pill-on strong { color:#1a9d5a; }
+.wpu-pill-off strong { color:#c23b3b; }
+
+/* ---- Cards ---- */
+.wpu-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; margin:0 0 18px; overflow:hidden;
+    box-shadow:0 6px 20px rgba(18,20,40,.06), 0 1px 3px rgba(18,20,40,.05); }
+.wpu-card-head { display:flex; align-items:center; gap:10px; padding:15px 20px; font-weight:600; font-size:14px;
+    color:#1d2327; background:linear-gradient(180deg,#fbfbfd,#f5f6f9); border-bottom:1px solid #eceef2; letter-spacing:.2px; }
+.wpu-card-head .dashicons { color:#6d4afe; }
+.wpu-pad { padding:18px 22px; }
+.wpu-step { display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; color:#1d2327; margin:0 0 14px; }
+.wpu-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
+    background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; font-size:13px; flex:0 0 auto; }
+.wpu-ok { font-size:14px; }
+.wpu-ok code, .wpu-muted code { background:#f0f0f4; color:#6d4afe; border-radius:6px; padding:2px 8px; }
+.wpu-muted { color:#787c82; font-size:12.5px; }
+.wpu-req { color:#b3261e; }
+
+/* ---- Masonry grid (Abilities page) ---- */
+.wpu-grid { column-count:3; column-gap:18px; }
+@media (max-width:1180px) { .wpu-grid { column-count:2; } }
+@media (max-width:782px)  { .wpu-grid { column-count:1; } }
+.wpu-grid .wpu-card { display:inline-block; width:100%; break-inside:avoid; -webkit-column-break-inside:avoid; transition:box-shadow .2s ease; }
+.wpu-grid .wpu-card:hover { box-shadow:0 10px 30px rgba(18,20,40,.10), 0 2px 6px rgba(18,20,40,.06); }
+
+/* ---- List rows ---- */
+.wpu-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 20px; border-bottom:1px solid #f1f2f5; transition:background .15s ease; }
+.wpu-row:last-child { border-bottom:0; }
+.wpu-row:hover { background:#fafaff; }
+.wpu-ability-list, .wpu-skill-list { display:flex; flex-direction:column; gap:0; }
+.wpu-ability-row, .wpu-skill-row { display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:14px 4px; border-bottom:1px solid #f1f2f5; transition:background .15s ease; }
+.wpu-skill-row { flex-wrap:wrap; }
+.wpu-ability-row:last-child, .wpu-skill-row:last-child { border-bottom:0; }
+.wpu-ability-row:hover, .wpu-skill-row:hover { background:#fafaff; }
+.wpu-info { flex:1; min-width:0; }
+.wpu-row-title { font-weight:600; color:#1d2327; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.wpu-slug { background:#f0f0f4; color:#6d4afe; border-radius:6px; padding:2px 8px; font-size:11px; }
+.wpu-desc { color:#787c82; font-size:12.5px; margin-top:3px; }
+.wpu-updated { color:#b0b5bb; font-size:11.5px; margin-top:4px; }
+
+/* ---- Badges ---- */
+.wpu-cat-badge { background:#eef2ff; color:#4338ca; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600; }
+.wpu-run-badge { border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+.wpu-run-php    { background:#f3e8ff; color:#7c3aed; }
+.wpu-run-wp-cli { background:#e0f2fe; color:#0369a1; }
+.wpu-run-http   { background:#fef9c3; color:#854d0e; }
+.wpu-type-badge { border-radius:6px; padding:2px 9px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+.wpu-badge-builtin { background:#fef3c7; color:#92400e; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600; }
+
+/* ---- Toggle switch (46px canonical; skill-hub keeps a compact inline variant) ---- */
+.wpu-switch { position:relative; display:inline-block; flex:0 0 auto; cursor:pointer; }
+.wpu-switch input { position:absolute; opacity:0; width:0; height:0; }
+.wpu-track { display:block; width:46px; height:26px; border-radius:999px; background:#cfd2da;
+    transition:background .25s ease; box-shadow:inset 0 1px 3px rgba(0,0,0,.18); }
+.wpu-knob { position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff;
+    box-shadow:0 2px 5px rgba(0,0,0,.28); transition:transform .25s cubic-bezier(.4,0,.2,1); }
+.wpu-switch input:checked + .wpu-track { background:linear-gradient(135deg,#7b5cff,#5b34f2); }
+.wpu-switch input:checked + .wpu-track .wpu-knob { transform:translateX(20px); }
+.wpu-switch input:focus-visible + .wpu-track { outline:2px solid #5b34f2; outline-offset:2px; }
+.wpu-switch.wpu-saving .wpu-track { opacity:.6; }
+.wpu-enable-row { display:flex; align-items:center; gap:14px; }
+.wpu-toggles { display:flex; align-items:center; gap:6px; margin-top:10px; flex-wrap:wrap; }
+.wpu-toggle-label { font-size:12px; color:#50575e; }
+
+/* ---- Notice banners ---- */
+.wpu-notice { border-left:4px solid #6d4afe; background:#fafafa; border-radius:0 8px 8px 0; padding:10px 14px; margin:0 0 14px; }
+.wpu-notice.notice-success { border-color:#1a9d5a; background:#f0faf5; }
+.wpu-notice.notice-error   { border-color:#b3261e; background:#fff5f5; }
+.wpu-notice.notice-info    { border-color:#0072b1; background:#f0f7ff; }
+.wpu-notice p { margin:0; font-size:13px; }
+.wpu-notice-inline { margin: 0 0 16px; }
+
+/* ---- Monospace textareas (recipe / skill / memory content) ---- */
+.wpu-recipe-ta, .wpu-skill-ta, .wpu-content-ta {
+    display:block; width:100%; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12.5px; line-height:1.6; border:1px solid #d3d5db; border-radius:10px;
+    padding:14px; resize:vertical; box-sizing:border-box; color:#1d2327; background:#fafbff;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.06); transition:border-color .15s;
+}
+.wpu-recipe-ta { min-height:260px; }
+.wpu-skill-ta { min-height:240px; }
+.wpu-content-ta { min-height:140px; padding:10px 12px; }
+.wpu-recipe-ta:focus, .wpu-skill-ta:focus, .wpu-content-ta:focus { border-color:#6d4afe; outline:none; background:#fff; }
+
+/* ---- Hub form rows + file upload ---- */
+.wpu-hub-row { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.wpu-file-label { display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+    background:#f3f3f7; border:1px solid #e2e4e9; border-radius:10px; padding:8px 14px;
+    font-size:13px; color:#50575e; transition:background .15s; }
+.wpu-file-label:hover { background:#ecebff; border-color:#a89cff; }
+.wpu-file-label .dashicons { color:#6d4afe; }
+.wpu-form-table td, .wpu-form-table th { padding:8px 10px 8px 0; vertical-align:middle; }
+.wpu-form-table th { width:130px; font-weight:600; font-size:13px; color:#3c434a; }
+.wpu-select { min-width:180px; }
+.wpu-form-actions { margin-top:12px; display:flex; gap:8px; align-items:center; }
+
+/* ---- Tabs (connect page + hub type filters) ---- */
+.wpu-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 16px; }
+.wpu-tab { background:#f3f3f7; border:1px solid #e2e4e9; border-radius:10px; padding:8px 16px; cursor:pointer; font-size:13px; font-weight:600; color:#50575e; transition:all .15s ease; }
+.wpu-tab:hover { background:#ecebff; }
+.wpu-tab.active { background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; border-color:transparent; box-shadow:0 4px 12px rgba(91,52,242,.28); }
+.wpu-pane { display:none; }
+.wpu-pane.active { display:block; }
+.wpu-where { display:flex; align-items:flex-start; gap:6px; color:#3c434a; font-size:12.5px; background:#f7f7fb; border-radius:8px; padding:9px 12px; }
+.wpu-where .dashicons { color:#6d4afe; }
+.wpu-type-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px; }
+.wpu-type-tab { display:inline-block; background:#f3f3f7; border:1px solid #e2e4e9; border-radius:8px;
+    padding:5px 14px; font-size:12.5px; font-weight:600; color:#50575e; text-decoration:none; transition:all .15s ease; }
+.wpu-type-tab:hover { background:#ecebff; border-color:#a89cff; color:#3c434a; text-decoration:none; }
+.wpu-type-tab.active { background:linear-gradient(135deg,#7b5cff,#5b34f2); color:#fff; border-color:transparent;
+    box-shadow:0 3px 10px rgba(91,52,242,.25); text-decoration:none; }
+.wpu-active-filter { font-size:13px; font-weight:400; color:#787c82; }
+.wpu-clear-filter { font-size:12px; color:#6d4afe; text-decoration:none; margin-left:4px; }
+.wpu-clear-filter:hover { text-decoration:underline; }
+
+/* ---- Connect page: credential reveal, tables, code blocks ---- */
+.wpu-reveal { background:#fff8e5; border:1px solid #f5d97a; border-radius:10px; padding:12px 14px; }
+.wpu-reveal-warn { color:#8a6d00; font-size:12.5px; margin-bottom:8px; }
+.wpu-reveal-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.wpu-pw { font-size:15px; letter-spacing:1px; background:#1d2327; color:#fff; border-radius:8px; padding:8px 14px; }
+.wpu-pwtable { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+.wpu-pwtable th { text-align:left; color:#787c82; font-weight:600; padding:8px 10px; border-bottom:1px solid #eceef2; }
+.wpu-pwtable td { padding:9px 10px; border-bottom:1px solid #f1f2f5; }
+.wpu-codewrap { position:relative; margin:12px 0; }
+.wpu-copybtn { position:absolute; top:10px; right:10px; z-index:2; }
+.wpu-code { background:#1e1e2e; color:#e6e6f0; padding:16px; border-radius:12px; overflow:auto; font-size:12.5px; line-height:1.55;
+    box-shadow:inset 0 1px 4px rgba(0,0,0,.4); margin:0; white-space:pre; }
+.wpu-steps { margin:10px 0 0 4px; color:#3c434a; font-size:13px; }
+.wpu-steps li { margin:5px 0; }
+
+/* ---- Row actions + empty states ---- */
+.wpu-ability-actions, .wpu-skill-actions { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.button-link-delete { color:#b3261e !important; background:transparent; border:none; cursor:pointer; font-size:13px; padding:4px 8px; }
+.button-link-delete:hover { color:#7f1d1d !important; }
+.wpu-empty { text-align:center; padding:32px 20px; color:#787c82; }
+.wpu-empty-icon { font-size:36px; width:36px; height:36px; color:#c5beff; display:block; margin:0 auto 10px; }
+.wpu-empty p { font-size:13.5px; }
+
+/* ---- Usage-stats page ---- */
+.wpu-summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:0 0 18px; }
+.wpu-summary-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; padding:16px 18px;
+    box-shadow:0 6px 20px rgba(18,20,40,.06), 0 1px 3px rgba(18,20,40,.05); }
+.wpu-summary-num { font-size:24px; font-weight:700; color:#1d2327; line-height:1.3;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wpu-summary-fail { color:#c23b3b; }
+.wpu-summary-top { font-size:15px; font-family:Consolas,Monaco,monospace; color:#6d4afe; }
+.wpu-summary-label { color:#787c82; font-size:12px; margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
+.wpu-chart { display:flex; flex-direction:column; gap:10px; }
+.wpu-chart-row { display:flex; align-items:center; gap:12px; }
+.wpu-chart-label { flex:0 0 220px; font-size:12.5px; color:#1d2327; font-family:Consolas,Monaco,monospace;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wpu-chart-track { flex:1; background:#f0f0f4; border-radius:6px; height:16px; overflow:hidden; position:relative; }
+.wpu-chart-bar { height:100%; background:linear-gradient(135deg,#7b5cff,#5b34f2); border-radius:6px; position:relative;
+    transition:width .3s ease; min-width:2px; }
+.wpu-chart-fail { position:absolute; top:0; right:0; height:100%; background:#c23b3b; }
+.wpu-chart-count { flex:0 0 50px; text-align:right; font-size:12.5px; color:#50575e; font-weight:600; }
+.wpu-stats-table { border:none; box-shadow:none; }
+.wpu-stats-table th, .wpu-stats-table td { font-size:13px; }
+.wpu-sortlink { color:#50575e; text-decoration:none; }
+.wpu-sortlink.active { color:#6d4afe; font-weight:700; }
+.wpu-sortlink:hover { color:#6d4afe; }
+.wpu-lasterr { white-space:pre-wrap; word-break:break-word; color:#c23b3b; background:#fff5f5; }
+@media (max-width: 900px) {
+    .wpu-summary-grid { grid-template-columns:repeat(2,1fr); }
+    .wpu-chart-label { flex-basis:120px; }
+}
+
+/* ---- Toast ---- */
+.wpu-toast { position:fixed; right:28px; bottom:28px; background:#1d2327; color:#fff; padding:11px 18px;
+    border-radius:10px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0; transform:translateY(10px);
+    pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:9999; }
+.wpu-toast.show { opacity:1; transform:translateY(0); }
+.wpu-toast.err { background:#b3261e; }

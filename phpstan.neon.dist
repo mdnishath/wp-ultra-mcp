@@ -1,0 +1,26 @@
+# PHPStan configuration for WP-Ultra-MCP.
+#
+# Advisory in CI (continue-on-error). Level 5 catches the array-shape and
+# null-safety mistakes this codebase is structurally prone to without demanding
+# full type coverage. For accurate WordPress symbol resolution, add the stubs:
+#   composer require --dev szepeviktor/phpstan-wordpress
+# and include its extension below.
+parameters:
+    level: 5
+    paths:
+        - wp-ultra-mcp/includes
+        - wp-ultra-mcp/wp-ultra-mcp.php
+        - wp-ultra-mcp/uninstall.php
+    excludePaths:
+        - wp-ultra-mcp/vendor/*
+    # WordPress core functions/classes are not autoloadable here; without the
+    # WordPress stubs package every WP call is "unknown". Ignore those so the
+    # analysis surfaces OUR bugs, not missing-core-symbol noise.
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '#Function (wp_|get_|update_|add_|register_|is_|esc_|sanitize_|current_user_can|apply_filters|do_action|__)[a-z_]+ not found#'
+        - '#Call to method .* on an unknown class WP_[A-Za-z_]+#'
+        - '#Instantiated class WP_[A-Za-z_]+ not found#'
+        - '#Access to (property|constant) .* on an unknown class WP_[A-Za-z_]+#'
+        - '#Caught class WP_Error not found#'

@@ -45,4 +45,33 @@ it('delete removes a file', function () {
     assert_wp_error(wpultra_read_file(['path' => 'd.txt']), 'gone');
 });
 
+// ---- Path-jail hardening (these protections must not silently regress) ----
+
+it('rejects NTFS alternate-data-stream syntax', function () {
+    // `shell.php::$DATA` hides the .php extension from the sandbox check.
+    assert_wp_error(wpultra_write_file(['path' => 'wp-content/x.txt::$DATA', 'content' => 'x']), 'ADS blocked');
+});
+
+it('rejects control characters in the path', function () {
+    assert_wp_error(wpultra_write_file(['path' => "wp-content/a\x00b.txt", 'content' => 'x']), 'null byte');
+    assert_wp_error(wpultra_write_file(['path' => "wp-content/a\x1fb.txt", 'content' => 'x']), 'control char');
+});
+
+it('trailing-dot / trailing-space .php still requires the sandbox', function () {
+    // Some filesystems strip trailing dots/spaces on open → `shell.php.` == `shell.php`.
+    assert_true(wpultra_path_requires_sandbox('wp-content/themes/x/shell.php.'), 'trailing dot');
+    assert_true(wpultra_path_requires_sandbox('wp-content/themes/x/shell.php '), 'trailing space');
+    // And a write to such a path outside the sandbox is blocked.
+    assert_wp_error(wpultra_write_file(['path' => 'wp-content/themes/x/shell.php.', 'content' => '<?php']), 'jailed');
+});
+
+it('all executable-ish extensions require the sandbox', function () {
+    foreach (['a.phtml', 'a.phps', 'a.pht', 'a.phar', 'a.ini', 'a.php7', '.htaccess', 'web.config'] as $name) {
+        assert_true(wpultra_path_requires_sandbox('wp-content/' . $name), $name);
+    }
+    // Plain data files do not.
+    assert_eq(false, wpultra_path_requires_sandbox('wp-content/a.txt'), 'txt is fine');
+    assert_eq(false, wpultra_path_requires_sandbox('wp-content/a.json'), 'json is fine');
+});
+
 run_tests();

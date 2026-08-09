@@ -36,7 +36,8 @@ wp_register_ability('wpultra/bricks-edit-element', [
 ]);
 
 function wpultra_bricks_edit_element_cb(array $input) {
-    $post_id = (int) $input['post_id'];
+    $post_id = (int) ($input['post_id'] ?? 0);
+    if ($post_id <= 0 || !get_post($post_id)) { return wpultra_err('bad_post', 'Valid post_id required.'); }
     $res = wpultra_bricks_mutate($post_id, fn(array $elements) => wpultra_bricks_op_edit(
         $elements,
         (string) $input['element_id'],

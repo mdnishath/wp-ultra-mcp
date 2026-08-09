@@ -233,6 +233,7 @@ function wpultra_brain_memories(): array {
 /** Last 15 audit-log entries (newest first), shaped to {ts, action, summary, ok}. WP-calling. */
 function wpultra_brain_recent_activity(): array {
     if (!function_exists('get_option')) { return []; }
+    if (function_exists('wpultra_audit_flush')) { wpultra_audit_flush(); } // include same-request buffered entries
     $log = get_option('wpultra_audit', []);
     if (!is_array($log)) { return []; }
     $tail = array_slice($log, -15);
@@ -253,6 +254,7 @@ function wpultra_brain_recent_activity(): array {
 /** Top-5 failure hotspots from the ability-stats option. WP-calling. */
 function wpultra_brain_failure_hotspots(): array {
     if (!function_exists('get_option')) { return []; }
+    if (function_exists('wpultra_audit_flush')) { wpultra_audit_flush(); } // include same-request buffered tallies
     $stats = get_option('wpultra_ability_stats', []);
     if (!is_array($stats)) { return []; }
     return wpultra_brain_hotspots($stats, 5);

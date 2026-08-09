@@ -8,7 +8,7 @@ wp_register_ability('wpultra/trigger-list', [
     'category'    => 'triggers',
     'input_schema'  => [
         'type'       => 'object',
-        'properties' => ['events' => ['type' => 'boolean']],
+        'properties' => array_merge(['events' => ['type' => 'boolean']], wpultra_pagination_schema()),
         'additionalProperties' => false,
     ],
     'output_schema' => [
@@ -35,5 +35,6 @@ function wpultra_trigger_list_cb(array $input) {
         return wpultra_ok(['events' => wpultra_triggers_supported_events(), 'actions' => wpultra_triggers_action_types()]);
     }
     $rows = array_map('wpultra_triggers_shape', wpultra_triggers_load());
-    return wpultra_ok(['triggers' => array_values($rows)]);
+    [$page, $meta] = wpultra_paginate(array_values($rows), $input, 200);
+    return wpultra_ok(['triggers' => $page, 'total' => $meta['total'], 'returned' => $meta['returned']]);
 }

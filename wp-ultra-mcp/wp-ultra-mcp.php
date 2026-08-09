@@ -2,11 +2,12 @@
 /**
  * Plugin Name: WP-Ultra-MCP
  * Description: Turn this WordPress site into an MCP server for AI CLIs — Elementor, SQL, WP-CLI, files, and more.
- * Version: 0.30.1
+ * Version: 0.31.0
  * Requires PHP: 8.0
- * Requires at least: 6.6
+ * Requires at least: 6.9
  * License: GPL-2.0-or-later
  * Text Domain: wp-ultra-mcp
+ * Domain Path: /languages
  * Update URI: https://github.com/mdnishath/wp-ultra-mcp
  */
 
@@ -14,7 +15,7 @@ declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit(); }
 
-define('WPULTRA_VERSION', '0.30.1');
+define('WPULTRA_VERSION', '0.31.0');
 define('WPULTRA_FILE', __FILE__);
 define('WPULTRA_DIR', plugin_dir_path(__FILE__));
 define('WPULTRA_URL', plugin_dir_url(__FILE__));
@@ -46,6 +47,23 @@ register_activation_hook(__FILE__, function () {
     }
 });
 
+/**
+ * On deactivation, unschedule every wpultra_* cron event. Without this the job
+ * runner, autotranslate, feed-import, social, reports, etc. ticks keep firing
+ * on WP-Cron after the plugin is off (their callbacks are gone → silent no-ops
+ * or PHP notices). Data is left untouched — that is uninstall.php's job.
+ */
+register_deactivation_hook(__FILE__, function () {
+    $crons = function_exists('_get_cron_array') ? (array) _get_cron_array() : [];
+    foreach ($crons as $events) {
+        foreach ((array) $events as $hook => $_) {
+            if (is_string($hook) && strpos($hook, 'wpultra_') === 0) {
+                wp_clear_scheduled_hook($hook);
+            }
+        }
+    }
+});
+
 add_action('admin_notices', function () {
     if (function_exists('wpultra_sandbox_crashed') && wpultra_sandbox_crashed()) {
         $url = wp_nonce_url(admin_url('admin-post.php?action=wpultra_clear_safe'), 'wpultra_clear_safe');
@@ -69,73 +87,16 @@ if (is_admin()) {
     }
 }
 
-// Boot the MCP adapter + abilities (guarded internally on enabled-flag and adapter availability).
-add_action('plugins_loaded', 'wpultra_boot', 20);
-
-// Load SEO engine files on every request (front-end + admin) so head.php hooks fire.
-// Abilities registry (wp_abilities_api_init) only fires on REST calls, so this separate
-// loader ensures native SEO <head> tags render on regular page views.
-add_action('init', 'wpultra_load_seo_frontend', 1);
-
-// Load the fields engine on every request (front-end + admin) so the Meta Box
-// rwmb_meta_boxes filter registers persisted groups; the ability engine-loop only
-// runs on REST calls, so persisted MB groups need this separate always-on hook.
-add_action('init', 'wpultra_load_fields_frontend', 1);
-
-// Surface GitHub releases in WP core's native plugin-update UI, and to the
-// WP-Cron auto-updater (cron is not is_admin(), so it needs this too).
-add_action('init', 'wpultra_load_updater', 1);
-
-// Register the async job runner + its cron tick on every request (WP-Cron fires
-// outside the REST/abilities loop, so the tick handler must always be present).
-add_action('plugins_loaded', 'wpultra_load_jobs_runtime', 21);
-
-// Register event-trigger hooks on every request (post/order/comment/form events
-// and the async webhook/playbook dispatch fire outside the REST/abilities loop).
-add_action('plugins_loaded', 'wpultra_load_triggers_runtime', 22);
-
-// Register AI-generated custom atomic widgets on every request (the Elementor
-// editor + front-end render paths run outside the REST/abilities loop).
-add_action('plugins_loaded', 'wpultra_load_widgets_runtime', 23);
-
-// Monitors on every request: login tracking, fatal-error reports, 404 log,
-// IndexNow auto-ping (all fire outside the REST/abilities loop).
-add_action('plugins_loaded', 'wpultra_load_monitors_runtime', 24);
-
-// Marketing runtimes on every request: campaign cron sender, A/B filters,
-// lead form-capture, popup renderer, affiliate attribution, /track endpoint.
-add_action('plugins_loaded', 'wpultra_load_marketing_runtime', 25);
-
-// Store-power runtimes on every request: dynamic pricing, fulfillment status,
-// review/Q&A shortcodes, wishlist + stock alerts, loyalty earning, currency.
-add_action('plugins_loaded', 'wpultra_load_woopower_runtime', 26);
-
-// Site-safety runtimes on every request: firewall (blocks early), health
-// monitor cron, link-fixer crawl, off-site backup schedule. Priority 5 so the
-// firewall evaluates the request before heavier runtimes do their work.
-add_action('plugins_loaded', 'wpultra_load_safety_runtime', 5);
-
-// AI-native runtimes on every request: RAG chatbot widget + /chat endpoint,
-// agent-loop + SEO-autopilot cron handlers, design/analytics helpers.
-add_action('plugins_loaded', 'wpultra_load_ai_runtime', 27);
-
-// Ops & compliance runtimes on every request: GDPR consent banner, scheduled
-// reports cron, white-label admin rebrand + client-mode, roles/migration.
-add_action('plugins_loaded', 'wpultra_load_ops_runtime', 28);
-
-// Content-reach cron runtimes on every request: autotranslate batch tick +
-// RSS feed-import poll (both fire on WP-Cron, outside the REST/abilities loop).
-add_action('plugins_loaded', 'wpultra_load_contentreach_runtime', 29);
-
-// Business-verticals runtimes on every request: booking/membership/LMS/events/
-// directory/donations register CPTs + crons + the membership paywall filter.
-add_action('plugins_loaded', 'wpultra_load_verticals_runtime', 30);
-
-// Headless runtime on every request: JWT-secret filter for WPGraphQL-JWT and
-// CORS headers on GraphQL responses (both fire outside the REST/abilities loop).
-add_action('plugins_loaded', 'wpultra_load_headless_runtime', 31);
-
-// Register persisted AI-defined CPTs/taxonomies on every request; the ability
-// engine-loop only runs on REST calls, so definitions saved by register-cpt /
-// register-taxonomy need this separate always-on hook to exist on the front-end.
-add_action('init', 'wpultra_load_structure_frontend', 1);
+// Runtime boot (C1.14): three dispatchers replace the former 16 top-level hooks.
+// Each dispatcher resolves the enabled/disabled state once and runs its ordered
+// loader map (see wpultra_runtime_boot() in includes/bootstrap-mcp.php).
+//
+// - Safety runs alone at priority 5 so the firewall evaluates the request
+//   before other plugins' plugins_loaded work, exactly as before.
+// - Everything else runs at priority 20 in the same relative order the old
+//   21..31 priorities enforced.
+// - Frontend/init loaders (textdomain, SEO head, fields, updater, persisted
+//   CPTs) run at init priority 1 in former registration order.
+add_action('plugins_loaded', 'wpultra_runtime_boot_early', 5);
+add_action('plugins_loaded', 'wpultra_runtime_boot', 20);
+add_action('init', 'wpultra_runtime_init', 1);

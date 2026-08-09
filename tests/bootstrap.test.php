@@ -11,7 +11,7 @@ require __DIR__ . '/../wp-ultra-mcp/includes/bootstrap-mcp.php';
 
 it('ability file list is complete and unique', function () {
     $files = wpultra_ability_files();
-    assert_eq(305, count($files), 'count');
+    assert_eq(311, count($files), 'count');
     assert_true(in_array('headless-status', $files, true), 'has headless');
     assert_true(in_array('conflict-bisect', $files, true), 'has bug fixer');
     assert_true(in_array('auto-recover', $files, true), 'has bug fixer reach');
@@ -61,6 +61,32 @@ it('file_category reverse lookup works', function () {
 it('no categories disabled by default', function () {
     assert_eq([], wpultra_disabled_categories());
     assert_true(wpultra_category_enabled('code-execution'), 'enabled by default');
+});
+
+it('C1.14: runtime dispatchers exist and cover every loader', function () {
+    // The three dispatchers replace the former 16 top-level hooks.
+    assert_true(function_exists('wpultra_runtime_boot_early'), 'early dispatcher');
+    assert_true(function_exists('wpultra_runtime_boot'), 'main dispatcher');
+    assert_true(function_exists('wpultra_runtime_init'), 'init dispatcher');
+    // Every wpultra_load_* loader defined in bootstrap-mcp.php must be referenced
+    // somewhere besides its own definition (i.e. dispatched); a loader mentioned
+    // exactly once is defined-but-orphaned.
+    $bootstrap = (string) file_get_contents(__DIR__ . '/../wp-ultra-mcp/includes/bootstrap-mcp.php');
+    preg_match_all('/function (wpultra_load_\w+)\(/', $bootstrap, $m);
+    foreach ($m[1] as $loader) {
+        if ($loader === 'wpultra_load_abilities') { continue; } // booted via wp_abilities_api_init inside wpultra_boot
+        assert_true(substr_count($bootstrap, $loader) >= 2, "loader $loader is defined but never dispatched");
+    }
+});
+
+it('C1.14: main plugin file registers only the three dispatchers as loaders', function () {
+    $main = (string) file_get_contents(__DIR__ . '/../wp-ultra-mcp/wp-ultra-mcp.php');
+    assert_contains("add_action('plugins_loaded', 'wpultra_runtime_boot_early', 5)", $main);
+    assert_contains("add_action('plugins_loaded', 'wpultra_runtime_boot', 20)", $main);
+    assert_contains("add_action('init', 'wpultra_runtime_init', 1)", $main);
+    // No stray direct loader registrations left behind.
+    assert_eq(false, strpos($main, "add_action('plugins_loaded', 'wpultra_load_"), 'no direct plugins_loaded loaders');
+    assert_eq(false, strpos($main, "add_action('init', 'wpultra_load_"), 'no direct init loaders');
 });
 
 run_tests();

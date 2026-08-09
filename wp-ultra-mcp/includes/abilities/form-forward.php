@@ -19,7 +19,7 @@ wp_register_ability('wpultra/form-forward', [
             'action'   => ['type' => 'string', 'enum' => ['list', 'create', 'delete']],
             'url'      => ['type' => 'string', 'description' => 'create: the webhook endpoint to POST submissions to.'],
             'secret'   => ['type' => 'string', 'description' => 'create: optional HMAC signing secret (X-WPUltra-Signature).'],
-            'plugin'   => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent'], 'description' => 'create: only forward this form plugin.'],
+            'plugin'   => ['type' => 'string', 'enum' => ['cf7', 'wpforms', 'gravity', 'fluent', 'ninja'], 'description' => 'create: only forward this form plugin.'],
             'form'     => ['type' => 'string', 'description' => 'create: only forward this form id.'],
             'template' => ['type' => 'object', 'description' => 'create: optional body reshape — map of key => string with {data.*}/{event}/{site} tokens. Omit to POST the full payload incl. fields.'],
             'label'    => ['type' => 'string'],
@@ -44,7 +44,7 @@ wp_register_ability('wpultra/form-forward', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 

@@ -4,11 +4,14 @@ if (!defined('ABSPATH')) { exit(); }
 
 wp_register_ability('wpultra/undo-list', [
     'label'       => __('List Undo Snapshots', 'wp-ultra-mcp'),
-    'description' => __('List recent reversible changes captured automatically before option, custom-CSS, theme.json, and term-update mutations (newest first). Each row: id, type, target, label, created. Use wpultra/undo-restore with an id, or wpultra/undo-last, to roll one back. (Posts/pages use wpultra/content-restore instead.)', 'wp-ultra-mcp'),
+    'description' => __('List recent reversible changes captured automatically before option, custom-CSS, theme.json, term, file, plugin/theme-activation, and post/builder-content mutations (newest first). Each row: id, type, target, label, created. Use wpultra/undo-restore with an id, or wpultra/undo-last, to roll one back. `post` snapshots cover Elementor/Bricks/Gutenberg edits + update-post (fields + builder postmeta that WP revisions miss); wpultra/content-restore additionally uses native post revisions.', 'wp-ultra-mcp'),
     'category'    => 'undo',
     'input_schema'  => [
         'type'       => 'object',
-        'properties' => ['type' => ['type' => 'string', 'enum' => ['option', 'custom_css', 'theme_json', 'term']]],
+        'properties' => array_merge(
+            ['type' => ['type' => 'string', 'enum' => ['option', 'custom_css', 'theme_json', 'term', 'file', 'active_plugins', 'active_theme', 'post']]],
+            wpultra_pagination_schema()
+        ),
         'additionalProperties' => false,
     ],
     'output_schema' => [
@@ -37,5 +40,7 @@ function wpultra_undo_list_cb(array $input) {
         if ($filter !== '' && (string) ($e['type'] ?? '') !== $filter) { continue; }
         $rows[] = wpultra_undo_shape((array) $e);
     }
-    return wpultra_ok(['snapshots' => $rows, 'count' => count($rows)]);
+    // The undo ring is capped at 50, so the default page returns the whole set.
+    [$page, $meta] = wpultra_paginate($rows, $input, 50);
+    return wpultra_ok(['snapshots' => $page, 'count' => $meta['returned'], 'total' => $meta['total']]);
 }

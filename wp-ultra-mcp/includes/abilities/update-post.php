@@ -57,6 +57,9 @@ function wpultra_update_post(array $input) {
     foreach ($map as $in => $col) { if (array_key_exists($in, $input)) { $postarr[$col] = (string) $input[$in]; $updated[] = $in; } }
     if (array_key_exists('slug', $input)) { $postarr['post_name'] = sanitize_title((string) $input['slug']); $updated[] = 'slug'; }
     if (array_key_exists('menu_order', $input)) { $postarr['menu_order'] = (int) $input['menu_order']; $updated[] = 'menu_order'; }
+    // F1.1: snapshot the post's before-state (fields + builder postmeta) so this
+    // edit is reversible through undo — WP revisions don't cover builder meta.
+    if (function_exists('wpultra_undo_capture_post')) { wpultra_undo_capture_post($id, 'update-post ' . $id); }
     // Slash before wp_update_post()/update_post_meta() — both unslash internally, so raw
     // backslashes (Windows paths, JSON/regex, block markup) would otherwise be stripped.
     if (count($postarr) > 1) { $res = wp_update_post(wp_slash($postarr), true); if (is_wp_error($res)) { return $res; } }

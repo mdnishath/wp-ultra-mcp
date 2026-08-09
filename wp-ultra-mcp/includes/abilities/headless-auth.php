@@ -34,7 +34,7 @@ wp_register_ability('wpultra/headless-auth', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 
@@ -59,9 +59,7 @@ function wpultra_headless_auth_cb(array $input) {
     $shape = ['id' => $user->ID, 'login' => $user->user_login, 'email' => $user->user_email];
 
     if ($action === 'create-app-password') {
-        if (($input['confirm'] ?? false) !== true) {
-            return wpultra_err('unconfirmed', 'create-app-password mints a long-lived credential. Re-run with confirm:true.');
-        }
+        if ($e = wpultra_require_confirm($input, 'create-app-password mints a long-lived credential. Re-run with confirm:true.', 'unconfirmed')) { return $e; }
         if (!class_exists('WP_Application_Passwords')) {
             return wpultra_err('unavailable', 'Application Passwords are not available on this WordPress.');
         }
@@ -76,9 +74,7 @@ function wpultra_headless_auth_cb(array $input) {
     }
 
     if ($action === 'issue-token') {
-        if (($input['confirm'] ?? false) !== true) {
-            return wpultra_err('unconfirmed', 'issue-token mints auth tokens for that user. Re-run with confirm:true.');
-        }
+        if ($e = wpultra_require_confirm($input, 'issue-token mints auth tokens for that user. Re-run with confirm:true.', 'unconfirmed')) { return $e; }
         if (!class_exists('WPGraphQL\\JWT_Authentication\\Auth')) {
             return wpultra_err('jwt_missing', 'WPGraphQL-JWT is not active — run headless-setup first.');
         }

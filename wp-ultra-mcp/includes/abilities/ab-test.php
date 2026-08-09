@@ -87,7 +87,7 @@ wp_register_ability('wpultra/ab-test', [
     'meta' => [
         'show_in_rest' => true,
         'mcp'          => ['public' => true, 'type' => 'tool'],
-        'annotations'  => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+        'annotations'  => ['readonly' => false, 'destructive' => true, 'idempotent' => false],
     ],
 ]);
 
@@ -171,9 +171,7 @@ function wpultra_ab_test_ability(array $input) {
             if (($test['status'] ?? '') === 'running') {
                 return wpultra_err('running', "Test '$id' is running — stop it before deleting.");
             }
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', "Deleting '$id' discards its stats. Re-run with confirm: true.");
-            }
+            if ($e = wpultra_require_confirm($input, "Deleting '$id' discards its stats. Re-run with confirm: true.", 'unconfirmed')) { return $e; }
             $tests = wpultra_ab_get_tests();
             unset($tests[$id]);
             wpultra_ab_save_tests($tests);
@@ -181,9 +179,7 @@ function wpultra_ab_test_ability(array $input) {
             return wpultra_ok(['deleted' => true]);
 
         case 'apply-winner':
-            if (($input['confirm'] ?? false) !== true) {
-                return wpultra_err('unconfirmed', 'apply-winner permanently rewrites the post. Re-run with confirm: true.');
-            }
+            if ($e = wpultra_require_confirm($input, 'apply-winner permanently rewrites the post. Re-run with confirm: true.', 'unconfirmed')) { return $e; }
             $key = (string) ($input['variant'] ?? '');
             if ($key === '') { $key = (string) ($test['winner'] ?? ''); }
             if ($key === '') { $key = (string) (wpultra_ab_winner($test) ?? ''); }

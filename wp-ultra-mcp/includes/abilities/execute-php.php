@@ -35,6 +35,11 @@ wp_register_ability('wpultra/execute-php', [
     ],
 ]);
 
+/** PURE: audit-log reference for a snippet — hash + size, never the source. */
+function wpultra_execute_php_log_ref(string $code): string {
+    return 'sha256:' . substr(hash('sha256', $code), 0, 12) . ' len=' . strlen($code);
+}
+
 function wpultra_execute_php(array $input) {
     $code = (string) ($input['code'] ?? '');
     if ($code === '') { return wpultra_err('empty_code', 'code is required.'); }
@@ -62,13 +67,15 @@ function wpultra_execute_php(array $input) {
         restore_error_handler();
         if (function_exists('set_time_limit')) { @set_time_limit((int) $prev); }
         if (!is_scalar($return) && $return !== null) { $return = print_r($return, true); }
-        wpultra_audit_log('execute-php', $code, true);
+        // Log a fingerprint, never the source: snippets may contain credentials,
+        // and the audit option lands in every DB snapshot/backup.
+        wpultra_audit_log('execute-php', wpultra_execute_php_log_ref($code), true);
         return wpultra_ok(['return_value' => $return, 'output' => $output, 'warnings' => $warnings]);
     } catch (\Throwable $e) {
         $output = ob_get_clean();
         restore_error_handler();
         if (function_exists('set_time_limit')) { @set_time_limit((int) $prev); }
-        wpultra_audit_log('execute-php', $code, false);
+        wpultra_audit_log('execute-php', wpultra_execute_php_log_ref($code), false);
         return ['success' => false, 'error' => $e->getMessage(), 'error_class' => get_class($e), 'output' => $output, 'warnings' => $warnings];
     }
 }

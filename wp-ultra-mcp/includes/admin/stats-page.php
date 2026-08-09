@@ -141,39 +141,5 @@ function wpultra_stats_page_render(): void {
         <?php endif; ?>
     </div>
 
-    <style>
-        .wpu-notice-inline { margin: 0 0 16px; }
-
-        .wpu-summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:0 0 18px; }
-        .wpu-summary-card { background:#fff; border:1px solid #e6e7eb; border-radius:14px; padding:16px 18px;
-            box-shadow:0 6px 20px rgba(18,20,40,.06), 0 1px 3px rgba(18,20,40,.05); }
-        .wpu-summary-num { font-size:24px; font-weight:700; color:#1d2327; line-height:1.3;
-            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .wpu-summary-fail { color:#c23b3b; }
-        .wpu-summary-top { font-size:15px; font-family:Consolas,Monaco,monospace; color:#6d4afe; }
-        .wpu-summary-label { color:#787c82; font-size:12px; margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
-
-        .wpu-chart { display:flex; flex-direction:column; gap:10px; }
-        .wpu-chart-row { display:flex; align-items:center; gap:12px; }
-        .wpu-chart-label { flex:0 0 220px; font-size:12.5px; color:#1d2327; font-family:Consolas,Monaco,monospace;
-            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .wpu-chart-track { flex:1; background:#f0f0f4; border-radius:6px; height:16px; overflow:hidden; position:relative; }
-        .wpu-chart-bar { height:100%; background:linear-gradient(135deg,#7b5cff,#5b34f2); border-radius:6px; position:relative;
-            transition:width .3s ease; min-width:2px; }
-        .wpu-chart-fail { position:absolute; top:0; right:0; height:100%; background:#c23b3b; }
-        .wpu-chart-count { flex:0 0 50px; text-align:right; font-size:12.5px; color:#50575e; font-weight:600; }
-
-        .wpu-stats-table { border:none; box-shadow:none; }
-        .wpu-stats-table th, .wpu-stats-table td { font-size:13px; }
-        .wpu-sortlink { color:#50575e; text-decoration:none; }
-        .wpu-sortlink.active { color:#6d4afe; font-weight:700; }
-        .wpu-sortlink:hover { color:#6d4afe; }
-        .wpu-lasterr { white-space:pre-wrap; word-break:break-word; color:#c23b3b; background:#fff5f5; }
-
-        @media (max-width: 900px) {
-            .wpu-summary-grid { grid-template-columns:repeat(2,1fr); }
-            .wpu-chart-label { flex-basis:120px; }
-        }
-    </style>
     <?php
 }
