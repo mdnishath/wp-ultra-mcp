@@ -43,6 +43,13 @@ function run_tests(): void {
     exit($f > 0 ? 1 : 0);
 }
 
+// PHP 8.0 lacks array_is_list() (8.1+). Production is covered — WordPress core
+// polyfills it since 6.5 and the plugin requires 6.9 — but the bare harness has
+// no WP compat layer, so engine code using it fails only on the PHP 8.0 CI job.
+if (!function_exists('array_is_list')) {
+    function array_is_list(array $arr): bool { return $arr === [] || array_keys($arr) === range(0, count($arr) - 1); }
+}
+
 // ---- Minimal WordPress stubs (only what pure-logic code needs) ----
 if (!class_exists('WP_Error')) {
     class WP_Error {
