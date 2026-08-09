@@ -5,7 +5,7 @@ if (!defined('ABSPATH') && !defined('WPULTRA_TEST')) { /* allow harness load */ 
 if (!function_exists('wpultra_seo_strlen')) {
     /** PURE. UTF-8-aware character count (mb_strlen when available, else code-point count). */
     function wpultra_seo_strlen(string $s): int {
-        if (function_exists('mb_strlen')) { return (int) wpultra_seo_strlen($s); }
+        if (function_exists('mb_strlen')) { return (int) mb_strlen($s); }
         return (int) preg_match_all('/./us', $s, $__m);
     }
 }

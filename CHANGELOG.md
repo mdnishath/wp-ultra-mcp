@@ -6,6 +6,11 @@ this file mirrors it and tracks unreleased work.
 
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.31.1]
+- Fix: `wpultra_seo_strlen()` recursed infinitely (a self-call typo instead of
+  `mb_strlen()`) whenever the mbstring extension was loaded — `seo-analyze-page`
+  hung until OOM on virtually every production host. Caught by CI's first run.
+
 ## [0.31.0] — Roadmap 5: Hardening + Consistency + Reach (complete, 45/45)
 
 Tracked in [`docs/ROADMAP-5.md`](docs/ROADMAP-5.md). All waves complete

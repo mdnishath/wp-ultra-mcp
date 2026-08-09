@@ -85,11 +85,14 @@ function wpultra_system_install_plugin(string $source) {
         if (is_wp_error($api)) { return $api; }
         $package = $api->download_link;
     }
-    $upgrader = new Plugin_Upgrader(new WP_Upgrader_Skin());
+    // Automatic_Upgrader_Skin captures feedback instead of echoing it. The default
+    // WP_Upgrader_Skin echoes HTML via show_message(), whose wp_ob_end_flush_all()
+    // also destroys any ob_start() wrapper — corrupting the JSON-RPC response.
+    $upgrader = new Plugin_Upgrader(new Automatic_Upgrader_Skin());
     $ok = $upgrader->install($package);
     if (is_wp_error($ok)) { return $ok; }
-    if (!$ok) { return wpultra_err('install_failed', 'Plugin install failed.'); }
-    return ['installed' => true, 'plugin' => (string) $upgrader->plugin_info()];
+    if (!$ok) { return wpultra_err('install_failed', 'Plugin install failed. ' . implode(' ', $upgrader->skin->get_upgrade_messages())); }
+    return ['installed' => true, 'plugin' => (string) $upgrader->plugin_info(), 'feedback' => $upgrader->skin->get_upgrade_messages()];
 }
 
 /** @return array|WP_Error */
@@ -97,10 +100,11 @@ function wpultra_system_update_plugin(string $plugin) {
     wpultra_system_require_upgrader();
     if (!class_exists('Plugin_Upgrader')) { return wpultra_err('upgrader_unavailable', 'Plugin_Upgrader unavailable.'); }
     if (function_exists('wp_update_plugins')) { wp_update_plugins(); }
-    $upgrader = new Plugin_Upgrader(new WP_Upgrader_Skin());
+    // Non-echoing skin — see wpultra_system_install_plugin().
+    $upgrader = new Plugin_Upgrader(new Automatic_Upgrader_Skin());
     $ok = $upgrader->upgrade($plugin);
     if (is_wp_error($ok)) { return $ok; }
-    return ['plugin' => $plugin, 'updated' => (bool) $ok];
+    return ['plugin' => $plugin, 'updated' => (bool) $ok, 'feedback' => $upgrader->skin->get_upgrade_messages()];
 }
 
 /** @return array|WP_Error */
@@ -151,12 +155,13 @@ function wpultra_system_install_theme(string $source) {
         if (is_wp_error($api)) { return $api; }
         $package = $api->download_link;
     }
-    $upgrader = new Theme_Upgrader(new WP_Upgrader_Skin());
+    // Non-echoing skin — see wpultra_system_install_plugin().
+    $upgrader = new Theme_Upgrader(new Automatic_Upgrader_Skin());
     $ok = $upgrader->install($package);
     if (is_wp_error($ok)) { return $ok; }
-    if (!$ok) { return wpultra_err('install_failed', 'Theme install failed.'); }
+    if (!$ok) { return wpultra_err('install_failed', 'Theme install failed. ' . implode(' ', $upgrader->skin->get_upgrade_messages())); }
     $slug = method_exists($upgrader, 'theme_info') && $upgrader->theme_info() ? $upgrader->theme_info()->get_stylesheet() : '';
-    return ['installed' => true, 'stylesheet' => (string) $slug];
+    return ['installed' => true, 'stylesheet' => (string) $slug, 'feedback' => $upgrader->skin->get_upgrade_messages()];
 }
 
 /** @return array|WP_Error update an installed theme to its latest version. */
@@ -165,10 +170,11 @@ function wpultra_system_update_theme(string $stylesheet) {
     if (!class_exists('Theme_Upgrader')) { return wpultra_err('upgrader_unavailable', 'Theme_Upgrader unavailable.'); }
     if (!wp_get_theme($stylesheet)->exists()) { return wpultra_err('theme_not_found', "Theme '$stylesheet' is not installed."); }
     if (function_exists('wp_update_themes')) { wp_update_themes(); }
-    $upgrader = new Theme_Upgrader(new WP_Upgrader_Skin());
+    // Non-echoing skin — see wpultra_system_install_plugin().
+    $upgrader = new Theme_Upgrader(new Automatic_Upgrader_Skin());
     $ok = $upgrader->upgrade($stylesheet);
     if (is_wp_error($ok)) { return $ok; }
-    return ['stylesheet' => $stylesheet, 'updated' => (bool) $ok];
+    return ['stylesheet' => $stylesheet, 'updated' => (bool) $ok, 'feedback' => $upgrader->skin->get_upgrade_messages()];
 }
 
 /** @return array|WP_Error delete an installed theme (never the active one). */

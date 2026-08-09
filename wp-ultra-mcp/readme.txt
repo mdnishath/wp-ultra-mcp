@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.9
 Requires PHP: 8.0
-Stable tag: 0.31.0
+Stable tag: 0.31.1
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -51,6 +51,9 @@ Any client that implements the Model Context Protocol 2025 spec. Claude Code and
 Three REST endpoints accept unauthenticated requests, because they receive beacons from page-cached front-end HTML that cannot carry a nonce: `wpultra/v1/chat` (the AI chatbot, only when configured), `wpultra/v1/track` (marketing beacon), and `wpultra/v1/jserror` (front-end JS error logger). All are rate-limited per IP, sanitize their input, never mutate content, and never leak internal error text. If you don't use a feature, you can switch its endpoint off entirely — set the option `wpultra_public_endpoints_disabled` to an array of keys (`chat`, `track`, `jserror`); disabled endpoints are not registered at all and return 404. The headless read routes (`wpultra/headless/v1/*`) have their own per-route switches in the headless config.
 
 == Changelog ==
+
+= 0.31.1 =
+* FIX: `seo-analyze-page` hung and exhausted memory on any PHP with the mbstring extension (i.e. virtually every production host). `wpultra_seo_strlen()` contained a typo that made it call ITSELF instead of `mb_strlen()` when mbstring was available — infinite recursion until the process was killed. Dev machines whose CLI PHP lacked mbstring took the regex fallback and never saw it; the new GitHub Actions CI (which loads mbstring) caught it on its very first run. The full test suite now also runs with mbstring enabled locally.
 
 = 0.31.0 =
 * Roadmap-5 complete (45/45): hardening, consistency, and reach. Ability count 305 → 311.

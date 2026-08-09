@@ -66,7 +66,10 @@ function wpultra_coreupdate_apply(string $version = '') {
     $from = isset($wp_version) ? (string) $wp_version : '';
 
     if (!class_exists('Core_Upgrader')) { return wpultra_err('upgrader_unavailable', 'Core_Upgrader unavailable.'); }
-    $upgrader = new Core_Upgrader(new WP_Upgrader_Skin());
+    // Automatic_Upgrader_Skin captures feedback; the default skin echoes HTML and
+    // its show_message() -> wp_ob_end_flush_all() destroys any ob_start() wrapper,
+    // corrupting the JSON-RPC response over the MCP HTTP transport.
+    $upgrader = new Core_Upgrader(new Automatic_Upgrader_Skin());
     $result = $upgrader->upgrade($target);
     if (is_wp_error($result)) { return $result; }
 
