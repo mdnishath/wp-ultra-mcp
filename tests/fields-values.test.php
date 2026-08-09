@@ -4,6 +4,8 @@ declare(strict_types=1);
 define('ABSPATH', __DIR__ . '/');
 $__fails = 0;
 function ok($cond, $msg) { global $__fails; if ($cond) { echo "PASS: $msg\n"; } else { $__fails++; echo "FAIL: $msg\n"; } }
+// PHP 8.0 lacks array_is_list (8.1+); WP core polyfills it in production (6.5+).
+if (!function_exists('array_is_list')) { function array_is_list(array $arr): bool { return $arr === [] || array_keys($arr) === range(0, count($arr) - 1); } }
 
 // setup.php must be requireable without any field plugin present and report zero providers.
 require __DIR__ . '/../wp-ultra-mcp/includes/fields/setup.php';

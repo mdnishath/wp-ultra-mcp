@@ -19,6 +19,8 @@ if (!class_exists('WP_Error')) {
 if (!function_exists('is_wp_error')) { function is_wp_error($t) { return $t instanceof WP_Error; } }
 if (!function_exists('wpultra_err')) { function wpultra_err($c, $m, $d = '') { return new WP_Error($c, $m, $d); } }
 if (!function_exists('__')) { function __($t, $d = 'default') { return $t; } }
+// PHP 8.0 lacks array_is_list (8.1+); WP core polyfills it in production (6.5+).
+if (!function_exists('array_is_list')) { function array_is_list(array $arr): bool { return $arr === [] || array_keys($arr) === range(0, count($arr) - 1); } }
 
 require __DIR__ . '/../wp-ultra-mcp/includes/fields/complex.php';
 
