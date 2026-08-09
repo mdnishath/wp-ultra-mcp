@@ -60,9 +60,23 @@ function wpultra_manage_access_cb(array $input) {
     if ($action === 'grant-role') {
         $role = (string) ($input['role'] ?? '');
         if ($role === '') { return wpultra_err('missing_role', 'role is required.'); }
+        $abilities  = array_values(array_unique(array_map('strval', (array) ($input['abilities'] ?? []))));
+        $categories = array_values(array_unique(array_map('strval', (array) ($input['categories'] ?? []))));
+        // Never let an admin delegate RCE-class abilities/categories (execute-php,
+        // run-wp-cli, execute-wp-query, file writes, and the code-execution/database/
+        // filesystem categories) to a non-admin role — that would be a one-step path
+        // from a self-registered subscriber to arbitrary code execution.
+        $deny = wpultra_access_never_delegatable();
+        $bad  = array_merge(array_intersect($abilities, $deny['abilities']), array_intersect($categories, $deny['categories']));
+        if ($bad !== []) {
+            wpultra_audit_log('manage-access', "blocked RCE-class grant to $role: " . implode(', ', $bad), false);
+            return wpultra_err('forbidden_grant',
+                'These run arbitrary code/SQL/filesystem writes and cannot be delegated to a non-admin role: '
+                . implode(', ', $bad) . '. Remove them from the grant — admins can still run them directly.');
+        }
         $policy['roles'][$role] = [
-            'abilities'  => array_values(array_unique(array_map('strval', (array) ($input['abilities'] ?? [])))),
-            'categories' => array_values(array_unique(array_map('strval', (array) ($input['categories'] ?? [])))),
+            'abilities'  => $abilities,
+            'categories' => $categories,
         ];
         wpultra_access_policy_save($policy);
         wpultra_audit_log('manage-access', "grant role $role", true);

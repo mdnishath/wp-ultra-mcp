@@ -3,8 +3,8 @@
 # Compress-Archive writes backslash separators, which Linux PHP ZipArchive treats
 # as literal filename characters (broke the v0.13.0 remote install).
 $ErrorActionPreference = 'Stop'
-$src = 'E:\wp-connector\wp-ultra-mcp'
-$zip = 'E:\wp-connector\wp-ultra-mcp.zip'
+$src = 'D:\wp-connector\wp-ultra-mcp'
+$zip = 'D:\wp-connector\wp-ultra-mcp.zip'
 $exclude = @('.git', 'node_modules')
 
 if (Test-Path $zip) { Remove-Item -Force $zip }

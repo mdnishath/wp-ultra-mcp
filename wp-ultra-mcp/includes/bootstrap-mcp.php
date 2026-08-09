@@ -839,6 +839,39 @@ function wpultra_load_structure_frontend(): void {
     }
 }
 
+/**
+ * Gate the MCP endpoint (HTTP transport) AND the built-in discover / get-info /
+ * execute tools to admins-or-granted-roles, instead of the adapter default of
+ * "any logged-in `read` user". Without this, a logged-in subscriber / Woo
+ * customer can reach the MCP endpoint and enumerate the whole ability catalog
+ * (they still cannot execute anything — each ability re-checks manage_options —
+ * but the endpoint should not be open to non-admins at all).
+ *
+ * The default server exposes no transport_permission_callback slot, so the
+ * adapter's capability filters are the correct lever. A plain capability string
+ * can't express "admin OR holds a role grant", so we route them through a
+ * virtual capability granted dynamically via wpultra_permission_callback (which
+ * honors the access-grant policy). Gating the transport alone would suffice
+ * (every tool call flows through it); we also gate the three tools for defense
+ * in depth. Recursion-safe: the inner check only asks for manage_options /
+ * super-admin, never the virtual cap.
+ */
+function wpultra_mcp_harden_transport(): void {
+    $cap = static function () { return 'wpultra_use_mcp'; };
+    add_filter('mcp_adapter_default_transport_permission_user_capability', $cap);
+    add_filter('mcp_adapter_discover_abilities_capability', $cap);
+    add_filter('mcp_adapter_get_ability_info_capability', $cap);
+    add_filter('mcp_adapter_execute_ability_capability', $cap);
+    add_filter('user_has_cap', static function ($allcaps, $caps, $args) {
+        $wants = (isset($args[0]) && $args[0] === 'wpultra_use_mcp')
+            || in_array('wpultra_use_mcp', (array) $caps, true);
+        if ($wants && function_exists('wpultra_permission_callback') && wpultra_permission_callback()) {
+            $allcaps['wpultra_use_mcp'] = true;
+        }
+        return $allcaps;
+    }, 10, 3);
+}
+
 function wpultra_boot(): void {
     if (!wpultra_mcp_adapter_available()) {
         add_action('admin_notices', function () {
@@ -858,6 +891,9 @@ function wpultra_boot(): void {
     });
 
     if (!wpultra_is_enabled()) { return; }
+
+    // Close the MCP endpoint to non-admins (admins + explicitly-granted roles only).
+    wpultra_mcp_harden_transport();
 
     add_action('wp_abilities_api_categories_init', 'wpultra_register_categories');
     add_action('wp_abilities_api_init', 'wpultra_load_abilities');

@@ -31,12 +31,41 @@ const WPULTRA_ACCESS_OPTION = 'wpultra_access_policy';
  * ------------------------------------------------------------------ */
 
 /**
+ * Pure: the set of abilities/categories that must NEVER be delegated to a
+ * non-admin role. These run arbitrary PHP, arbitrary SQL, or arbitrary
+ * filesystem writes — i.e. full RCE — so granting them to (say) `subscriber`
+ * on a site with open registration would be a one-step privilege-escalation to
+ * code execution. An admin can still run them directly; they just can't hand
+ * them to a lower-privilege role. Enforced both at grant time (manage-access)
+ * and defensively at execution time (wpultra_access_role_can).
+ *
+ * @return array{abilities:string[],categories:string[]}
+ */
+function wpultra_access_never_delegatable(): array {
+    return [
+        'abilities'  => ['execute-php', 'run-wp-cli', 'execute-wp-query', 'write-file', 'edit-file', 'delete-file'],
+        'categories' => ['code-execution', 'database', 'filesystem'],
+    ];
+}
+
+/** Pure: is this ability/category in the never-delegatable RCE set? */
+function wpultra_access_is_rce_class(string $ability, string $category): bool {
+    $deny = wpultra_access_never_delegatable();
+    return in_array($ability, $deny['abilities'], true)
+        || ($category !== '' && in_array($category, $deny['categories'], true));
+}
+
+/**
  * Pure: may a user with $roles run $ability (in $category) under $policy?
  * Admins always may. Otherwise a role must grant the ability by name or its
- * whole category.
+ * whole category — EXCEPT RCE-class abilities/categories, which are never
+ * delegatable to a non-admin even if a stale/hand-edited policy grants them.
  */
 function wpultra_access_role_can(array $roles, string $ability, string $category, array $policy, bool $is_admin): bool {
     if ($is_admin) { return true; }
+    // Defensive backstop: even if the policy somehow contains an RCE-class grant
+    // (legacy policy, direct option edit), a non-admin can never use it.
+    if (wpultra_access_is_rce_class($ability, $category)) { return false; }
     $rolemap = is_array($policy['roles'] ?? null) ? $policy['roles'] : [];
     foreach ($roles as $role) {
         $grant = $rolemap[$role] ?? null;

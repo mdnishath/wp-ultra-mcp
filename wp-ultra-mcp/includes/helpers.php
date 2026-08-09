@@ -58,6 +58,12 @@ function wpultra_classify_query(string $sql): array {
     if (!$destructive && preg_match('/\b(INTO\s+(OUTFILE|DUMPFILE)|LOAD_FILE)\b/i', $sql)) {
         $destructive = true;
     }
+    // INSERT is normally additive (only adds rows), but `INSERT … ON DUPLICATE KEY
+    // UPDATE` overwrites existing rows — that is an UPDATE in disguise and must need
+    // confirm:true like any other row mutation, not slip through as a "safe" INSERT.
+    if (!$destructive && $verb === 'INSERT' && preg_match('/\bON\s+DUPLICATE\s+KEY\s+UPDATE\b/i', $sql)) {
+        $destructive = true;
+    }
     return ['verb' => $verb, 'destructive' => $destructive];
 }
 
@@ -140,7 +146,17 @@ function wpultra_wp_cli_unsafe_command(array $args): string {
     $tokens = [];
     foreach ($args as $a) {
         $a = (string) $a;
-        if ($a === '' || $a[0] === '-') { continue; } // skip flags/options
+        if ($a === '') { continue; }
+        if ($a[0] === '-') {
+            // WP-CLI GLOBAL flags that run arbitrary PHP BEFORE the command itself —
+            // `wp --exec="<php>" option list` executes the PHP yet classifies as the
+            // innocuous `option list`, bypassing the command-name gate entirely.
+            // Flag them so allow_unsafe (explicit opt-in) is still required.
+            $flag = strtolower($a);
+            if (str_starts_with($flag, '--exec'))    { return '--exec'; }
+            if (str_starts_with($flag, '--require'))  { return '--require'; }
+            continue; // other flags/options are not command-name relevant
+        }
         $tokens[] = strtolower($a);
         if (count($tokens) >= 2) { break; }
     }

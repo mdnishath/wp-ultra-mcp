@@ -3,7 +3,7 @@ Contributors: wpultra
 Tags: mcp, ai, elementor, wp-cli, automation
 Requires at least: 6.6
 Requires PHP: 8.0
-Stable tag: 0.29.0
+Stable tag: 0.30.0
 License: GPLv2 or later
 
 Turn this WordPress site into an MCP server for AI CLIs (Claude Code, Gemini): raw SQL, WP-CLI, files, execute-php, persistent memory, WP content, skills, and schema-driven Elementor v4 layout control.
@@ -48,6 +48,15 @@ AI control is disabled by default. Enable it only when you need it. The SQL abil
 Any client that implements the Model Context Protocol 2025 spec. Claude Code and Gemini CLI are tested.
 
 == Changelog ==
+
+= 0.30.0 =
+* FIX: the Connect page's "Copy" buttons silently did nothing on plain-http `.local` dev domains. `navigator.clipboard` is only defined in secure contexts (https, or localhost) — on a non-secure origin it's `undefined`, so calling `.writeText()` threw synchronously *before* the promise chain, meaning `.catch()` never ran and the `execCommand('copy')` fallback never fired. Now guarded so the fallback is used whenever the Clipboard API isn't available.
+* SECURITY: `manage-access` grant-role can no longer delegate RCE-class abilities/categories (`execute-php`, `run-wp-cli`, `execute-wp-query`, file writes; `code-execution`/`database`/`filesystem` categories) to a non-admin role — closes a one-step privilege-escalation path from a self-registered low-privilege account to arbitrary code execution. Enforced at grant time and defensively at execution time (a stale/hand-edited policy can't bypass it either).
+* SECURITY: the MCP endpoint (and the built-in discover/get-info/execute tools) is now gated to admins-or-granted-roles instead of the adapter's default of any logged-in `read` user — a logged-in subscriber could previously reach the endpoint and enumerate the whole ability catalog.
+* SECURITY: `run-wp-cli`'s unsafe-command detection now catches WP-CLI global flags (`--exec`, `--require`) that execute arbitrary PHP before the command itself runs — e.g. `wp --exec="<php>" option list` previously classified as the innocuous `option list` and bypassed the command-name gate.
+* FIX: `execute-wp-query` now classifies `INSERT … ON DUPLICATE KEY UPDATE` as destructive (it can overwrite existing rows like an UPDATE) instead of letting it slip through as a plain, always-safe INSERT.
+* FIX: `headless-revalidate` no longer echoes the raw `REVALIDATE_SECRET` back in the persisted config blob on `status`/`disable` calls — masked to `xx********xx`; the full value is still revealed once, in the `enable` action's note.
+* Release tooling: `bin/build-zip.ps1` and `bin/deploy.ps1` now point at the current repo/site paths.
 
 = 0.29.0 =
 * ROADMAP-4 COMPLETE — two new pillars, 19 abilities (286 → 305).

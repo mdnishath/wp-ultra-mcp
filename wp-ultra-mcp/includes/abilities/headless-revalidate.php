@@ -94,7 +94,16 @@ function wpultra_headless_revalidate_cb(array $input) {
         if (in_array((int) ($entry['trigger_id'] ?? 0), $cfg['trigger_ids'], true)) { $log[] = $entry; }
         if (count($log) >= 10) { break; }
     }
-    $out = ['config' => $cfg, 'triggers' => $shaped, 'log' => $log];
+    // Never echo the shared secret in the persisted config blob. The `test` branch
+    // above already omits it; mask it here too so `status`/`disable` (and the
+    // enable fall-through) don't leak REVALIDATE_SECRET into MCP transcripts/logs.
+    // The full value is revealed exactly once, in the enable `note` below.
+    $safe_cfg = $cfg;
+    if (isset($safe_cfg['secret']) && $safe_cfg['secret'] !== '') {
+        $s = (string) $safe_cfg['secret'];
+        $safe_cfg['secret'] = strlen($s) > 4 ? substr($s, 0, 2) . str_repeat('*', 8) . substr($s, -2) : '****';
+    }
+    $out = ['config' => $safe_cfg, 'triggers' => $shaped, 'log' => $log];
     if ($action === 'enable') {
         $out['note'] = 'Set REVALIDATE_SECRET=' . $cfg['secret'] . ' on the frontend. Then publish/update any post — the frontend refreshes within seconds. Use action:test for an instant check.';
     }

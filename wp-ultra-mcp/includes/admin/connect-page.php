@@ -375,13 +375,21 @@ function wpultra_connect_render(): void {
                 var el = document.querySelector(btn.getAttribute('data-copy'));
                 if (!el) return;
                 var text = el.textContent;
-                navigator.clipboard.writeText(text).then(function () { showToast('Copied to clipboard'); })
-                    .catch(function () {
-                        var r = document.createRange(); r.selectNode(el);
-                        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
-                        try { document.execCommand('copy'); showToast('Copied'); } catch (e) { showToast('Press Ctrl+C to copy'); }
-                        sel.removeAllRanges();
-                    });
+                function fallbackCopy() {
+                    var r = document.createRange(); r.selectNode(el);
+                    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+                    try { document.execCommand('copy'); showToast('Copied'); } catch (e) { showToast('Press Ctrl+C to copy'); }
+                    sel.removeAllRanges();
+                }
+                // navigator.clipboard is only defined in secure contexts (https, or localhost).
+                // On a plain-http .local domain it's undefined, so calling .writeText() throws
+                // synchronously *before* the promise chain — .catch() never sees it and the
+                // execCommand fallback never runs. Guard for its existence first.
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function () { showToast('Copied to clipboard'); }).catch(fallbackCopy);
+                } else {
+                    fallbackCopy();
+                }
             });
         });
     })();

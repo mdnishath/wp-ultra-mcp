@@ -54,4 +54,25 @@ it('policy normalize coerces shapes + clamps negatives', function () {
     assert_eq(7, $n['limits']['abilities']['x']);
 });
 
+it('RCE-class abilities/categories are never delegatable to a non-admin', function () {
+    // Even a policy that explicitly grants them must not enable a non-admin.
+    $bad = ['roles' => ['subscriber' => [
+        'abilities'  => ['execute-php', 'run-wp-cli', 'execute-wp-query', 'write-file'],
+        'categories' => ['code-execution', 'database', 'filesystem'],
+    ]]];
+    assert_true(!wpultra_access_role_can(['subscriber'], 'execute-php', 'code-execution', $bad, false));
+    assert_true(!wpultra_access_role_can(['subscriber'], 'run-wp-cli', 'code-execution', $bad, false));
+    assert_true(!wpultra_access_role_can(['subscriber'], 'execute-wp-query', 'database', $bad, false));
+    assert_true(!wpultra_access_role_can(['subscriber'], 'write-file', 'filesystem', $bad, false));
+    // Admins are unaffected (they may run anything).
+    assert_true(wpultra_access_role_can(['subscriber'], 'execute-php', 'code-execution', $bad, true));
+    // Non-RCE grants still work as before.
+    $ok = ['roles' => ['editor' => ['abilities' => [], 'categories' => ['content']]]];
+    assert_true(wpultra_access_role_can(['editor'], 'create-post', 'content', $ok, false));
+    // The deny helper is stable.
+    assert_true(wpultra_access_is_rce_class('execute-php', ''));
+    assert_true(wpultra_access_is_rce_class('anything', 'filesystem'));
+    assert_true(!wpultra_access_is_rce_class('create-post', 'content'));
+});
+
 run_tests();
