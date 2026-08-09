@@ -115,10 +115,10 @@ All gaps were verified absent by grep, not inferred.
 
 ## Architecture notes
 
-- [ ] **Reuse over new code:** S1.1 reuses `sandbox/runtime.php` hardening; S2.1 reuses `dbrepair.php`'s backtick escape; S2.2 reuses `visualdiff.php`'s URL validation; C1.1 rides the same `wp_before_execute_ability` hook as the access gate (and S1.2's assertion protects both); F1.1 extends the existing undo ring, not a new system; F1.3 uses the already-loaded `Theme_Upgrader`; F2.x extend the proven adapter directories.
-- [ ] **Safety pattern unchanged:** destructive = confirm-gated (now via the shared C1.2 helper); every mutation → activity-log (now guaranteed centrally by C1.1); snapshots before repair; never-delegatable expanded (S1.3), never shrunk.
-- [ ] **Self-test as the enforcement layer:** every invariant this roadmap establishes gets a self-test assertion — hook fires (S1.2), manifest ≡ disk (C1.6), confirm-gated ⇒ destructive (C1.3). Regressions surface in `self-test`, not in production.
-- [ ] **Categories:** S/C waves touch existing files; F1 → `system`/`content`/`gutenberg`; F2 → `verticals`/`forms`/`multilingual`/`users`.
+- **Reuse over new code:** S1.1 reuses `sandbox/runtime.php` hardening; S2.1 reuses `dbrepair.php`'s backtick escape; S2.2 reuses `visualdiff.php`'s URL validation; C1.1 rides the same `wp_before_execute_ability` hook as the access gate (and S1.2's assertion protects both); F1.1 extends the existing undo ring, not a new system; F1.3 uses the already-loaded `Theme_Upgrader`; F2.x extend the proven adapter directories. *(All honored.)*
+- **Safety pattern unchanged:** destructive = confirm-gated (now via the shared C1.2 helper); every mutation → activity-log (now guaranteed centrally by C1.1); snapshots before repair; never-delegatable expanded (S1.3), never shrunk. *(All honored.)*
+- **Self-test as the enforcement layer:** every invariant this roadmap establishes gets a self-test assertion — hook fires (S1.2), manifest ≡ disk (C1.6), confirm-gated ⇒ destructive (C1.3). Regressions surface in `self-test`, not in production. *(All honored.)*
+- **Categories:** S/C waves touch existing files; F1 → `system`/`content`/`gutenberg`; F2 → `verticals`/`forms`/`multilingual`/`users`. *(As planned.)*
 
 ## Tally
 
